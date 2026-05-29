@@ -102,6 +102,7 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: ${SERVER_PORT}
+      TLS: ${TLS}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
@@ -162,6 +163,7 @@ services:
     environment:
       # Server configuration
       SERVER_PORT: ${SERVER_PORT}
+      TLS: ${TLS}
     volumes:
       - type: volume
         source: agent-build

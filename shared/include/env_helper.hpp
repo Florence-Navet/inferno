@@ -18,6 +18,7 @@ class EnvHelper {
   static std::string resolveServerHost();
 
   static const std::uint16_t SERVER_PORT = 8888;
+  static bool resolveTlsEnabled();
 
  private:
 };

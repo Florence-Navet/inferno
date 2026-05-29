@@ -1,6 +1,7 @@
 #include "agent_session.hpp"
 
 #include "protocol/protocol_helper.hpp"
+#include "socket/tls_socket_factory.hpp"
 #include "socket/socket_factory.hpp"
 
 std::optional<Frame> AgentSession::tryExtractFrame() {
@@ -24,7 +25,11 @@ void AgentSession::resetSession() {
   registered_ = RegisterState::PENDING;
   buffer_.clear();
   header_.reset();
-  socket_ = SocketFactory::createTCP();
+  if (encryption_) {
+    socket_ = TLSSocketFactory::createClient("certs/ca.crt");
+  } else {
+    socket_ = SocketFactory::createTCP();
+  }
 }
 
 // ===== socket related methods =====

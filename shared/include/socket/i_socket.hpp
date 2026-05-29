@@ -62,6 +62,8 @@ class ISocket {
   // For debugging / logging
   virtual std::string remoteAddress() const = 0;
   virtual std::uint16_t remotePort() const = 0;
+
+  virtual SocketStatus translateStatus(int err) const = 0;
 };
 
 #endif

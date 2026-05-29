@@ -152,7 +152,7 @@ uint16_t LinuxSocket::remotePort() const {
   return ntohs(address.sin_port);
 }
 
-SocketStatus LinuxSocket::translateStatus(int err) {
+SocketStatus LinuxSocket::translateStatus(int err) const {
   switch (err) {
     case ECONNREFUSED:
       return SocketStatus::CONNECTION_REFUSED;

@@ -21,7 +21,9 @@ int main() {
 
   Poller poller;
   AgentDispatcher dispatcher;
-  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs);
+  bool encryption = EnvHelper::resolveTlsEnabled();
+
+  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs, encryption);
 
   loop.run();
   return 0;

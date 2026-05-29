@@ -7,21 +7,34 @@
 #include <sstream>
 
 // #include "protocol/protocol_parser.hpp"
+#include "socket/tls_socket_factory.hpp"
 #include "socket/socket_factory.hpp"
 // #include "protocol/lptf_protocol.hpp"
 
 TcpServer::TcpServer(const std::uint16_t port, const int backlog)
     : port_(port), backlog_(backlog) {}
 
+TcpServer::TcpServer(const std::uint16_t port, const bool encryption,
+                     const int backlog)
+    : port_(port), encryption_(encryption), backlog_(backlog) {}
+
 bool TcpServer::start() {
   if (serverSocket_ && serverSocket_->isValid()) {
     std::ostringstream what;
-    what << "[start] Socket is already valid on port " << port_ ;
+    what << "[start] Socket is already valid on port " << port_;
     logger_.error(what.str());
     // std::cout << "[start] Socket is already valid on port " << port_ << '\n';
     return false;
   }
-  serverSocket_ = SocketFactory::createTCP();
+
+  logger_.info("TLS = " + std::string(encryption_ ? "true" : "false"));
+  if (encryption_) {
+    serverSocket_ =
+        TLSSocketFactory::createServer("certs/server.crt", "certs/server.key");
+  } else {
+    serverSocket_ = SocketFactory::createTCP();
+  }
+
   if (!serverSocket_ || !serverSocket_->isValid()) {
     std::ostringstream what;
     what << "[start] Failed to create server socket on port " << port_;

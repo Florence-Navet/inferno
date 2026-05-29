@@ -72,7 +72,7 @@ A Qt-based interface providing:
 
 ## Prerequisites
 
-- Docker / Docker Desktop installed and running
+- Docker / Docker Desktop or [Podman](https://github.com/containers/podman) installed and running
 
 ## Setup
 
@@ -111,7 +111,7 @@ docker compose down
 
 
 ## How to build
-This project uses a multi-stage build pipeline orchestrated with Docker Compose services.
+This project uses a **multi-stage container build pipeline** orchestrated through Docker Compose-compatible services. The pipeline has been tested with both Docker and Podman.
 
 Builder services are only responsible for compilation and testing.
 Runtime services only execute the final binaries produced during the build pipeline.
@@ -130,5 +130,3 @@ Multiple runtime instances can be started without rebuilding the binary, since a
 
 The following diagram illustrates the pipeline:
 ![pipeline](./_docs/project/build_pipeline_&_artifact_flow.png)
-
-  'build_pipeline_&_artifact_flow.png'

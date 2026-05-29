@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.20)
 project(InfernoAgent LANGUAGES CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# ── OpenSSL ───────────────────────────────────────────────────────────────────
+find_package(OpenSSL REQUIRED)
+
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
 # When built in isolation (inside the agent container), this pulls it directly.
@@ -11,6 +14,7 @@ if(NOT TARGET shared_lib)
         add_library(shared_lib STATIC IMPORTED GLOBAL)
         set_target_properties(shared_lib PROPERTIES
             IMPORTED_LOCATION "${_shared_lib}"
+            INTERFACE_LINK_LIBRARIES "OpenSSL::SSL;OpenSSL::Crypto"
         )
         target_include_directories(shared_lib INTERFACE
             "${CMAKE_CURRENT_SOURCE_DIR}/../shared/include"

@@ -1,4 +1,6 @@
 #include "env_helper.hpp"
+#include <algorithm>
+#include <cctype>
 
 std::uint16_t EnvHelper::resolveServerPort() {
   const char* portEnv = std::getenv("SERVER_PORT");
@@ -27,4 +29,17 @@ std::string EnvHelper::resolveServerHost() {
     return std::string(hostEnv);
   }
   return "server";
+}
+
+bool EnvHelper::resolveTlsEnabled() {
+  const char* tlsEnv = std::getenv("TLS");
+  if (tlsEnv == nullptr) {
+    return false;  // default value
+  }
+
+  std::string value(tlsEnv);
+
+  std::transform(value.begin(), value.end(), value.begin(), ::tolower);
+
+  return value == "true" || value == "1" || value == "yes" || value == "on";
 }

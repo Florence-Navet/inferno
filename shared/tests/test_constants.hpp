@@ -21,6 +21,10 @@ constexpr std::uint16_t TCP_SERVER_REMOTE_ADDR_PORT =
 
 // ── server_integration_test.cpp ──────────────────────────────
 constexpr std::uint16_t SERVER_INTEGRATION_PORT = 19882;
+// ── tls_socket_integration_test.cpp ──────────────────────────
+constexpr std::uint16_t TLS_SOCKET_ECHO_PORT = 19893;
+constexpr std::uint16_t TLS_PLAIN_SERVER_PORT = 19894;
+constexpr std::uint16_t TLS_PLAIN_CLIENT_PORT = 19895;
 
 // ── reactor_integration_test.cpp ─────────────────────────────
 constexpr std::uint16_t REACTOR_HAPPY_PATH_PORT = 19883;

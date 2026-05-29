@@ -32,6 +32,7 @@ services:
       dockerfile: Dockerfile
     # container_name: inferno-shared
     volumes:
+      
       - type: bind
         source: ./shared
         target: /app/shared
@@ -41,6 +42,9 @@ services:
       - type: volume
         source: shared-build
         target: /app/shared/build
+      - type: bind
+        source: ./certs
+        target: /app/certs
     command: ["bash", "./inferno.sh", "test", "shared"]
     # command: ["bash"]
 
@@ -74,6 +78,9 @@ services:
       - type: volume
         source: server-build
         target: /app/server/build
+      - type: bind
+        source: ./certs
+        target: /app/certs
     command: ["bash", "./inferno.sh", "test", "server"]
 
   # ============================================
@@ -95,12 +102,16 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: ${SERVER_PORT}
+      TLS: ${TLS}
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     volumes:
       - type: volume
         source: server-build
         target: /app/server/build
+      - type: bind
+        source: ./certs
+        target: /app/certs
     command: ["./server/build/bin/server"]
 
 
@@ -132,6 +143,9 @@ services:
       - type: volume
         source: agent-build
         target: /app/agent/build
+      - type: bind
+        source: ./certs
+        target: /app/certs
     command: ["bash", "./inferno.sh", "test", "agent"]
 
 
@@ -149,10 +163,14 @@ services:
     environment:
       # Server configuration
       SERVER_PORT: ${SERVER_PORT}
+      TLS: ${TLS}
     volumes:
       - type: volume
         source: agent-build
         target: /app/agent/build
+      - type: bind
+        source: ./certs
+        target: /app/certs
     command: ["./agent/build/bin/agent"]
 
 volumes:

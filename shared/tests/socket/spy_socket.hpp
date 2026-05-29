@@ -61,6 +61,9 @@ class SpySocket : public ISocket {
   int getFd() override { return -1; }
   std::string remoteAddress() const override { return ""; }
   std::uint16_t remotePort() const override { return 0; }
+  SocketStatus translateStatus(int /*err*/) const override {
+    return SocketStatus::UNKNOWN;
+  }
 
  private:
   bool closed_ = false;
@@ -85,6 +88,9 @@ class SpySocket : public ISocket {
     int getFd() override { return spy_.getFd(); }
     std::string remoteAddress() const override { return spy_.remoteAddress(); }
     std::uint16_t remotePort() const override { return spy_.remotePort(); }
+    SocketStatus translateStatus(int err) const override {
+      return spy_.translateStatus(err);
+    }
     SpySocket& spy_;
   };
 };

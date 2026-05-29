@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 project(InfernoShared LANGUAGES CXX)
 
+# ── OpenSSL for TLS communication ────────────────────────────────────────────
+find_package(OpenSSL REQUIRED)
+
 # ── Library ───────────────────────────────────────────────────────────────────
 # STATIC = compiled once into a .a archive, then linked into agent and server.
 # No Dockerfile, no executable — this is purely a library.
@@ -13,9 +16,13 @@ add_library(shared_lib STATIC
     src/protocol/protocol_serializer.cpp
     src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
+    src/socket/tls_socket.cpp
+    src/socket/tls_socket_factory.cpp
     src/protocol/protocol_helper.cpp
     src/poller/poller.cpp
 )
+
+target_link_libraries(shared_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
 # PUBLIC = these include dirs are inherited by any target that links shared_lib.
 # This is what lets agent and server write #include "ISocket.hpp" without paths.
@@ -51,6 +58,7 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
 
     set(SOCKET_TESTS
         tests/socket/socket_integration_test.cpp
+        tests/socket/tls_socket_integration_test.cpp
         )
         
         add_executable(shared_tests
@@ -78,6 +86,9 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
     )
     
     add_test(NAME shared_tests COMMAND shared_tests)
+    set_tests_properties(shared_tests PROPERTIES
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
+    )
     # include(GoogleTest)
     # gtest_discover_tests(shared_tests DISCOVERY_MODE PRE_TEST)
 

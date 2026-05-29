@@ -15,7 +15,7 @@ class AgentLoop {
   // heartbeatMs — how long to wait for server data before sending HEALTHCHECK
   // retryMs     — how long to wait between reconnection attempts
   AgentLoop(IPoller& poller, AgentDispatcher& dispatcher, std::string host,
-            std::uint16_t port, int heartbeatMs, int retryMs);
+            std::uint16_t port, int heartbeatMs, int retryMs, const bool encryption = false);
 
   AgentLoop(const AgentLoop&) = delete;
   AgentLoop& operator=(const AgentLoop&) = delete;

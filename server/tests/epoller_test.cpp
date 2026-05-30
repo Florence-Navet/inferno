@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <future>
+#include <thread>
 #include <vector>
 
 #if !defined(__linux__)
@@ -13,29 +15,50 @@ TEST(Epoller, NotSupportedOnThisPlatform) {
 
 #else
 
-#include <unistd.h>
+#include "socket/i_socket.hpp"
+#include "socket/socket_factory.hpp"
+#include "test_constants.hpp"
+#include "test_tcp_server.hpp"
 
 namespace {
 
-struct PipeFds {
-  int readFd = -1;
-  int writeFd = -1;
+struct ConnectedSockets {
+  std::unique_ptr<ISocket> serverSide;
+  std::unique_ptr<ISocket> clientSide;
 };
 
-PipeFds makePipe() {
-  int fds[2] = {-1, -1};
-  if (::pipe(fds) != 0) {
+ConnectedSockets makeConnectedSockets(std::uint16_t port) {
+  TestTcpServer server(port);
+  if (!server.start()) {
     return {};
   }
-  return {fds[0], fds[1]};
+
+  std::promise<void> serverReady;
+  std::shared_future<void> serverReadyFuture =
+      serverReady.get_future().share();
+  std::unique_ptr<ISocket> client;
+
+  std::thread connector([&] {
+    serverReadyFuture.wait();
+    client = SocketFactory::createTCP();
+    if (client) {
+      client->connect("127.0.0.1", port);
+    }
+  });
+
+  serverReady.set_value();
+  std::unique_ptr<ISocket> serverSide = server.acceptAgent();
+  connector.join();
+
+  return {std::move(serverSide), std::move(client)};
 }
 
-void closePipe(const PipeFds& pipeFds) {
-  if (pipeFds.readFd != -1) {
-    ::close(pipeFds.readFd);
+void closeSockets(ConnectedSockets& sockets) {
+  if (sockets.serverSide) {
+    sockets.serverSide->close();
   }
-  if (pipeFds.writeFd != -1) {
-    ::close(pipeFds.writeFd);
+  if (sockets.clientSide) {
+    sockets.clientSide->close();
   }
 }
 
@@ -49,9 +72,11 @@ TEST(EpollerUnit, should_be_valid_after_construction) {
 TEST(EpollerUnit, should_return_true_when_add_called_with_valid_fd) {
   Epoller epoller;
 
-  const PipeFds pipeFds = makePipe();
-
-  ASSERT_TRUE(epoller.add(pipeFds.readFd, WatchFlags::READ));
+  ConnectedSockets sockets =
+      makeConnectedSockets(TestConstants::EPOLLER_ADD_PORT);
+  ASSERT_NE(sockets.serverSide, nullptr);
+  ASSERT_TRUE(epoller.add(sockets.serverSide->getFd(), WatchFlags::READ));
+  closeSockets(sockets);
 }
 TEST(EpollerUnit, should_return_false_when_add_called_with_invalid_fd) {
   Epoller epoller;
@@ -62,10 +87,13 @@ TEST(EpollerUnit, should_return_false_when_add_called_with_invalid_fd) {
 TEST(EpollerUnit, should_return_true_when_remove_called_on_watched_fd) {
   Epoller epoller;
   // ASSERT_TRUE(epoller.isValid());
-  const PipeFds pipeFds = makePipe();
-  epoller.add(pipeFds.readFd, WatchFlags::READ);
+  ConnectedSockets sockets =
+      makeConnectedSockets(TestConstants::EPOLLER_REMOVE_PORT);
+  ASSERT_NE(sockets.serverSide, nullptr);
+  epoller.add(sockets.serverSide->getFd(), WatchFlags::READ);
 
-  EXPECT_TRUE(epoller.remove(pipeFds.readFd));
+  EXPECT_TRUE(epoller.remove(sockets.serverSide->getFd()));
+  closeSockets(sockets);
 }
 
 TEST(EpollerUnit, should_return_false_when_remove_called_on_unwatched_fd) {
@@ -78,25 +106,30 @@ TEST(EpollerUnit, should_return_false_when_remove_called_on_unwatched_fd) {
 TEST(EpollerUnit, should_return_zero_event_on_timeout_when_no_data) {
   Epoller epoller;
 
-  const PipeFds pipeFds = makePipe();
-  epoller.add(pipeFds.readFd, WatchFlags::READ);
+  ConnectedSockets sockets =
+      makeConnectedSockets(TestConstants::EPOLLER_TIMEOUT_PORT);
+  ASSERT_NE(sockets.serverSide, nullptr);
+  epoller.add(sockets.serverSide->getFd(), WatchFlags::READ);
   std::vector<ReadyEvent> events;
   const int ready = epoller.wait(events, 0);
   EXPECT_EQ(ready, 0);
   EXPECT_TRUE(events.empty());
 
-  epoller.remove(pipeFds.readFd);
-  closePipe(pipeFds);
+  epoller.remove(sockets.serverSide->getFd());
+  closeSockets(sockets);
 }
 
 TEST(EpollerIntegration, should_report_readable_event_when_data_arrives) {
   Epoller epoller;
 
-  const PipeFds pipeFds = makePipe();
-  epoller.add(pipeFds.readFd, WatchFlags::READ);
+  ConnectedSockets sockets =
+      makeConnectedSockets(TestConstants::EPOLLER_READABLE_PORT);
+  ASSERT_NE(sockets.serverSide, nullptr);
+  ASSERT_NE(sockets.clientSide, nullptr);
+  epoller.add(sockets.serverSide->getFd(), WatchFlags::READ);
 
-  const std::uint8_t byte = 0xAB;
-  ASSERT_EQ(::write(pipeFds.writeFd, &byte, 1), 1);
+  const std::vector<std::uint8_t> payload = {0xAB};
+  ASSERT_TRUE(sockets.clientSide->send(payload).ok());
 
   std::vector<ReadyEvent> events;
   const int ready = epoller.wait(events, 100);
@@ -105,7 +138,7 @@ TEST(EpollerIntegration, should_report_readable_event_when_data_arrives) {
 
   bool found = false;
   for (const auto& event : events) {
-    if (event.fileDescriptor == pipeFds.readFd) {
+    if (event.fileDescriptor == sockets.serverSide->getFd()) {
       found = true;
       EXPECT_TRUE(event.readable);
       EXPECT_FALSE(event.error);
@@ -114,21 +147,28 @@ TEST(EpollerIntegration, should_report_readable_event_when_data_arrives) {
   }
   EXPECT_TRUE(found);
 
-  epoller.remove(pipeFds.readFd);
-  closePipe(pipeFds);
+  epoller.remove(sockets.serverSide->getFd());
+  closeSockets(sockets);
 }
 
 TEST(EpollerIntegration, should_continue_after_one_fd_removed) {
   Epoller epoller;
   ASSERT_TRUE(epoller.isValid());
 
-  const PipeFds firstPipe = makePipe();
-  const PipeFds secondPipe = makePipe();
-  epoller.add(firstPipe.readFd, WatchFlags::READ);
-  epoller.add(secondPipe.readFd, WatchFlags::READ);
-  const std::uint8_t firstByte = 0x11;
-  ASSERT_EQ(::write(firstPipe.writeFd, &firstByte, 1), 1);
-  // TODO: should we write in the second pipe???
+  ConnectedSockets firstSockets =
+      makeConnectedSockets(TestConstants::EPOLLER_CONTINUE_PORT_1);
+  ConnectedSockets secondSockets =
+      makeConnectedSockets(TestConstants::EPOLLER_CONTINUE_PORT_2);
+  ASSERT_NE(firstSockets.serverSide, nullptr);
+  ASSERT_NE(secondSockets.serverSide, nullptr);
+  ASSERT_NE(firstSockets.clientSide, nullptr);
+  ASSERT_NE(secondSockets.clientSide, nullptr);
+
+  epoller.add(firstSockets.serverSide->getFd(), WatchFlags::READ);
+  epoller.add(secondSockets.serverSide->getFd(), WatchFlags::READ);
+
+  const std::vector<std::uint8_t> firstPayload = {0x11};
+  ASSERT_TRUE(firstSockets.clientSide->send(firstPayload).ok());
 
   std::vector<ReadyEvent> events;
   const int readyFirst = epoller.wait(events, 100);
@@ -136,7 +176,7 @@ TEST(EpollerIntegration, should_continue_after_one_fd_removed) {
 
   bool firstFound = false;
   for (const auto& event : events) {
-    if (event.fileDescriptor == firstPipe.readFd) {
+    if (event.fileDescriptor == firstSockets.serverSide->getFd()) {
       firstFound = true;
       EXPECT_TRUE(event.readable);
       break;
@@ -144,11 +184,11 @@ TEST(EpollerIntegration, should_continue_after_one_fd_removed) {
   }
   EXPECT_TRUE(firstFound);
 
-  epoller.remove(firstPipe.readFd);
-  closePipe(firstPipe);
+  epoller.remove(firstSockets.serverSide->getFd());
+  closeSockets(firstSockets);
 
-  const std::uint8_t secondByte = 0x22;
-  ASSERT_EQ(::write(secondPipe.writeFd, &secondByte, 1), 1);
+  const std::vector<std::uint8_t> secondPayload = {0x22};
+  ASSERT_TRUE(secondSockets.clientSide->send(secondPayload).ok());
 
   events.clear();
   const int readySecond = epoller.wait(events, 100);
@@ -156,7 +196,7 @@ TEST(EpollerIntegration, should_continue_after_one_fd_removed) {
 
   bool secondFound = false;
   for (const auto& event : events) {
-    if (event.fileDescriptor == secondPipe.readFd) {
+    if (event.fileDescriptor == secondSockets.serverSide->getFd()) {
       secondFound = true;
       EXPECT_TRUE(event.readable);
       break;
@@ -164,8 +204,8 @@ TEST(EpollerIntegration, should_continue_after_one_fd_removed) {
   }
   EXPECT_TRUE(secondFound);
 
-  epoller.remove(secondPipe.readFd);
-  closePipe(secondPipe);
+  epoller.remove(secondSockets.serverSide->getFd());
+  closeSockets(secondSockets);
 }
 
 #endif

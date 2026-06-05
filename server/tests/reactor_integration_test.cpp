@@ -117,18 +117,18 @@ TEST(ReactorIntegration,
   {
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect("127.0.0.1", port));
-    EXPECT_TRUE(socket->send(
-        makeRawFrame(MessageType::REGISTER,
-                     makeRegisterPayload("reactor-a"))).ok());
+    const auto registerFrame =
+        makeRawFrame(MessageType::REGISTER, makeRegisterPayload("reactor-a"));
+    EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 
   // Second agent — connects immediately; OS queues it in the backlog
   {
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect("127.0.0.1", port));
-    EXPECT_TRUE(socket->send(
-        makeRawFrame(MessageType::REGISTER,
-                     makeRegisterPayload("reactor-b"))).ok());
+    const auto registerFrame =
+        makeRawFrame(MessageType::REGISTER, makeRegisterPayload("reactor-b"));
+    EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 
   reactor.stop();

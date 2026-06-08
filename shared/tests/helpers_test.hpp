@@ -6,8 +6,15 @@
 #include <vector>
 
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "protocol/protocol_helper.hpp"
+#include "protocol/protocol_serializer.hpp"
+#include "test_constants.hpp"
+#include "convert_endian.hpp"
+
+
+inline std::vector<std::uint8_t> bytesFromString(const std::string& s) {
+  return std::vector<std::uint8_t>(s.begin(), s.end());
+}
 
 inline Frame makeFrame(MessageType type,
                        const std::vector<std::uint8_t>& payload = {}) {
@@ -45,6 +52,34 @@ inline std::vector<std::uint8_t> makeRegisterPayload(
   p.arch = arch;
   p.hostname = hostname;
   return ProtocolSerializer::serializeRegisterPayload(p);
+}
+
+inline std::vector<std::uint8_t> makeRegisterPayload(
+    const std::uint8_t rawOs = static_cast<uint8_t>(OSType::LINUX),
+    const std::uint8_t rawArch = static_cast<uint8_t>(ArchType::X64),
+    const std::uint16_t declaredHostnameLen = TestConstants::TEST_HOSTNAME_LEN,
+    const std::uint16_t declaredOsVersionLen =
+        TestConstants::TEST_OS_VERSION_LEN,
+    const std::uint16_t declaredCurrentUserLen =
+        TestConstants::TEST_CURRENT_USER_LEN,
+    const std::vector<std::uint8_t>& hostnameBytes =
+        TestConstants::TEST_HOSTNAME,
+    const std::vector<std::uint8_t>& osVersionBytes =
+        TestConstants::TEST_OS_VERSION,
+    const std::vector<std::uint8_t>& currentUserBytes =
+        TestConstants::TEST_CURRENT_USER) {
+  std::vector<std::uint8_t> out(REGISTER_FIXED_BYTES);
+
+  out[0] = rawOs;
+  out[1] = rawArch;
+  ConvertEndian::writeU16BE(out, 2, declaredHostnameLen);
+  ConvertEndian::writeU16BE(out, 4, declaredOsVersionLen);
+  ConvertEndian::writeU16BE(out, 6, declaredCurrentUserLen);
+
+  out.insert(out.end(), hostnameBytes.begin(), hostnameBytes.end());
+  out.insert(out.end(), osVersionBytes.begin(), osVersionBytes.end());
+  out.insert(out.end(), currentUserBytes.begin(), currentUserBytes.end());
+  return out;
 }
 
 inline std::vector<std::uint8_t> makeResponsePayload(

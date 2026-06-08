@@ -78,6 +78,8 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   payload.os_type = OSType::LINUX;
   payload.arch = ArchType::X64;
   payload.hostname = "inferno-agent";
+  payload.os_version = "Linux";
+  payload.current_user = "agent";
 
   const std::vector<std::uint8_t> registerPayload =
       ProtocolSerializer::serializeRegisterPayload(payload);

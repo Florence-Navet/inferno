@@ -4,6 +4,7 @@
 #include "protocol/protocol_parser.hpp"
 #include "server_dispatcher.hpp"
 #include "socket/spy_socket.hpp"
+#include "test_constants.hpp"
  
 // ServerDispatcher — 3 tests covering the only stable invariants.
 // SpySocket accumulates all sent bytes; we parse them back with
@@ -17,10 +18,10 @@ TEST(ServerDispatcher,
  
   dispatcher.handleFrame(
       session,
-      makeFrame(MessageType::REGISTER, makeRegisterPayload("host-01")));
+      makeFrame(MessageType::REGISTER, makeRegisterPayload()));
  
   EXPECT_TRUE(session.getIsRegistered());
-  EXPECT_EQ(session.getAgentInfo().hostname, "host-01");
+  EXPECT_EQ(session.getAgentInfo().hostname, TestConstants::TEST_HOSTNAME_STR);
  
   ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(spy.messageType(), MessageType::COMMAND);
@@ -53,7 +54,7 @@ TEST(ServerDispatcher,
     AgentSession session = makeSession(spy);
     dispatcher.handleFrame(
         session,
-        makeFrame(MessageType::REGISTER, makeRegisterPayload("h")));
+        makeFrame(MessageType::REGISTER, makeRegisterPayload()));
  
     ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
     const CommandPayload cmd =

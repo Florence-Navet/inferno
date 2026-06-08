@@ -103,7 +103,7 @@ TEST(TcpServerIntegration,
 
       // Send REGISTER using the shared helper
       const auto registerFrame = makeRawFrame(MessageType::REGISTER,
-                                              makeRegisterPayload("tcp-server-agent"));
+                                              makeRegisterPayload());
       if (agentSession.send(registerFrame).ok()) {
         agentSession.receiveIntoBuffer();
         std::optional<Frame> frame = agentSession.tryExtractFrame();

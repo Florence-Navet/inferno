@@ -24,6 +24,8 @@ TEST(ProtocolRoundTrip,
   EXPECT_EQ(result.os_type, input.os_type);
   EXPECT_EQ(result.arch, input.arch);
   EXPECT_EQ(result.hostname, input.hostname);
+  EXPECT_EQ(result.os_version, input.os_version);
+  EXPECT_EQ(result.current_user, input.current_user);
 }
 
 TEST(ProtocolRoundTrip,

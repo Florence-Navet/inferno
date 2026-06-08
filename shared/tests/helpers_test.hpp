@@ -44,15 +44,19 @@ inline std::vector<std::uint8_t> makeRawFrame(
 
 // ── Typed payload builders (use serializer) ───────────────────
 
-inline std::vector<std::uint8_t> makeRegisterPayload(
-    const std::string& hostname, OSType os = OSType::LINUX,
-    ArchType arch = ArchType::X64) {
-  RegisterPayload p;
-  p.os_type = os;
-  p.arch = arch;
-  p.hostname = hostname;
-  return ProtocolSerializer::serializeRegisterPayload(p);
-}
+// inline std::vector<std::uint8_t> makeRegisterPayload(
+//     const std::string& hostname, OSType os = OSType::LINUX,
+//     ArchType arch = ArchType::X64,
+//     const std::string& osVersion = "Test OS 1.0",
+//     const std::string& currentUser = "testuser") {
+//   RegisterPayload p;
+//   p.os_type = os;
+//   p.arch = arch;
+//   p.hostname = hostname;
+//   p.os_version = osVersion;
+//   p.current_user = currentUser;
+//   return ProtocolSerializer::serializeRegisterPayload(p);
+// }
 
 inline std::vector<std::uint8_t> makeRegisterPayload(
     const std::uint8_t rawOs = static_cast<uint8_t>(OSType::LINUX),

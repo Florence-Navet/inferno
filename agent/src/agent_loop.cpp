@@ -6,7 +6,7 @@
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
                      std::string host, std::uint16_t port, int heartbeatMs,
-                     int retryMs)
+                     int retryMs, const bool encryption)
     : poller_(poller),
       dispatcher_(dispatcher),
       host_(std::move(host)),
@@ -15,7 +15,9 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
       retryMs_(retryMs),
       running_(true),
       connected_(false),
-      session_() {}
+      session_(encryption) {
+        logger_.info("TLS = " + std::string(encryption ? "true" : "false"));
+      }
 
 // ─── effectiveTimeout
 // ─────────────────────────────────────────────────────────

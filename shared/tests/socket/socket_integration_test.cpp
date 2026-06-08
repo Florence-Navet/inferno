@@ -1,73 +1,61 @@
 #include <gtest/gtest.h>
-
+ 
+#include <future>
 #include <thread>
 #include <vector>
-
+ 
 #include "socket/socket_factory.hpp"
 #include "test_constants.hpp"
-
-
-
-// Helper: runs a server that accepts one agent, receives data, sends it back
-// "echoes" everything it receives — classic test pattern
-void runEchoServer(uint16_t port, bool& serverReady) {
+ 
+namespace {
+ 
+// Echo server: binds, listens, signals ready, accepts one client,
+// receives data, sends it back.
+// The promise is set after listen() — at that point the OS is ready
+// to queue incoming connections, so the client can safely connect.
+void runEchoServer(std::uint16_t port, std::promise<void>& serverReady) {
   auto serverSocket = SocketFactory::createTCP();
   serverSocket->bind(port);
   serverSocket->listen();
-  serverReady = true;  // signal the main thread we're ready
-
-  auto agentSocket = serverSocket->accept();  // blocks until agent connects
-
-  std::vector<uint8_t> buffer(1024);
-  auto receiveResult = agentSocket->recv(buffer.data(), buffer.size());
-
-  // Echo back exactly what we received
-  agentSocket->send(buffer.data(), receiveResult.bytesTransferred);
+  serverReady.set_value();     // unblocks the client — no busy-wait needed
+ 
+  auto agentSocket = serverSocket->accept();
+  std::vector<std::uint8_t> buffer(1024);
+  auto receivedResult = agentSocket->recv(buffer.data(), buffer.size());
+  agentSocket->send(buffer.data(), static_cast<std::size_t>(receivedResult.bytesTransferred));
 }
-
-TEST(SocketIntegration, SendAndReceiveData) {
-
-  bool serverReady = false;
-  // TODO how not to use thread while still be os agnostic (::socketpair() on
-  // linux) ? Run the server in a background thread (otherwise it would block
-  // our test)
-  std::thread serverThread(runEchoServer, TestConstants::SOCKET_ECHO_PORT, 
-                            std::ref(serverReady));
-
-  // Wait until server is actually listening before we try to connect
-  while (!serverReady) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-  }
-
-  // Agent side
+ 
+}  // namespace
+ 
+TEST(SocketIntegration, should_echo_sent_bytes_back_to_agent) {
+  std::promise<void> serverReady;
+  std::thread serverThread(runEchoServer, TestConstants::SOCKET_ECHO_PORT,
+                           std::ref(serverReady));
+  serverReady.get_future().wait();  // precise — no sleep, no busy-wait
+ 
   auto agentSocket = SocketFactory::createTCP();
   bool connected = agentSocket->connect("127.0.0.1", TestConstants::SOCKET_ECHO_PORT);
-  ASSERT_TRUE(connected) << "Agent failed to connect";
-
-  // Send some bytes
-  std::vector<uint8_t> dataToSend = {0x01, 0x02, 0x03, 0x04};
+  ASSERT_TRUE(connected) << " Agent failed to connect to echo server on port " << TestConstants::SOCKET_ECHO_PORT;
+ 
+  const std::vector<std::uint8_t> dataToSend = {0x01, 0x02, 0x03, 0x04};
   auto sendResult = agentSocket->send(dataToSend);
   EXPECT_TRUE(sendResult.ok());
   EXPECT_EQ(sendResult.bytesTransferred, 4);
-
-  // Receive the echo
-  std::vector<uint8_t> received(1024);
-  auto receiveResult = agentSocket->recv(received.data(), received.size());
-  EXPECT_TRUE(receiveResult.ok());
-  EXPECT_EQ(receiveResult.bytesTransferred, 4);
-
-  // Check the bytes match exactly
-  EXPECT_EQ(received[0], 0x01);
-  EXPECT_EQ(received[1], 0x02);
-  EXPECT_EQ(received[2], 0x03);
-  EXPECT_EQ(received[3], 0x04);
-
+ 
+  std::vector<std::uint8_t> received(1024);
+  auto recvResult = agentSocket->recv(received.data(), received.size());
+  EXPECT_TRUE(recvResult.ok());
+  EXPECT_EQ(recvResult.bytesTransferred, 4);
+ 
+  received.resize(static_cast<std::size_t>(recvResult.bytesTransferred));
+  EXPECT_EQ(received, dataToSend);
+ 
   serverThread.join();
 }
-
-TEST(SocketIntegration, ConnectToNonExistentServer) {
+ 
+TEST(SocketIntegration,
+     should_fail_to_connect_when_nothing_is_listening_on_port) {
   auto socket = SocketFactory::createTCP();
-  bool connected =
-      socket->connect("127.0.0.1", TestConstants::SOCKET_UNUSED_PORT);  // nothing listening here
+  bool connected = socket->connect("127.0.0.1", TestConstants::SOCKET_UNUSED_PORT);
   EXPECT_FALSE(connected);
 }

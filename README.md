@@ -16,31 +16,6 @@ The system focuses on:
 - cross-platform system monitoring,
 - and distributed telemetry processing.
 
-Agents communicate with the server through a custom binary protocol and are designed to collect system information, stream performance metrics, execute diagnostics, and report machine health data.
-
-The project focuses on low-level networking, protocol design, systems programming, telemetry collection, and cross-platform development.
-
-## Current status
-
-The project is structured into progressive implementation phases inspired by system design milestones.
-
-Current progress:
-
-- Phase 1: Network communication layer (server ↔ multiple agents)
-  - implemented using custom socket abstraction (`ISocket`)
-  - supports concurrent connections without threads or fork
-
-- Phase 2: Binary communication protocol design
-  - custom packet format (`lptf_protocol`, `protocol_parser`, `protocol_serializer`)
-  - extensible structure for future telemetry and commands
-  - RFC-style specification in progress
-
-Next steps:
-
-- Phase 3: System metrics collection and diagnostics agent
-- Phase 4: Qt-based monitoring GUI
-- Phase 5+: persistence, analysis, cross-platform deployment
-
 ## Planned architecture
 Inferno is designed as a distributed monitoring system composed of three main components:
 
@@ -97,7 +72,7 @@ A Qt-based interface providing:
 
 ## Prerequisites
 
-- Docker / Docker Desktop installed and running
+- Docker / Docker Desktop or [Podman](https://github.com/containers/podman) installed and running
 
 ## Setup
 
@@ -136,7 +111,7 @@ docker compose down
 
 
 ## How to build
-This project uses a multi-stage build pipeline orchestrated with Docker Compose services.
+This project uses a **multi-stage container build pipeline** orchestrated through Docker Compose-compatible services. The pipeline has been tested with both Docker and Podman.
 
 Builder services are only responsible for compilation and testing.
 Runtime services only execute the final binaries produced during the build pipeline.
@@ -155,5 +130,3 @@ Multiple runtime instances can be started without rebuilding the binary, since a
 
 The following diagram illustrates the pipeline:
 ![pipeline](./_docs/project/build_pipeline_&_artifact_flow.png)
-
-  'build_pipeline_&_artifact_flow.png'

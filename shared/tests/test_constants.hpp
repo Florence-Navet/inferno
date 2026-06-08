@@ -21,11 +21,23 @@ constexpr std::uint16_t TCP_SERVER_REMOTE_ADDR_PORT =
 
 // ── server_integration_test.cpp ──────────────────────────────
 constexpr std::uint16_t SERVER_INTEGRATION_PORT = 19882;
+// ── tls_socket_integration_test.cpp ──────────────────────────
+constexpr std::uint16_t TLS_SOCKET_ECHO_PORT = 19893;
+constexpr std::uint16_t TLS_PLAIN_SERVER_PORT = 19894;
+constexpr std::uint16_t TLS_PLAIN_CLIENT_PORT = 19895;
 
 // ── reactor_integration_test.cpp ─────────────────────────────
 constexpr std::uint16_t REACTOR_HAPPY_PATH_PORT = 19883;
 constexpr std::uint16_t REACTOR_INVALID_FIRST_MESSAGE_PORT = 19884;
 constexpr std::uint16_t REACTOR_DISCONNECT_PORT = 19885;
+
+// ── epoller_test.cpp ─────────────────────────────────────────
+constexpr std::uint16_t EPOLLER_ADD_PORT = 19886;
+constexpr std::uint16_t EPOLLER_REMOVE_PORT = 19887;
+constexpr std::uint16_t EPOLLER_TIMEOUT_PORT = 19888;
+constexpr std::uint16_t EPOLLER_READABLE_PORT = 19889;
+constexpr std::uint16_t EPOLLER_CONTINUE_PORT_1 = 19890;
+constexpr std::uint16_t EPOLLER_CONTINUE_PORT_2 = 19891;
 
 // ── agent_integration_test.cpp ───────────────────────────────
 constexpr std::uint16_t AGENT_INTEGRATION_PORT = 19892;

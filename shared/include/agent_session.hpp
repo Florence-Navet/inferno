@@ -15,9 +15,9 @@ enum class RegisterState : std::uint8_t { PENDING, SENT, OK, REJECTED };
 
 class AgentSession {
  public:
-  AgentSession() = default;
-  explicit AgentSession(std::unique_ptr<ISocket> sock)
-      : socket_(std::move(sock)) {}
+  explicit AgentSession(const bool encryption = false) : encryption_(encryption) {};
+  explicit AgentSession(std::unique_ptr<ISocket> sock, const bool encryption = false)
+      : socket_(std::move(sock)), encryption_(encryption) {}
   AgentSession(std::nullptr_t) = delete;
 
   AgentSession(const AgentSession&) = delete;
@@ -60,6 +60,7 @@ class AgentSession {
 
   RegisterPayload agentInfo_;
   bool isRegistered_ = false;
+  bool encryption_;
 };
 
 #endif

@@ -12,6 +12,7 @@
 class TcpServer {
  public:
   explicit TcpServer(std::uint16_t port, int backlog = 10);
+  explicit TcpServer(std::uint16_t port, const bool encryption, int backlog = 10);
   TcpServer(const TcpServer&) = delete;
   TcpServer& operator=(const TcpServer&) = delete;
   ~TcpServer() = default;
@@ -26,6 +27,7 @@ class TcpServer {
   }
 
  private:
+  bool encryption_{false};
   std::uint16_t port_;
   int backlog_;
   std::unique_ptr<ISocket> serverSocket_;

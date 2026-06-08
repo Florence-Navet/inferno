@@ -1,4 +1,5 @@
 #include "protocol/protocol_parser.hpp"
+
 #include <string>
 
 #include "convert_endian.hpp"
@@ -129,10 +130,20 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
     throw InvalidSize("register payload", std::to_string(input.size()));
   }
   const std::uint16_t hostnameLen{ConvertEndian::readU16BE(input, 2)};
+  const std::uint16_t osVersionLen{ConvertEndian::readU16BE(input, 4)};
+  const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, 6)};
 
-  const std::size_t maxHostnameLength{MAX_VALUE_INT16 - REGISTER_FIXED_BYTES};
-  const std::size_t expectedSize{REGISTER_FIXED_BYTES + hostnameLen};
-  validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
+  const std::size_t maxFieldLen{MAX_VALUE_INT16 - REGISTER_FIXED_BYTES};
+
+  validateNotNullLength(hostnameLen, maxFieldLen);
+  validateNotNullLength(osVersionLen, maxFieldLen);
+  validateNotNullLength(currentUserLen, maxFieldLen);
+
+  const std::size_t expectedSize{REGISTER_FIXED_BYTES + hostnameLen +
+                                 osVersionLen + currentUserLen};
+  validateExpectedLength(input, expectedSize);
+  // validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
+  // TODO validateStringLength needs to check each string or all payload
 
   RegisterPayload payload;
   payload.os_type = toOsType(input[0]);
@@ -140,6 +151,16 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
   payload.hostname.assign(
       reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES),
       hostnameLen);
+
+  payload.os_version.assign(
+      reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES +
+                                    hostnameLen),
+      osVersionLen);
+
+  payload.current_user.assign(
+      reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES +
+                                    hostnameLen + osVersionLen),
+      currentUserLen);
   return payload;
 }
 

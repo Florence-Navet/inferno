@@ -2,10 +2,9 @@
 
 #include <cstddef>
 #include <string>
+
 #include "convert_endian.hpp"
-
 #include "exception/lptf_exception.hpp"
-
 
 namespace {
 
@@ -26,8 +25,7 @@ void validateHeader(const LptfHeader& header) {
                              "Version provided is not a number");
   }
   if (header.type >= MessageType::END) {
-    throw InvalidType(
-        std::to_string(static_cast<std::uint8_t>(header.type)));
+    throw InvalidType(std::to_string(static_cast<std::uint8_t>(header.type)));
   }
 }
 
@@ -119,7 +117,7 @@ void validateErrorPayload(const ErrorPayload& payload) {
 std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
     const LptfHeader& header) {
   validateHeader(header);
-  
+
   std::vector<std::uint8_t> headerInByte(LPTF_HEADER_SIZE);
 
   for (std::size_t i = 0; i < sizeof(header.identifier); ++i) {
@@ -145,7 +143,24 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
   payloadInByte[1] = static_cast<std::uint8_t>(payload.arch);
   ConvertEndian::writeU16BE(
       payloadInByte, 2, static_cast<std::uint16_t>(payload.hostname.size()));
+
+  ConvertEndian::writeU16BE(
+      payloadInByte, 4, static_cast<std::uint16_t>(payload.os_version.size()));
+
+  ConvertEndian::writeU16BE(
+      payloadInByte, 6,
+      static_cast<std::uint16_t>(payload.current_user.size()));
+
   copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
+
+  copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
+             payload.os_version);
+
+  copyString(payloadInByte,
+             REGISTER_FIXED_BYTES + payload.hostname.size() +
+                 payload.os_version.size(),
+             payload.current_user);
+
   return payloadInByte;
 }
 

@@ -15,7 +15,7 @@ constexpr char LPTF_IDENTIFIER[4] = {'L', 'P', 'T', 'F'};
 constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER, 4);
 
 constexpr std::size_t REGISTER_FIXED_BYTES =
-    sizeof(std::uint16_t) +
+    3 * sizeof(std::uint16_t) +
     2 * sizeof(std::uint8_t);  // hostname_len + os_type + arch
 
 constexpr std::size_t KMAX_U16_VALUE = 65535u;
@@ -33,8 +33,6 @@ constexpr std::size_t DATA_FIXED_BYTES =
     sizeof(std::uint16_t) + sizeof(std::uint8_t);
 constexpr std::size_t ERROR_FIXED_BYTES =
     sizeof(std::uint16_t) + sizeof(std::uint8_t);
-
-
 
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
@@ -100,6 +98,8 @@ struct RegisterPayload {
   OSType os_type;
   ArchType arch;
   std::string hostname;
+  std::string os_version;    // new — "Ubuntu 22.04", "Windows 11"
+  std::string current_user;  // new — getenv("USER") / GetUserName()
 };
 
 struct CommandPayload {

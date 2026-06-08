@@ -38,13 +38,13 @@ class LinuxSocket : public ISocket {
   std::string remoteAddress() const override;
   uint16_t remotePort() const override;
   int getFd() override { return socketFileDescriptor_; }
+  SocketStatus translateStatus(int err) const override;
 
  private:
   int socketFileDescriptor_ =
       -1;  
 
   // Translates errno → your SocketError
-  static SocketStatus translateStatus(int err);
 };
 
 #endif

@@ -6,11 +6,14 @@
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
+#include "test_constants.hpp"
 
 TEST(ProtocolRoundTrip,
      should_preserve_register_payload_through_serialize_then_parse) {
   // Arrange
-  RegisterPayload input{OSType::LINUX, ArchType::X64, "agent-01"};
+  RegisterPayload input{
+      OSType::LINUX, ArchType::X64, TestConstants::TEST_HOSTNAME_STR,
+      TestConstants::TEST_OS_VERSION_STR, TestConstants::TEST_CURRENT_USER_STR};
 
   // Act
   const std::vector<std::uint8_t> bytes =

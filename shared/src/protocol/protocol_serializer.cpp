@@ -48,10 +48,28 @@ void validateRegisterPayload(const RegisterPayload& payload) {
   if (payload.hostname.empty()) {
     throw InvalidSize("register hostname length", "0");
   }
+
+  if (payload.os_version.empty()) {
+    throw InvalidSize("register os_version length", "0");
+  }
+
+  if (payload.current_user.empty()) {
+    throw InvalidSize("register current_user length", "0");
+  }
+
   if (payload.hostname.size() > REGISTER_MAX_HOSTNAME_LEN) {
     throw InvalidSize("register hostname length",
                       std::to_string(payload.hostname.size()));
   }
+
+  ensureFitsU16(payload.hostname.size(),
+                "register hostname length");
+
+  ensureFitsU16(payload.os_version.size(),
+                "register os_version length");
+
+  ensureFitsU16(payload.current_user.size(),
+                "register current_user length");
 }
 
 void validateCommandPayload(const CommandPayload& payload) {
@@ -136,7 +154,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
     const RegisterPayload& payload) {
   validateRegisterPayload(payload);
 
-  const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size()};
+  const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size() +
+                              payload.os_version.size() +
+                              payload.current_user.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.os_type);

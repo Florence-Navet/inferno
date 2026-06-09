@@ -75,9 +75,10 @@ inline std::vector<std::uint8_t> makeRegisterPayload(
 
   out[0] = rawOs;
   out[1] = rawArch;
-  ConvertEndian::writeU16BE(out, 2, declaredHostnameLen);
-  ConvertEndian::writeU16BE(out, 4, declaredOsVersionLen);
-  ConvertEndian::writeU16BE(out, 6, declaredCurrentUserLen);
+  std::size_t offset{2};
+  ConvertEndian::writeU16BE(out, offset, declaredHostnameLen);
+  ConvertEndian::writeU16BE(out, offset, declaredOsVersionLen);
+  ConvertEndian::writeU16BE(out, offset, declaredCurrentUserLen);
 
   out.insert(out.end(), hostnameBytes.begin(), hostnameBytes.end());
   out.insert(out.end(), osVersionBytes.begin(), osVersionBytes.end());
@@ -97,6 +98,27 @@ inline std::vector<std::uint8_t> makeResponsePayload(
   p.data.assign(data.begin(), data.end());
 
   return ProtocolSerializer::serializeResponsePayload(p);
+}
+
+inline ProcessInfo createProcessInfo(std::uint32_t pid = 1234,
+                                     float cpu_percent = 42.5f,
+                                     std::uint64_t mem_bytes = 1024 * 1024 *
+                                                               512,
+                                     std::string name = "my_process") {
+  ProcessInfo info;
+  info.pid = pid;
+  info.cpu_percent = cpu_percent;
+  info.mem_bytes = mem_bytes;  // 512 MB
+  info.name = name;
+  return info;
+}
+
+inline std::vector<ProcessInfo> createProcessInfoList(int howMayProcess = 3) {
+    std::vector<ProcessInfo> infos;
+    for (int i{0}; i < howMayProcess; ++i) {
+        infos.insert(infos.end(), createProcessInfo());
+    }
+    return infos;
 }
 
 #endif

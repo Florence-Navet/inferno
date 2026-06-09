@@ -3,8 +3,8 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 // INFO what's the difference between std::uint8_t and uint8_t OR
 // std::size_t and std::size_t...etc
@@ -27,7 +27,7 @@ class ConvertEndian {
   static std::uint16_t readU16BE(const std::vector<std::uint8_t>& buffer,
                                  std::size_t& offset);
 
-  static void writeU16BE(std::vector<std::uint8_t>& buffer, std::size_t offset,
+  static void writeU16BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
                          std::uint16_t value);
 
   static std::uint32_t readU32BE(const std::vector<std::uint8_t>& buffer,
@@ -41,6 +41,17 @@ class ConvertEndian {
 
   static std::string getString(const std::vector<std::uint8_t>& buffer,
                                std::size_t& offset, std::uint16_t length);
+
+  static void writeU32BE(std::vector<std::uint8_t>& buffer,
+                                        std::size_t& offset,
+                                        std::uint32_t value);
+
+  static void writeU64BE(std::vector<std::uint8_t>& buffer,
+                                        std::size_t& offset,
+                                        std::uint64_t value);
+
+  static void writeFloat(std::vector<std::uint8_t>& buffer,
+                                        std::size_t& offset, float value);
 };
 
 #endif

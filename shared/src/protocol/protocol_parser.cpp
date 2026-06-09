@@ -224,9 +224,9 @@ ResponsePayload ProtocolParser::parseResponsePayload(
     throw InvalidSize("response payload", std::to_string(input.size()));
   }
   std::size_t offset{3};
-  validateChunkFields(input[offset], input[offset+1]); // 3 & 4
-  offset+=2;
-  const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)}; // 5
+  validateChunkFields(input[offset], input[offset + 1]);  // 3 & 4
+  offset += 2;
+  const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};  // 5
 
   const std::size_t expectedSize{RESPONSE_FIXED_BYTES + dataLen};
   validateExpectedLength(input, expectedSize);
@@ -276,7 +276,7 @@ ProcessInfo ProtocolParser::parseProcessInfo(
     const std::vector<std::uint8_t>& input) {
   ProcessInfo info;
   size_t offset = 0;
-  
+
   info.pid = ConvertEndian::readU32BE(input, offset);
   info.cpu_percent = ConvertEndian::readFloat(input, offset);
   info.mem_bytes = ConvertEndian::readU64BE(input, offset);
@@ -284,4 +284,20 @@ ProcessInfo ProtocolParser::parseProcessInfo(
   info.name = ConvertEndian::getString(input, offset, nameLen);
 
   return info;
+}
+
+std::vector<ProcessInfo> ProtocolParser::parseProcessInfoList(
+    const std::vector<std::uint8_t>& input) {
+  std::vector<ProcessInfo> processInfoList;
+  std::size_t offset{0};
+  std::uint16_t processCount = ConvertEndian::readU16BE(input, offset);
+
+  for (size_t i{0}; i < processCount; ++i) {
+    ProcessInfo info = ProtocolParser::parseProcessInfo(
+        std::vector<uint8_t>(input.begin() + offset, input.end()));
+    processInfoList.push_back(info);
+    offset += PROCESS_INFO_FIXED_SIZE + info.name.size();
+  }
+
+  return processInfoList;
 }

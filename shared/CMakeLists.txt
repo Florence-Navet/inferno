@@ -15,6 +15,7 @@ add_library(shared_lib STATIC
     src/dispatcher/dispatcher.cpp
     src/protocol/protocol_parser.cpp
     src/protocol/protocol_serializer.cpp
+    src/protocol/metrics_serializer.cpp
     src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp

@@ -8,10 +8,10 @@ public:
     LinuxSystemMonitor();
     ~LinuxSystemMonitor() override;
 
-    OsInfo       getOsInfo()                          override;
-    ProcessList  getProcessList()                     override;
-    MetricsSample sampleMetrics()                     override;
-    std::string  executeShell(const std::string& cmd) override;
+    RegisterPayload       getOsInfo()                          override;
+    std::vector<ProcessInfo>  getProcessList()                     override;
+    // MetricsSample sampleMetrics()                     override;
+    std::string  executeShell(const std::string& command) override;
 };
 
 

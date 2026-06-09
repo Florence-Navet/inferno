@@ -95,8 +95,8 @@ struct CommandPayload {
 | 0     | OS_INFO           |
 | 1     | RUNNING_PROCESSES |
 | 2     | SHELL             |
-| 3     | START_KEYLOGGER   |
-| 4     | STOP_KEYLOGGER    |
+| 3     | START_METRICS     |
+| 4     | STOP_METRICS      |
 
 ### 4.3 RESPONSE
 
@@ -111,6 +111,22 @@ struct ResponsePayload {
     uint16_t data_len;    // length of this chunk
     char data[data_len];  
 };
+```
+
+if process info , response.data will be a vector of processInfo:
+```c++
+struct ProcessInfo {
+    uint32_t pid;
+    float cpu_percent;  // 0.0 – 100.0
+    uint64_t mem_bytes;
+    uint16_t name_len
+    char name[name_len];
+};
+```
+
+vector will look like this :
+```
+std::vector<uint8_t> | processCount (2 bytes) | processList (N bytes) |
 ```
 
 #### Chunking rules

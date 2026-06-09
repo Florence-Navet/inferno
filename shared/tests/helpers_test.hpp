@@ -5,12 +5,11 @@
 #include <string>
 #include <vector>
 
+#include "convert_endian.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "test_constants.hpp"
-#include "convert_endian.hpp"
-
 
 inline std::vector<std::uint8_t> bytesFromString(const std::string& s) {
   return std::vector<std::uint8_t>(s.begin(), s.end());
@@ -94,7 +93,9 @@ inline std::vector<std::uint8_t> makeResponsePayload(
   p.status = ResponseStatus::OK;
   p.total_chunks = totalChunks;
   p.chunk_index = chunkIndex;
-  p.data = data;
+  //   p.data = data;
+  p.data.assign(data.begin(), data.end());
+
   return ProtocolSerializer::serializeResponsePayload(p);
 }
 

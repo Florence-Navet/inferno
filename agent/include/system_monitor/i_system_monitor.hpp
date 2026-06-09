@@ -3,13 +3,15 @@
 
 #include <cstdint>
 
+#include "lptf_protocol.hpp"
+
 class ISystemMonitor {
-public:
-    virtual ~ISystemMonitor() = default;
-    virtual OsInfo       getOsInfo()                          = 0;
-    virtual ProcessList  getProcessList()                     = 0;
-    virtual MetricsSample sampleMetrics()                     = 0;
-    virtual std::string  executeShell(const std::string& cmd) = 0;
+ public:
+  virtual ~ISystemMonitor() = default;
+  virtual RegisterPayload getOsInfo() = 0;
+  virtual std::vector<ProcessInfo> getProcessList() = 0;
+  // virtual MetricsSample sampleMetrics()                     = 0;
+  virtual std::string executeShell(const std::string& command) = 0;
 };
 
-#endif // I_SYSTEM_MONITOR_HPP
+#endif  // I_SYSTEM_MONITOR_HPP

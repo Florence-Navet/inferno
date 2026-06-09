@@ -212,7 +212,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeResponsePayload(
   payloadInByte[4] = payload.chunk_index;
   ConvertEndian::writeU16BE(payloadInByte, 5,
                             static_cast<std::uint16_t>(payload.data.size()));
-  copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
+  // copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
+  std::copy(payload.data.begin(), payload.data.end(),
+          payloadInByte.begin() + RESPONSE_FIXED_BYTES);
   return payloadInByte;
 }
 

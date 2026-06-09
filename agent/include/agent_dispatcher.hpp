@@ -32,7 +32,7 @@ class AgentDispatcher : public Dispatcher {
  private:
   // StatusRegister registered_{StatusRegister::REJECTED};
   void sendResponse(AgentSession& session, std::uint16_t id,
-                    ResponseStatus status, const std::string& data);
+                    ResponseStatus status, const std::vector<std::uint8_t>& data);
   void onCommand(AgentSession& session,
                  const std::vector<std::uint8_t>& payload);
   void onDisconnect(AgentSession& session);

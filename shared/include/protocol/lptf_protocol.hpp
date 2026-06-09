@@ -16,7 +16,8 @@ constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER, 4);
 
 constexpr std::size_t REGISTER_FIXED_BYTES =
     3 * sizeof(std::uint16_t) +
-    2 * sizeof(std::uint8_t);  // hostname_len + os_version_len + current_user_len + os_type + arch
+    2 * sizeof(std::uint8_t);  // hostname_len + os_version_len +
+                               // current_user_len + os_type + arch
 
 constexpr std::size_t KMAX_U16_VALUE = 65535u;
 constexpr std::uint16_t MAX_VALUE_INT16 =
@@ -33,6 +34,11 @@ constexpr std::size_t DATA_FIXED_BYTES =
     sizeof(std::uint16_t) + sizeof(std::uint8_t);
 constexpr std::size_t ERROR_FIXED_BYTES =
     sizeof(std::uint16_t) + sizeof(std::uint8_t);
+
+constexpr std::size_t PROCESS_INFO_FIXED_SIZE = sizeof(std::uint32_t) +
+    sizeof(float) +
+    sizeof(std::uint64_t) +
+    sizeof(std::uint16_t);
 
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
@@ -113,7 +119,7 @@ struct ResponsePayload {
   ResponseStatus status;
   std::uint8_t total_chunks;
   std::uint8_t chunk_index;
-  std::string data;
+  std::vector<std::uint8_t> data;
 };
 
 struct DataPayload {
@@ -130,6 +136,13 @@ struct ErrorPayload {
 struct Frame {
   LptfHeader header;
   std::vector<std::uint8_t> payload;
+};
+
+struct ProcessInfo {
+  std::uint32_t pid;
+  float cpu_percent;  // 0.0 – 100.0
+  std::uint64_t mem_bytes;
+  std::string name;
 };
 
 #endif

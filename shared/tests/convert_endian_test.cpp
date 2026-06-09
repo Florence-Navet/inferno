@@ -11,8 +11,9 @@ TEST(ConvertEndian, should_return_correct_uint16_when_bytes_are_valid) {
                                       0b00101100};  // decimal value = 300
   std::uint16_t expected = 300;
 
+  std::size_t offset{0};
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);
@@ -23,9 +24,10 @@ TEST(ConvertEndian, should_return_correct_uint16_when_value_is_zero) {
   std::vector<std::uint8_t> buffer = {0b00000000,
                                       0b00000000};  // decimal value = 0
   std::uint16_t expected = 0;
+  std::size_t offset{0};
 
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);
@@ -36,9 +38,10 @@ TEST(ConvertEndian, should_return_correct_uint16_when_value_is_65535) {
   std::vector<std::uint8_t> buffer = {0b11111111,
                                       0b11111111};  // decimal value = 65535
   std::uint16_t expected = 65535;
+  std::size_t offset{0};
 
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);

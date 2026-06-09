@@ -8,6 +8,7 @@ find_package(OpenSSL REQUIRED)
 # STATIC = compiled once into a .a archive, then linked into agent and server.
 # No Dockerfile, no executable — this is purely a library.
 add_library(shared_lib STATIC
+    src/convert_endian.cpp
     src/agent_session.cpp
     src/env_helper.cpp
     src/logger.cpp

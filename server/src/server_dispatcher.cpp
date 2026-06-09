@@ -68,7 +68,7 @@ void ServerDispatcher::onResponse(AgentSession& agent,
        << "  chunk=" << static_cast<int>(response.chunk_index) + 1 << "/"
        << static_cast<int>(response.total_chunks)
        << "  status=" << static_cast<int>(response.status) << "\n"
-       << response.data;
+       << ProtocolParser::toString(response.data);
 
   logger_.info(what.str());
   // std::cout << "[← RESPONSE] id=" << response.id

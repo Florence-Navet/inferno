@@ -8,20 +8,21 @@ LinuxSystemMonitor::~LinuxSystemMonitor() {
     // Cleanup code, if needed
 }
 
-OsInfo LinuxSystemMonitor::getOsInfo() {
+RegisterPayload LinuxSystemMonitor::getOsInfo() {
     // Implement OS info retrieval logic here
-    return OsInfo{};
+    return RegisterPayload{};
 }
-ProcessList LinuxSystemMonitor::getProcessList() {
+std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
     // Implement process list retrieval logic here
-    return ProcessList{};
+    return std::vector<ProcessInfo>{};
 }
-MetricsSample LinuxSystemMonitor::sampleMetrics() {
-    // Implement metrics sampling logic here
-    return MetricsSample{};
-}
+// MetricsSample LinuxSystemMonitor::sampleMetrics() {
+//     // Implement metrics sampling logic here
+//     return MetricsSample{};
+// }
 std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
     // Implement shell command execution logic here
+    (void) cmd; // not used yed
     return std::string{};
 }
 

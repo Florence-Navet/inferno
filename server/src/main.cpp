@@ -19,7 +19,7 @@ int main() {
 
   const uint16_t serverPort = EnvHelper::resolveServerPort();
   bool encryption = EnvHelper::resolveTlsEnabled();
-  TcpServer server(serverPort, encryption);
+   TcpServer server(serverPort, encryption);
   if (!server.start()) {
     std::cerr << "[server] Failed to bind/listen on port " << serverPort
               << '\n';

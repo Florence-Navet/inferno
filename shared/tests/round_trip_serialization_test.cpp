@@ -16,14 +16,14 @@ TEST(ProtocolRoundTrip,
 
   // Act
   const std::vector<std::uint8_t> bytes =
-      ProtocolSerializer::serializeProcessInfo(input);
-  const std::vector<ProcessInfo> result = ProtocolParser::parseProcessInfo(bytes);
+      ProtocolSerializer::serializeProcessInfo(info);
+  const ProcessInfo result = ProtocolParser::parseProcessInfo(bytes);
 
   // Assert
   EXPECT_EQ(result.pid, info.pid);
-  EXPECT_EQ(result.cpu_percent, infos.cpu_percent);
-  EXPECT_EQ(result.mem_bytes, infos.mem_bytes);
-  EXPECT_EQ(result.name, infos.name);
+  EXPECT_EQ(result.cpu_percent, info.cpu_percent);
+  EXPECT_EQ(result.mem_bytes, info.mem_bytes);
+  EXPECT_EQ(result.name, info.name);
 }
 
 TEST(ProtocolRoundTrip,
@@ -33,7 +33,7 @@ TEST(ProtocolRoundTrip,
 
   // Act
   const std::vector<std::uint8_t> bytes =
-      ProtocolSerializer::serializeProcessInfoList(input);
+      ProtocolSerializer::serializeProcessInfoList(infos);
   const std::vector<ProcessInfo> result = ProtocolParser::parseProcessInfoList(bytes);
 
   // Assert

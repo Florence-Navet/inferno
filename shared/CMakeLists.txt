@@ -16,6 +16,7 @@ add_library(shared_lib STATIC
     src/protocol/protocol_parser.cpp
     src/protocol/protocol_serializer.cpp
     src/protocol/metrics_serializer.cpp
+    src/protocol/metrics_parser.cpp
     src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp
@@ -67,6 +68,8 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
         tests/convert_endian_test.cpp
         tests/agent_session_test.cpp
         tests/protocol/protocol_roundtrip_test.cpp
+        tests/round_trip_metrics_test.cpp
+        tests/round_trip_serialization_test.cpp
         ${PARSER_TESTS}
         ${SERIALIZER_TESTS}
         ${SOCKET_TESTS}

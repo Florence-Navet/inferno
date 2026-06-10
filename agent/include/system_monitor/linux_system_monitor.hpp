@@ -19,6 +19,9 @@ public:
 
     //read the current user's login name ("root")
     std::string readCurrentUser();
+
+    // read the CPU architectture (X86_64 -> ArchType::X64)
+    ArchType readArch();
 };
 
 

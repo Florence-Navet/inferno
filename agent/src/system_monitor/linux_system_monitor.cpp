@@ -3,6 +3,8 @@
 
 #include <cstdlib>   // getenv()
 
+#include <sys/utsname.h>  // uname()
+
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
 }
@@ -17,6 +19,7 @@ RegisterPayload LinuxSystemMonitor::getOsInfo() {
         info.os_type = OSType::LINUX;
         info.hostname = readHostName();
         info.current_user = readCurrentUser();
+        info.arch = readArch();
    
     return info;
 }
@@ -58,4 +61,26 @@ std::string LinuxSystemMonitor::readCurrentUser(){
 
 
     return std::string{user};
+}
+
+ArchType LinuxSystemMonitor::readArch() {
+    // Todo : detect CPU architecture via uname()
+    struct utsname info;
+
+    // uname() fills the structure and returns 0(success) / -1 (error)
+    if (uname(&info) != 0) {
+        return ArchType::X64; // fall backs to a senisible default on failure
+    }
+
+    std::string machine = info.machine;
+
+    //TODO -> translate the machien string into an ArchType
+    if (machine == "x86_64") {
+        return ArchType::X64;
+    } else if (machine == "i386" || machine == "i686"){
+        return ArchType::X86;
+    } else if ((machine.rfind("arm", 0) == 0) || (machine == "aarch64")) {
+        return ArchType::ARM;
+    }
+    return ArchType::X64; // default if the string is not recognized
 }

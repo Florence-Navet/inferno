@@ -40,6 +40,22 @@ constexpr std::size_t PROCESS_INFO_FIXED_SIZE = sizeof(std::uint32_t) +
     sizeof(std::uint64_t) +
     sizeof(std::uint16_t);
 
+    // CPU: float total + uint8_t count  (per_core is variable)
+constexpr std::size_t CPU_SAMPLE_FIXED_SIZE = sizeof(float) + sizeof(std::uint8_t);
+
+// MEM: 5 × uint64_t, fully fixed
+constexpr std::size_t MEM_SAMPLE_FIXED_SIZE = 5 * sizeof(std::uint64_t);
+
+// DISK: uint16_t device_len + 2 × uint64_t  (device string is variable)
+constexpr std::size_t DISK_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(std::uint64_t);
+
+// NET: uint16_t iface_len + 2 × uint64_t  (iface string is variable)
+constexpr std::size_t NET_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(std::uint64_t);
+
+// METRICS top-level: 2 × uint8_t for disk_count + interface_count
+// (CpuSample and MemSample are inlined, variable themselves)
+constexpr std::size_t METRICS_SAMPLE_FIXED_SIZE = sizeof(std::uint8_t) * 2;
+
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
   DATA = 1,
@@ -54,13 +70,13 @@ enum class CommandType : std::uint8_t {
   OS_INFO = 0,
   RUNNING_PROCESSES = 1,
   SHELL = 2,
-  START_KEYLOGGER = 3,
-  STOP_KEYLOGGER = 4,
+  START_METRICS = 3,
+  STOP_METRICS = 4,
   END,  // must be the last one
 };
 
 enum class DataType : std::uint8_t {
-  KEYLOGGER = 0,
+  METRICS_SAMPLE = 0,
   END,  // must be the last one
 };
 
@@ -124,7 +140,8 @@ struct ResponsePayload {
 
 struct DataPayload {
   DataType subtype;
-  std::string data;
+  // std::string data;
+  std::vector<std::uint8_t> data; 
 };
 
 struct ErrorPayload {
@@ -143,6 +160,38 @@ struct ProcessInfo {
   float cpu_percent;  // 0.0 – 100.0
   std::uint64_t mem_bytes;
   std::string name;
+};
+
+struct CpuSample {
+    float total_percent;
+    std::vector<float> per_core; // one per logical core
+};
+
+struct MemSample {
+    std::uint64_t phys_total;
+    std::uint64_t phys_used;
+    std::uint64_t phys_available;
+    std::uint64_t swap_total;
+    std::uint64_t swap_used;
+};
+
+struct DiskSample {
+    std::string   device;           // e.g. "sda", "C:"
+    std::uint64_t read_bytes_per_sec;
+    std::uint64_t write_bytes_per_sec;
+};
+
+struct NetSample {
+    std::string   iface;            // e.g. "eth0", "Ethernet"
+    std::uint64_t rx_bytes_per_sec;
+    std::uint64_t tx_bytes_per_sec;
+};
+
+struct MetricsSample {
+    CpuSample             cpu;
+    MemSample             mem;
+    std::vector<DiskSample> disks;
+    std::vector<NetSample>  interfaces;
 };
 
 #endif

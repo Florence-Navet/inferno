@@ -5,10 +5,11 @@
 #include <stdexcept>
 
 #include "logger.hpp"
+#include "protocol/metrics_parser.hpp"
+#include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
-#include "protocol/protocol_helper.hpp"
 // ServerDispatcher::ServerDispatcher() {}
 ServerDispatcher::ServerDispatcher() : Dispatcher("server") {}
 
@@ -90,8 +91,30 @@ void ServerDispatcher::onResponse(AgentSession& agent,
 void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
   const DataPayload data = ProtocolParser::parseDataPayload(payload);
   std::ostringstream what;
-  what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n"
-       << data.data;
+  what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
+  if (data.subtype == DataType::METRICS_SAMPLE) {
+    MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+
+    what << "[DATA] METRICS_SAMPLE\n";
+
+    what << "CPU: " << sample.cpu.total_percent << "%\n";
+    what << "CPU cores: ";
+    for (float core : sample.cpu.per_core) what << core << "% ";
+    what << '\n';
+
+    what << "Memory: " << sample.mem.phys_used << "/" << sample.mem.phys_total
+         << " bytes used\n";
+
+    for (const auto& disk : sample.disks) {
+      what << "Disk " << disk.device << " R=" << disk.read_bytes_per_sec
+           << " W=" << disk.write_bytes_per_sec << '\n';
+    }
+
+    for (const auto& iface : sample.interfaces) {
+      what << "Net " << iface.iface << " RX=" << iface.rx_bytes_per_sec
+           << " TX=" << iface.tx_bytes_per_sec << '\n';
+    }
+  }
   logger_.info(what.str());
   // std::cout << "[← DATA] subtype=" << static_cast<int>(data.subtype) << "\n"
   //           << data.data << "\n";

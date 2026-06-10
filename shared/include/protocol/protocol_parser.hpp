@@ -26,7 +26,7 @@ class ProtocolParser {
   static DataPayload parseDataPayload(const std::vector<std::uint8_t>& input);
   static ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input);
   static ProcessInfo parseProcessInfo(const std::vector<std::uint8_t>& input);
-  std::vector<ProcessInfo> parseProcessInfoList(
+  static std::vector<ProcessInfo> parseProcessInfoList(
       const std::vector<std::uint8_t>& input);
   static inline std::string toString(const std::vector<std::uint8_t>& v) {
     return std::string(v.begin(), v.end());

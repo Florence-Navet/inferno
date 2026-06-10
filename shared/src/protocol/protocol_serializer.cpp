@@ -207,7 +207,7 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeResponsePayload(
 
   const std::size_t finalSize{RESPONSE_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
-std::size_t offset{0};
+  std::size_t offset{0};
   ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
   payloadInByte[2] = static_cast<std::uint8_t>(payload.status);
   payloadInByte[3] = payload.total_chunks;
@@ -232,7 +232,10 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeDataPayload(
   std::size_t offset{1};
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
-  copyString(payloadInByte, DATA_FIXED_BYTES, payload.data);
+  // copyString(payloadInByte, DATA_FIXED_BYTES, payload.data);
+  std::copy(payload.data.begin(), payload.data.end(),
+            payloadInByte.begin() + DATA_FIXED_BYTES);
+
   return payloadInByte;
 }
 
@@ -274,7 +277,7 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
     // totalSize += info.name.size();
   }
 
-  std::vector<uint8_t> finalList(totalSize);
+  std::vector<std::uint8_t> finalList(totalSize);
   std::size_t offset{0};
   std::uint16_t processCount = static_cast<std::uint16_t>(infos.size());
 

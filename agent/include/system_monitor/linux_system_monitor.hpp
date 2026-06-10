@@ -12,6 +12,10 @@ public:
     std::vector<ProcessInfo>  getProcessList()                     override;
     // MetricsSample sampleMetrics()                     override;
     std::string  executeShell(const std::string& command) override;
+
+    private:
+    // Reads the machine"s hostname ("inferno-agent-1")
+    std::string readHostName();
 };
 
 

@@ -22,6 +22,9 @@ public:
 
     // read the CPU architectture (X86_64 -> ArchType::X64)
     ArchType readArch();
+
+    // read os vertion string (" Debian GNU/Linux 12")
+    std::string readOsVersion();
 };
 
 

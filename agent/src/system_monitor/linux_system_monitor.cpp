@@ -1,6 +1,8 @@
 #include "system_monitor/linux_system_monitor.hpp"
 #include <unistd.h>  // gethostname()
 
+#include <cstdlib>   // getenv()
+
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
 }
@@ -14,6 +16,7 @@ RegisterPayload LinuxSystemMonitor::getOsInfo() {
 
         info.os_type = OSType::LINUX;
         info.hostname = readHostName();
+        info.current_user = readCurrentUser();
    
     return info;
 }
@@ -42,4 +45,17 @@ std::string LinuxSystemMonitor::readHostName(){
 
     return  std::string{buffer};
 
+}
+
+std::string LinuxSystemMonitor::readCurrentUser(){
+
+    //getenv() returns  a raw char* - or a nullptr if the variable is not set
+    const char* user = getenv("USER");
+
+    if (user == nullptr) {
+        return std::string {};
+    }
+
+
+    return std::string{user};
 }

@@ -16,6 +16,9 @@ public:
     private:
     // Reads the machine"s hostname ("inferno-agent-1")
     std::string readHostName();
+
+    //read the current user's login name ("root")
+    std::string readCurrentUser();
 };
 
 

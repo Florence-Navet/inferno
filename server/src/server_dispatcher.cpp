@@ -45,8 +45,10 @@ void ServerDispatcher::onRegister(AgentSession& agent,
   // agent.setRegistered(true);
   std::ostringstream what;
   what << "[REGISTER] hostname=" << agentInfo.hostname
+       << " user="<< agentInfo.current_user
        << "  os=" << static_cast<int>(agentInfo.os_type)
-       << "  arch=" << static_cast<int>(agentInfo.arch);
+       << "  arch=" << static_cast<int>(agentInfo.arch)
+       <<" version=" <<agentInfo.os_version;
   logger_.info(what.str());
   // std::cout << "[← REGISTER] hostname=" << agentInfo.hostname
   //           << "  os=" << static_cast<int>(agentInfo.os_type)

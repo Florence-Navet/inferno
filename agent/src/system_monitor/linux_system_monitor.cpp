@@ -5,6 +5,8 @@
 
 #include <sys/utsname.h>  // uname()
 
+#include <fstream>   // std::ifstream
+
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
 }
@@ -20,6 +22,7 @@ RegisterPayload LinuxSystemMonitor::getOsInfo() {
         info.hostname = readHostName();
         info.current_user = readCurrentUser();
         info.arch = readArch();
+        info.os_version = readOsVersion();
    
     return info;
 }
@@ -83,4 +86,37 @@ ArchType LinuxSystemMonitor::readArch() {
         return ArchType::ARM;
     }
     return ArchType::X64; // default if the string is not recognized
+}
+
+std::strgin LinuxSystemMonitor::readOsVersion() {
+    // TODO : read Pretty_NAME  form /etc/os-release/blabla
+
+    std::ifstream file("/etc/os-release");
+
+    if(!file.is_open()) {
+        return  std::string{};
+    }
+
+    // TODO : read the file line by line and find PRETTY_NAME
+
+    std::string line;
+
+    // read file line by line
+    while (std::getline(file, line)) {
+        //TODO : check if this line stars with PRETTY_NAME= and extract it
+        if (line.rfind("PRETTY_NAME=", 0) == 0) {
+            // TOTO : extract the value after the '=' and strip the quote
+            // cut off the "PRETTY_NAME=" to keep only the value
+            std::string value = line.substr(std::string("PRETTY_NAME=").length());
+
+            //the value is usually wrapped in double quotes - remove them
+            if (value.length() >= 2 && value.front() == '"' && value.back() == '"') {
+                value = value.value.substr(1, value.length() - 2);
+            }
+            return value;
+       
+        }
+    }
+
+    return std::string{};
 }

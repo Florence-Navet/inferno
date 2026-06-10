@@ -3,10 +3,10 @@
 #include <sstream>
 
 #include "logger.hpp"
+#include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
-#include "protocol/protocol_helper.hpp"
 
 AgentDispatcher::AgentDispatcher() : Dispatcher("agent") {}
 
@@ -40,9 +40,9 @@ void AgentDispatcher::onDisconnect(AgentSession& session) {
   logger_.info("received DISCONNECT");
   // std::cout << "[agent] received DISCONNECT\n";
   // if (session.isValid()) {
-    // session.socket->close();
-    session.close(); // check for valid socket already inside close method
-    // session.socket.reset();
+  // session.socket->close();
+  session.close();  // check for valid socket already inside close method
+                    // session.socket.reset();
   // }
   // session.setRegistered(false);
 }
@@ -58,8 +58,10 @@ void AgentDispatcher::onCommand(AgentSession& session,
       logger_.info(what.str());
       // std::cout << "[agent] received COMMAND OS_INFO id=" << cmd.id <<
       // "\n";
-      return sendResponse(session, cmd.id, ResponseStatus::OK,
-                          "hello world from agent");
+
+      return sendResponse(
+          session, cmd.id, ResponseStatus::OK,
+          ProtocolSerializer::toBytes("hello world from agent"));
     }
 
     return sendError(session, ErrorType::UNKNOWN_COMMAND,
@@ -78,6 +80,8 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   payload.os_type = OSType::LINUX;
   payload.arch = ArchType::X64;
   payload.hostname = "inferno-agent";
+  payload.os_version = "Linux";
+  payload.current_user = "agent";
 
   const std::vector<std::uint8_t> registerPayload =
       ProtocolSerializer::serializeRegisterPayload(payload);
@@ -97,7 +101,7 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
 
 void AgentDispatcher::sendResponse(AgentSession& session, std::uint16_t id,
                                    ResponseStatus status,
-                                   const std::string& data) {
+                                   const std::vector<std::uint8_t>& data) {
   ResponsePayload payload;
   payload.id = id;
   payload.status = status;

@@ -45,7 +45,57 @@ constexpr std::uint16_t AGENT_INTEGRATION_PORT = 19892;
 // ── socket_integration_test.cpp ──────────────────────────────
 constexpr std::uint16_t SOCKET_ECHO_PORT = 9876;     // basic socket echo test
 constexpr std::uint16_t SOCKET_UNUSED_PORT = 19999;  // nothing listens here
-const std::string SERVER_HOST = "127.0.0.1";  // or localhost?
+const std::string SERVER_HOST = "127.0.0.1";         // or localhost?
+
+inline const std::string TEST_HOSTNAME_STR = "agent-01";
+
+inline const std::uint16_t TEST_HOSTNAME_LEN =
+    static_cast<std::uint16_t>(TEST_HOSTNAME_STR.size());
+
+inline const std::vector<std::uint8_t> TEST_HOSTNAME{
+    TEST_HOSTNAME_STR.begin(),
+    TEST_HOSTNAME_STR.end()
+};
+
+
+inline const std::string TEST_OS_VERSION_STR = "Ubuntu 22.04";
+
+inline const std::uint16_t TEST_OS_VERSION_LEN =
+    static_cast<std::uint16_t>(TEST_OS_VERSION_STR.size());
+
+inline const std::vector<std::uint8_t> TEST_OS_VERSION{
+    TEST_OS_VERSION_STR.begin(),
+    TEST_OS_VERSION_STR.end()
+};
+
+inline const std::string TEST_CURRENT_USER_STR = "root";
+
+inline const std::uint16_t TEST_CURRENT_USER_LEN =
+    static_cast<std::uint16_t>(TEST_CURRENT_USER_STR.size());
+
+inline const std::vector<std::uint8_t> TEST_CURRENT_USER{
+    TEST_CURRENT_USER_STR.begin(),
+    TEST_CURRENT_USER_STR.end()
+};
+
+
+
+
+// const std::vector<std::uint8_t> TEST_OS_VERSION = {
+//     "U", "b", "u", "n", "t", "u", " ", "2", "2", ".", "0", "4"};
+
+// constexpr std::string TEST_OS_VERSION_STR(TEST_OS_VERSION.begin(),
+//                                         TEST_OS_VERSION.end());
+
+// constexpr std::uint16_t TEST_OS_VERSION_LEN =
+//     static_cast<std::uint16_t>(TEST_OS_VERSION_STR.size());
+
+// const std::vector<std::uint8_t> TEST_CURRENT_USER = {"r", "o", "o", "t"};
+// inline const std::string TEST_CURRENT_USER_STR(TEST_CURRENT_USER.begin(),
+//                                         TEST_CURRENT_USER.end());
+
+// constexpr std::uint16_t TEST_CURRENT_USER_LEN =
+//     static_cast<std::uint16_t>(TEST_CURRENT_USER_STR.size());
 
 }  // namespace TestConstants
 

@@ -59,7 +59,7 @@ TEST(AgentSessionBuffer,
 TEST(AgentSessionBuffer,
      should_extract_frame_when_complete_frame_arrives_at_once) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = makeRegisterPayload("server42");
+  const std::vector<std::uint8_t> payload = makeRegisterPayload();
   // feed(agentSession, makeRawFrame(MessageType::REGISTER, payload));
   agentSession.appendToBuffer(makeRawFrame(MessageType::REGISTER, payload));
 
@@ -102,7 +102,7 @@ TEST(AgentSessionFrameExtraction,
 TEST(AgentSessionBuffer,
      should_consume_header_and_payload_bytes_after_extraction) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = makeRegisterPayload("host");
+  const std::vector<std::uint8_t> payload = makeRegisterPayload();
   const std::vector<std::uint8_t> raw =
       makeRawFrame(MessageType::REGISTER, payload);
   agentSession.appendToBuffer(raw);
@@ -121,7 +121,7 @@ TEST(AgentSessionBuffer,
   const std::vector<std::uint8_t> frame1 =
       makeRawFrame(MessageType::DISCONNECT);
   const std::vector<std::uint8_t> frame2 =
-      makeRawFrame(MessageType::REGISTER, makeRegisterPayload("box"));
+      makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
   const std::vector<std::uint8_t> frame2Header = std::vector<std::uint8_t>(
       frame2.begin(), frame2.begin() + LPTF_HEADER_SIZE);
 
@@ -147,7 +147,7 @@ TEST(
     should_return_nullopt_for_every_byte_until_the_last_one_completes_the_frame) {
   AgentSession agentSession;
   const std::vector<std::uint8_t> payload =
-      makeRegisterPayload("fragmented-host");
+      makeRegisterPayload();
   const std::vector<std::uint8_t> rawFrame =
       makeRawFrame(MessageType::REGISTER, payload);
 
@@ -167,7 +167,7 @@ TEST(
     AgentSessionBuffer,
     should_extract_frame_when_header_and_payload_arrive_in_separate_recv_calls) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = makeRegisterPayload("split");
+  const std::vector<std::uint8_t> payload = makeRegisterPayload();
   const std::vector<std::uint8_t> rawFrame =
       makeRawFrame(MessageType::REGISTER, payload);
 
@@ -193,7 +193,7 @@ TEST(
 TEST(AgentSessionConsecutiveFrames,
      should_extract_first_frame_and_leave_second_frame_header_in_state) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload2 = makeRegisterPayload("second");
+  const std::vector<std::uint8_t> payload2 = makeRegisterPayload();
   const std::vector<std::uint8_t> rawFrame2 =
       makeRawFrame(MessageType::REGISTER, payload2);
 
@@ -214,7 +214,7 @@ TEST(AgentSessionConsecutiveFrames,
 TEST(AgentSessionBuffer,
      should_extract_two_consecutive_frames_without_data_loss) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload1 = makeRegisterPayload("host1");
+  const std::vector<std::uint8_t> payload1 = makeRegisterPayload();
   const std::vector<std::uint8_t> payload2 = makeResponsePayload(0, "result");
 
   agentSession.appendToBuffer(makeRawFrame(MessageType::REGISTER, payload1));
@@ -237,7 +237,7 @@ TEST(AgentSessionBuffer,
 TEST(AgentSessionBuffer,
      should_extract_second_frame_only_after_it_becomes_complete) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload2 = makeRegisterPayload("late");
+  const std::vector<std::uint8_t> payload2 = makeRegisterPayload();
   const std::vector<std::uint8_t> raw2 =
       makeRawFrame(MessageType::REGISTER, payload2);
 

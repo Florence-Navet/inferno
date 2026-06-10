@@ -60,7 +60,7 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
   ASSERT_TRUE(socket->connect("127.0.0.1", port));
 
   const auto registerFrame =
-      makeRawFrame(MessageType::REGISTER, makeRegisterPayload("reactor-1"));
+      makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
   EXPECT_TRUE(socket->send(registerFrame).ok());
 
   reactor.stop();
@@ -118,7 +118,7 @@ TEST(ReactorIntegration,
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect("127.0.0.1", port));
     const auto registerFrame =
-        makeRawFrame(MessageType::REGISTER, makeRegisterPayload("reactor-a"));
+        makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 
@@ -127,7 +127,7 @@ TEST(ReactorIntegration,
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect("127.0.0.1", port));
     const auto registerFrame =
-        makeRawFrame(MessageType::REGISTER, makeRegisterPayload("reactor-b"));
+        makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 

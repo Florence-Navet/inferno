@@ -8,12 +8,15 @@ find_package(OpenSSL REQUIRED)
 # STATIC = compiled once into a .a archive, then linked into agent and server.
 # No Dockerfile, no executable — this is purely a library.
 add_library(shared_lib STATIC
+    src/convert_endian.cpp
     src/agent_session.cpp
     src/env_helper.cpp
     src/logger.cpp
     src/dispatcher/dispatcher.cpp
     src/protocol/protocol_parser.cpp
     src/protocol/protocol_serializer.cpp
+    src/protocol/metrics_serializer.cpp
+    src/protocol/metrics_parser.cpp
     src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp
@@ -65,6 +68,8 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
         tests/convert_endian_test.cpp
         tests/agent_session_test.cpp
         tests/protocol/protocol_roundtrip_test.cpp
+        tests/round_trip_metrics_test.cpp
+        tests/round_trip_serialization_test.cpp
         ${PARSER_TESTS}
         ${SERIALIZER_TESTS}
         ${SOCKET_TESTS}

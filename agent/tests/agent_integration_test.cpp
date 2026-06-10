@@ -85,7 +85,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
       ProtocolParser::parseResponsePayload(responseFrame->payload);
   EXPECT_EQ(response.id, 0);
   EXPECT_EQ(response.status, ResponseStatus::OK);
-  EXPECT_EQ(response.data, "hello world from agent");
+  EXPECT_EQ(response.data, ProtocolSerializer::toBytes("hello world from agent")); // TODO not a string anymore, byte vector
  
   // ── Send DISCONNECT — agent must close cleanly ────────────
   ASSERT_TRUE(serverSession.send(makeRawFrame(MessageType::DISCONNECT)).ok());

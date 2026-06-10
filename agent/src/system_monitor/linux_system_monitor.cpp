@@ -88,7 +88,7 @@ ArchType LinuxSystemMonitor::readArch() {
     return ArchType::X64; // default if the string is not recognized
 }
 
-std::strgin LinuxSystemMonitor::readOsVersion() {
+std::string LinuxSystemMonitor::readOsVersion() {
     // TODO : read Pretty_NAME  form /etc/os-release/blabla
 
     std::ifstream file("/etc/os-release");
@@ -111,7 +111,7 @@ std::strgin LinuxSystemMonitor::readOsVersion() {
 
             //the value is usually wrapped in double quotes - remove them
             if (value.length() >= 2 && value.front() == '"' && value.back() == '"') {
-                value = value.value.substr(1, value.length() - 2);
+                value = value.substr(1, value.length() - 2);
             }
             return value;
        

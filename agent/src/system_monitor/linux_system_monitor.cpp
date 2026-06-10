@@ -1,4 +1,5 @@
 #include "system_monitor/linux_system_monitor.hpp"
+#include <unistd.h>  // gethostname()
 
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
@@ -9,8 +10,12 @@ LinuxSystemMonitor::~LinuxSystemMonitor() {
 }
 
 RegisterPayload LinuxSystemMonitor::getOsInfo() {
-    // Implement OS info retrieval logic here
-    return RegisterPayload{};
+        RegisterPayload info;
+
+        info.os_type = OSType::LINUX;
+        info.hostname = readHostName();
+   
+    return info;
 }
 std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
     // Implement process list retrieval logic here
@@ -26,3 +31,15 @@ std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
     return std::string{};
 }
 
+
+std::string LinuxSystemMonitor::readHostName(){
+    char buffer[256]; // Linux hosnmaes ->255 chars
+
+    //gethosname() fills the buffer and returns 0 on success  // -1 if error
+    if (gethostname(buffer, sizeof(buffer)) != 0) {
+        return std::string{};  // return empty string rather trhan crashing
+    }
+
+    return  std::string{buffer};
+
+}

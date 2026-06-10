@@ -31,6 +31,8 @@ endif()
 add_library(agent_lib STATIC
     src/agent_dispatcher.cpp
     src/agent_loop.cpp
+    src/system_monitor/linux_system_monitor.cpp
+    src/system_monitor/system_monitor_factory.cpp
     # src/socket/SocketLinux.cpp    ← add as you create files
 )
 
@@ -68,6 +70,7 @@ add_executable(agent_tests
     tests/agent_dispatcher_test.cpp
     tests/agent_integration_test.cpp
     tests/main_test.cpp
+    tests/linux_system_monitor_test.cpp
     # tests/test_socket_linux.cpp   ← add as you create tests
 )
 

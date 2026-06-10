@@ -103,7 +103,7 @@ TEST(TcpServerIntegration,
 
       // Send REGISTER using the shared helper
       const auto registerFrame = makeRawFrame(MessageType::REGISTER,
-                                              makeRegisterPayload("tcp-server-agent"));
+                                              makeRegisterPayload());
       if (agentSession.send(registerFrame).ok()) {
         agentSession.receiveIntoBuffer();
         std::optional<Frame> frame = agentSession.tryExtractFrame();
@@ -138,7 +138,7 @@ TEST(TcpServerIntegration,
   ASSERT_TRUE(response.has_value());
   EXPECT_EQ(response->id, 7);
   EXPECT_EQ(response->status, ResponseStatus::OK);
-  EXPECT_EQ(response->data, "pong");
+  EXPECT_EQ(response->data, ProtocolSerializer::toBytes("pong"));
 }
 
 TEST(TcpServerIntegration,

@@ -11,8 +11,9 @@ TEST(ConvertEndian, should_return_correct_uint16_when_bytes_are_valid) {
                                       0b00101100};  // decimal value = 300
   std::uint16_t expected = 300;
 
+  std::size_t offset{0};
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);
@@ -23,9 +24,10 @@ TEST(ConvertEndian, should_return_correct_uint16_when_value_is_zero) {
   std::vector<std::uint8_t> buffer = {0b00000000,
                                       0b00000000};  // decimal value = 0
   std::uint16_t expected = 0;
+  std::size_t offset{0};
 
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);
@@ -36,9 +38,10 @@ TEST(ConvertEndian, should_return_correct_uint16_when_value_is_65535) {
   std::vector<std::uint8_t> buffer = {0b11111111,
                                       0b11111111};  // decimal value = 65535
   std::uint16_t expected = 65535;
+  std::size_t offset{0};
 
   // Act
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, 0);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
 
   // Assert
   EXPECT_EQ(expected, result);
@@ -72,8 +75,10 @@ TEST(ConvertEndian, should_return_correct_bytes_when_unint16_is_valid) {
   ConvertEndian::writeU16BE(result, offset, toWrite);
 
   // Assert
-  EXPECT_EQ(expected[offset], result[offset]);
-  EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  // EXPECT_EQ(expected[offset], result[offset]);
+  // EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  EXPECT_EQ(expected[0], result[0]);
+  EXPECT_EQ(expected[1], result[1]);
 }
 
 TEST(ConvertEndian, should_return_correct_bytes_when_unint16_is_0) {
@@ -90,8 +95,10 @@ TEST(ConvertEndian, should_return_correct_bytes_when_unint16_is_0) {
   ConvertEndian::writeU16BE(result, offset, toWrite);
 
   // Assert
-  EXPECT_EQ(expected[offset], result[offset]);
-  EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  // EXPECT_EQ(expected[offset], result[offset]);
+  // EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  EXPECT_EQ(expected[0], result[0]);
+  EXPECT_EQ(expected[1], result[1]);
 }
 
 TEST(ConvertEndian, should_return_correct_bytes_when_unint16_is_65535) {
@@ -108,8 +115,10 @@ TEST(ConvertEndian, should_return_correct_bytes_when_unint16_is_65535) {
   ConvertEndian::writeU16BE(result, offset, toWrite);
 
   // Assert
-  EXPECT_EQ(expected[offset], result[offset]);
-  EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  // EXPECT_EQ(expected[offset], result[offset]);
+  // EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  EXPECT_EQ(expected[0], result[0]);
+  EXPECT_EQ(expected[1], result[1]);
 }
 
 // WRITE TO BIG ENDIAN
@@ -127,21 +136,27 @@ TEST(ConvertEndian, should_return_correct_bytes_when_offset_is_provided) {
   ConvertEndian::writeU16BE(result, offset, toWrite);
 
   // Assert
-  EXPECT_EQ(expected[offset], result[offset]);
-  EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  // EXPECT_EQ(expected[offset], result[offset]);
+  // EXPECT_EQ(expected[offset + 1], result[offset + 1]);
+  EXPECT_EQ(expected[2], result[2]);
+  EXPECT_EQ(expected[3], result[3]);
 }
 
 TEST(ConvertEndian,
      should_return_original_value_when_read_is_called_after_write) {
   // Arrange
   std::uint16_t original = 539;
-  std::size_t offset = 1;
+  // std::size_t offset = 1;
+  std::size_t write_offset = 1;
+  std::size_t read_offset = 1;
   std::vector<std::uint8_t> buffer;
   buffer.resize(3);
 
   // Act
-  ConvertEndian::writeU16BE(buffer, offset, original);
-  std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
+  // ConvertEndian::writeU16BE(buffer, offset, original);
+  ConvertEndian::writeU16BE(buffer, write_offset, original);
+  // std::uint16_t result = ConvertEndian::readU16BE(buffer, offset);
+  std::uint16_t result = ConvertEndian::readU16BE(buffer, read_offset);
 
   // Assert
   EXPECT_EQ(original, result);

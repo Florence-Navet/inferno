@@ -2,10 +2,9 @@
 
 #include <cstddef>
 #include <string>
+
 #include "convert_endian.hpp"
-
 #include "exception/lptf_exception.hpp"
-
 
 namespace {
 
@@ -26,8 +25,7 @@ void validateHeader(const LptfHeader& header) {
                              "Version provided is not a number");
   }
   if (header.type >= MessageType::END) {
-    throw InvalidType(
-        std::to_string(static_cast<std::uint8_t>(header.type)));
+    throw InvalidType(std::to_string(static_cast<std::uint8_t>(header.type)));
   }
 }
 
@@ -50,10 +48,25 @@ void validateRegisterPayload(const RegisterPayload& payload) {
   if (payload.hostname.empty()) {
     throw InvalidSize("register hostname length", "0");
   }
+
+  if (payload.os_version.empty()) {
+    throw InvalidSize("register os_version length", "0");
+  }
+
+  if (payload.current_user.empty()) {
+    throw InvalidSize("register current_user length", "0");
+  }
+
   if (payload.hostname.size() > REGISTER_MAX_HOSTNAME_LEN) {
     throw InvalidSize("register hostname length",
                       std::to_string(payload.hostname.size()));
   }
+
+  ensureFitsU16(payload.hostname.size(), "register hostname length");
+
+  ensureFitsU16(payload.os_version.size(), "register os_version length");
+
+  ensureFitsU16(payload.current_user.size(), "register current_user length");
 }
 
 void validateCommandPayload(const CommandPayload& payload) {
@@ -119,7 +132,7 @@ void validateErrorPayload(const ErrorPayload& payload) {
 std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
     const LptfHeader& header) {
   validateHeader(header);
-  
+
   std::vector<std::uint8_t> headerInByte(LPTF_HEADER_SIZE);
 
   for (std::size_t i = 0; i < sizeof(header.identifier); ++i) {
@@ -129,7 +142,8 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
   headerInByte[4] = header.version;
   headerInByte[5] = static_cast<std::uint8_t>(header.type);
 
-  ConvertEndian::writeU16BE(headerInByte, 6, header.size);
+  std::size_t offset{6};
+  ConvertEndian::writeU16BE(headerInByte, offset, header.size);
 
   return headerInByte;
 }
@@ -138,14 +152,36 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
     const RegisterPayload& payload) {
   validateRegisterPayload(payload);
 
-  const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size()};
+  const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size() +
+                              payload.os_version.size() +
+                              payload.current_user.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.os_type);
   payloadInByte[1] = static_cast<std::uint8_t>(payload.arch);
+  std::size_t offset{2};
   ConvertEndian::writeU16BE(
-      payloadInByte, 2, static_cast<std::uint16_t>(payload.hostname.size()));
+      payloadInByte, offset,
+      static_cast<std::uint16_t>(payload.hostname.size()));
+
+  ConvertEndian::writeU16BE(
+      payloadInByte, offset,
+      static_cast<std::uint16_t>(payload.os_version.size()));
+
+  ConvertEndian::writeU16BE(
+      payloadInByte, offset,
+      static_cast<std::uint16_t>(payload.current_user.size()));
+
   copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
+
+  copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
+             payload.os_version);
+
+  copyString(payloadInByte,
+             REGISTER_FIXED_BYTES + payload.hostname.size() +
+                 payload.os_version.size(),
+             payload.current_user);
+
   return payloadInByte;
 }
 
@@ -155,10 +191,11 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeCommandPayload(
 
   const std::size_t finalSize{COMMAND_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
-
-  ConvertEndian::writeU16BE(payloadInByte, 0, payload.id);
-  payloadInByte[2] = static_cast<std::uint8_t>(payload.type);
-  ConvertEndian::writeU16BE(payloadInByte, 3,
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  payloadInByte[offset] = static_cast<std::uint8_t>(payload.type);
+  offset++;
+  ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
   copyString(payloadInByte, COMMAND_FIXED_BYTES, payload.data);
   return payloadInByte;
@@ -170,14 +207,17 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeResponsePayload(
 
   const std::size_t finalSize{RESPONSE_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
-
-  ConvertEndian::writeU16BE(payloadInByte, 0, payload.id);
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
   payloadInByte[2] = static_cast<std::uint8_t>(payload.status);
   payloadInByte[3] = payload.total_chunks;
   payloadInByte[4] = payload.chunk_index;
-  ConvertEndian::writeU16BE(payloadInByte, 5,
+  offset = 5;
+  ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
-  copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
+  // copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
+  std::copy(payload.data.begin(), payload.data.end(),
+            payloadInByte.begin() + RESPONSE_FIXED_BYTES);
   return payloadInByte;
 }
 
@@ -189,9 +229,13 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeDataPayload(
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.subtype);
-  ConvertEndian::writeU16BE(payloadInByte, 1,
+  std::size_t offset{1};
+  ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
-  copyString(payloadInByte, DATA_FIXED_BYTES, payload.data);
+  // copyString(payloadInByte, DATA_FIXED_BYTES, payload.data);
+  std::copy(payload.data.begin(), payload.data.end(),
+            payloadInByte.begin() + DATA_FIXED_BYTES);
+
   return payloadInByte;
 }
 
@@ -204,8 +248,48 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeErrorPayload(
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.code);
-  ConvertEndian::writeU16BE(payloadInByte, 1, message_length);
+  std::size_t offset{1};
+  ConvertEndian::writeU16BE(payloadInByte, offset, message_length);
 
   copyString(payloadInByte, ERROR_FIXED_BYTES, payload.message);
   return payloadInByte;
+}
+
+std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfo(
+    const ProcessInfo& info) {
+  std::vector<uint8_t> payload(PROCESS_INFO_FIXED_SIZE + info.name.size());
+  std::size_t offset{0};
+  ConvertEndian::writeU32BE(payload, offset, info.pid);
+  ConvertEndian::writeFloat(payload, offset, info.cpu_percent);
+  ConvertEndian::writeU64BE(payload, offset, info.mem_bytes);
+  ConvertEndian::writeU16BE(payload, offset, info.name.size());
+  std::copy(info.name.begin(), info.name.end(), payload.begin() + offset);
+
+  return payload;
+}
+
+std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
+    const std::vector<ProcessInfo>& infos) {
+  std::size_t totalSize = sizeof(std::uint16_t);  // processCount
+
+  for (const ProcessInfo& info : infos) {
+    totalSize += (PROCESS_INFO_FIXED_SIZE + info.name.size());
+    // totalSize += info.name.size();
+  }
+
+  std::vector<std::uint8_t> finalList(totalSize);
+  std::size_t offset{0};
+  std::uint16_t processCount = static_cast<std::uint16_t>(infos.size());
+
+  ConvertEndian::writeU16BE(finalList, offset, processCount);
+
+  for (const ProcessInfo& info : infos) {
+    std::vector<uint8_t> infoPayload =
+        ProtocolSerializer::serializeProcessInfo(info);
+    std::copy(infoPayload.begin(), infoPayload.end(),
+              finalList.begin() + offset);
+    offset += infoPayload.size();
+  }
+
+  return finalList;
 }

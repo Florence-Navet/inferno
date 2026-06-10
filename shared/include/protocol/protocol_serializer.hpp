@@ -4,13 +4,8 @@
 // #include <cstddef>
 // #include <cstring>
 
-#include <vector>
-
 #include <cstdint>
-
-
-#include "protocol/lptf_protocol.hpp"
-
+#include <vector>
 
 #include "protocol/lptf_protocol.hpp"
 
@@ -31,6 +26,15 @@ class ProtocolSerializer {
       const DataPayload& payload);
   static std::vector<std::uint8_t> serializeErrorPayload(
       const ErrorPayload& payload);
+
+  static std::vector<std::uint8_t> serializeProcessInfo(
+      const ProcessInfo& info);
+
+  static std::vector<std::uint8_t> serializeProcessInfoList(
+      const std::vector<ProcessInfo>& infos);
+  static inline std::vector<std::uint8_t> toBytes(const std::string& s) {
+    return std::vector<std::uint8_t>(s.begin(), s.end());
+  }
 };
 
 #endif

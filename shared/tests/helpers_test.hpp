@@ -5,9 +5,15 @@
 #include <string>
 #include <vector>
 
+#include "convert_endian.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "protocol/protocol_helper.hpp"
+#include "protocol/protocol_serializer.hpp"
+#include "test_constants.hpp"
+
+inline std::vector<std::uint8_t> bytesFromString(const std::string& s) {
+  return std::vector<std::uint8_t>(s.begin(), s.end());
+}
 
 inline Frame makeFrame(MessageType type,
                        const std::vector<std::uint8_t>& payload = {}) {
@@ -37,14 +43,47 @@ inline std::vector<std::uint8_t> makeRawFrame(
 
 // ── Typed payload builders (use serializer) ───────────────────
 
+// inline std::vector<std::uint8_t> makeRegisterPayload(
+//     const std::string& hostname, OSType os = OSType::LINUX,
+//     ArchType arch = ArchType::X64,
+//     const std::string& osVersion = "Test OS 1.0",
+//     const std::string& currentUser = "testuser") {
+//   RegisterPayload p;
+//   p.os_type = os;
+//   p.arch = arch;
+//   p.hostname = hostname;
+//   p.os_version = osVersion;
+//   p.current_user = currentUser;
+//   return ProtocolSerializer::serializeRegisterPayload(p);
+// }
+
 inline std::vector<std::uint8_t> makeRegisterPayload(
-    const std::string& hostname, OSType os = OSType::LINUX,
-    ArchType arch = ArchType::X64) {
-  RegisterPayload p;
-  p.os_type = os;
-  p.arch = arch;
-  p.hostname = hostname;
-  return ProtocolSerializer::serializeRegisterPayload(p);
+    const std::uint8_t rawOs = static_cast<uint8_t>(OSType::LINUX),
+    const std::uint8_t rawArch = static_cast<uint8_t>(ArchType::X64),
+    const std::uint16_t declaredHostnameLen = TestConstants::TEST_HOSTNAME_LEN,
+    const std::uint16_t declaredOsVersionLen =
+        TestConstants::TEST_OS_VERSION_LEN,
+    const std::uint16_t declaredCurrentUserLen =
+        TestConstants::TEST_CURRENT_USER_LEN,
+    const std::vector<std::uint8_t>& hostnameBytes =
+        TestConstants::TEST_HOSTNAME,
+    const std::vector<std::uint8_t>& osVersionBytes =
+        TestConstants::TEST_OS_VERSION,
+    const std::vector<std::uint8_t>& currentUserBytes =
+        TestConstants::TEST_CURRENT_USER) {
+  std::vector<std::uint8_t> out(REGISTER_FIXED_BYTES);
+
+  out[0] = rawOs;
+  out[1] = rawArch;
+  std::size_t offset{2};
+  ConvertEndian::writeU16BE(out, offset, declaredHostnameLen);
+  ConvertEndian::writeU16BE(out, offset, declaredOsVersionLen);
+  ConvertEndian::writeU16BE(out, offset, declaredCurrentUserLen);
+
+  out.insert(out.end(), hostnameBytes.begin(), hostnameBytes.end());
+  out.insert(out.end(), osVersionBytes.begin(), osVersionBytes.end());
+  out.insert(out.end(), currentUserBytes.begin(), currentUserBytes.end());
+  return out;
 }
 
 inline std::vector<std::uint8_t> makeResponsePayload(
@@ -55,8 +94,31 @@ inline std::vector<std::uint8_t> makeResponsePayload(
   p.status = ResponseStatus::OK;
   p.total_chunks = totalChunks;
   p.chunk_index = chunkIndex;
-  p.data = data;
+  //   p.data = data;
+  p.data.assign(data.begin(), data.end());
+
   return ProtocolSerializer::serializeResponsePayload(p);
+}
+
+inline ProcessInfo createProcessInfo(std::uint32_t pid = 1234,
+                                     float cpu_percent = 42.5f,
+                                     std::uint64_t mem_bytes = 1024 * 1024 *
+                                                               512,
+                                     std::string name = "my_process") {
+  ProcessInfo info;
+  info.pid = pid;
+  info.cpu_percent = cpu_percent;
+  info.mem_bytes = mem_bytes;  // 512 MB
+  info.name = name;
+  return info;
+}
+
+inline std::vector<ProcessInfo> createProcessInfoList(int howMayProcess = 3) {
+    std::vector<ProcessInfo> infos;
+    for (int i{0}; i < howMayProcess; ++i) {
+        infos.insert(infos.end(), createProcessInfo());
+    }
+    return infos;
 }
 
 #endif

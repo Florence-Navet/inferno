@@ -58,16 +58,16 @@ Payload immediately follows the header.
 Agent sends REGISTER immediately after connecting.
 
 ```c++
-struct RegisterPayload {
-    uint8_t os_type;        // 0=Windows, 1=Linux, 2=macOS
-    uint8_t arch;           // 0=x86, 1=x64, 2=ARM
-    uint16_t hostname_len;
-    uint16_t os_version_len
-    uint16_t current_user_len;
-    char hostname[hostname_len]; // UTF-8
-    char os_version[os_version_len];
-    char current_user[current_user_len];
-};
+    struct RegisterPayload {
+        uint8_t os_type;        // 0=Windows, 1=Linux, 2=macOS
+        uint8_t arch;           // 0=x86, 1=x64, 2=ARM
+        uint16_t hostname_len;
+        uint16_t os_version_len
+        uint16_t current_user_len;
+        char hostname[hostname_len]; // UTF-8
+        char os_version[os_version_len];
+        char current_user[current_user_len];
+    };
 ```
 
 Rules:
@@ -109,7 +109,7 @@ struct ResponsePayload {
     uint8_t total_chunks; // total number of chunks
     uint8_t chunk_index;  // 0-based index of this chunk
     uint16_t data_len;    // length of this chunk
-    char data[data_len];  
+    uint8_t data[data_len];  
 };
 ```
 
@@ -140,15 +140,58 @@ std::vector<uint8_t> | processCount (2 bytes) | processList (N bytes) |
 
 ### 4.4 DATA
 
-For unsolicited agent data:
+For unsolicited agent data: Metric
 
 ```c++
 struct DataPayload {
     uint8_t subtype;        // custom type
     uint16_t data_len;
-    char data[data_len];
+    uint8_t data[data_len];
 };
 ```
+
+### 4.4.1 Metric Sample
+```c++
+struct CpuSample {
+    float total_percent;
+    uint8_t core_number;
+    float per_core[core_number]
+}
+
+struct MemSample {
+    uint64_t phys_total;
+    uint64_t phys_used;
+    uint64_t phys_available;
+    uint64_t swap_total;
+    uint64_t swap_used;
+}
+
+
+struct DiskSample {
+    uint64_t read_bytes_per_sec;
+    uint64_t write_bytes_per_sec;
+    uint16_t device_len;
+    uint8_t   device[device_len];           // e.g. "sda", "C:"
+};
+
+struct NetSample {
+    uint64_t rx_bytes_per_sec;
+    uint64_t tx_bytes_per_sec;
+    uint16_t iface_len
+    uint8_t   iface[iface_len];            // e.g. "eth0", "Ethernet"
+};
+
+struct MetricsSample {
+    CpuSample             cpu;
+    MemSample             mem;
+    uint8_t disk_count;
+    uint8_t interface_count;
+    DiskSample disks[disk_count];
+    NetSample  interfaces[interface_count];
+};
+
+```
+
 
 ### 4.5 ERROR
 

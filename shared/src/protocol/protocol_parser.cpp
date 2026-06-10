@@ -184,8 +184,12 @@ DataPayload ProtocolParser::parseDataPayload(
 
   DataPayload payload;
   payload.subtype = toDataType(input[0]);
-  payload.data.assign(
-      reinterpret_cast<const char*>(input.data() + DATA_FIXED_BYTES), dataLen);
+  // payload.data.assign(
+  //     reinterpret_cast<const char*>(input.data() + DATA_FIXED_BYTES), dataLen);
+  payload.data = std::vector<std::uint8_t>(
+    input.begin() + DATA_FIXED_BYTES,
+    input.begin() + DATA_FIXED_BYTES + dataLen);
+    
   return payload;
 }
 

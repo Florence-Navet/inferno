@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "lptf_protocol.hpp"
+#include "protocol/lptf_protocol.hpp"
 
 class ISystemMonitor {
  public:

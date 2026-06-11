@@ -1,8 +1,9 @@
 #ifndef LINUX_METRICS_SCRAPPER_HPP
 #define LINUX_METRICS_SCRAPPER_HPP
 
-#include "metrics/i_metrics_scrapper.hpp"
 #include <map>
+
+#include "metrics/i_metrics_scrapper.hpp"
 
 class LinuxMetricsScrapper : public IMetricsScrapper {
  public:
@@ -21,6 +22,9 @@ class LinuxMetricsScrapper : public IMetricsScrapper {
   MemSample readMem();
   std::vector<DiskSample> readDisks();
   std::vector<NetSample> readNet();
+  std::ifstream openFile(const std::string& path);
+  float computeCpuPercent(const RawCpuSnapshot& snapshot, const std::size_t& index);
+  RawCpuSnapshot getRawCpuSnapshot();
 };
 
 #endif

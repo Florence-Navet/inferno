@@ -7,6 +7,9 @@
 
 #include <fstream>   // std::ifstream
 
+#include <pwd.h>
+#include <unistd.h>
+
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
 }
@@ -58,7 +61,14 @@ std::string LinuxSystemMonitor::readCurrentUser(){
     //getenv() returns  a raw char* - or a nullptr if the variable is not set
     const char* user = getenv("USER");
 
+    //USER is no always set - inside docker
+    // sy stem user db always knows  the current user
+
     if (user == nullptr) {
+        const struct passwd* pw = getpwuid(getuid());
+        if(pw != nullptr) {
+            return std::string  {pw ->pw_name};// ex root
+        }
         return std::string {};
     }
 

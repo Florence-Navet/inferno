@@ -12,6 +12,19 @@ public:
     std::vector<ProcessInfo>  getProcessList()                     override;
     // MetricsSample sampleMetrics()                     override;
     std::string  executeShell(const std::string& command) override;
+
+    private:
+    // Reads the machine"s hostname ("inferno-agent-1")
+    std::string readHostName();
+
+    //read the current user's login name ("root")
+    std::string readCurrentUser();
+
+    // read the CPU architectture (X86_64 -> ArchType::X64)
+    ArchType readArch();
+
+    // read os vertion string (" Debian GNU/Linux 12")
+    std::string readOsVersion();
 };
 
 

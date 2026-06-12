@@ -7,6 +7,8 @@
 #include "protocol/protocol_parser.hpp"
 // #include "socket/mock_socket_helpers.hpp"
 #include "socket/spy_socket.hpp"
+
+#include "fake_system_monitor.hpp"
  
 // ── AgentDispatcher tests ─────────────────────────────────────
 // Three tests: happy path, disconnect handling, unknown command.
@@ -21,7 +23,8 @@ TEST(AgentDispatcher,
      should_send_response_with_matching_id_on_os_info_command) {
   SpySocket spy;
   AgentSession session = makeSession(spy);
-  AgentDispatcher dispatcher;
+  FakeSystemMonitor monitor;
+  AgentDispatcher dispatcher(monitor);
  
   CommandPayload cmd;
   cmd.id   = 42;
@@ -50,7 +53,8 @@ TEST(AgentDispatcher,
      should_close_session_and_send_nothing_on_disconnect) {
   SpySocket spy;
   AgentSession session = makeSession(spy);
-  AgentDispatcher dispatcher;
+  FakeSystemMonitor monitor;
+  AgentDispatcher dispatcher(monitor);
  
   dispatcher.handleFrame(session, makeFrame(MessageType::DISCONNECT));
  
@@ -65,7 +69,8 @@ TEST(AgentDispatcher,
      should_send_error_response_when_command_type_is_not_implemented) {
   SpySocket spy;
   AgentSession session = makeSession(spy);
-  AgentDispatcher dispatcher;
+  FakeSystemMonitor monitor;
+  AgentDispatcher dispatcher(monitor);
  
   // RUNNING_PROCESSES is declared in the protocol but not implemented yet
   CommandPayload cmd;

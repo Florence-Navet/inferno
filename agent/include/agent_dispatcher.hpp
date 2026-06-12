@@ -10,6 +10,8 @@
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
 
+#include "system_monitor/i_system_monitor.hpp"
+
 // enum class StatusRegister : std::uint8_t {
 //   SENT,
 //   OK,
@@ -18,7 +20,7 @@
 
 class AgentDispatcher : public Dispatcher {
  public:
-  explicit AgentDispatcher();
+  explicit AgentDispatcher(ISystemMonitor& monitor);
 
   AgentDispatcher(const AgentDispatcher&) = delete;
   ~AgentDispatcher() = default;
@@ -30,6 +32,8 @@ class AgentDispatcher : public Dispatcher {
   void sendRegister(AgentSession& session);
 
  private:
+  ISystemMonitor& monitor_; // injected -used to read OS info for REGISTER
+
   // StatusRegister registered_{StatusRegister::REJECTED};
   void sendResponse(AgentSession& session, std::uint16_t id,
                     ResponseStatus status, const std::vector<std::uint8_t>& data);

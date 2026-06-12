@@ -12,6 +12,7 @@
 #include "socket/socket_factory.hpp"
 #include "test_tcp_server.hpp"
 #include "test_constants.hpp"
+#include "fake_system_monitor.hpp"
  
 // Full cycle: REGISTER → COMMAND(OS_INFO) → RESPONSE → DISCONNECT.
 //
@@ -36,7 +37,8 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
     ASSERT_TRUE(socket && socket->connect("127.0.0.1", port));
  
     AgentSession session(std::move(socket));
-    AgentDispatcher dispatcher;
+    FakeSystemMonitor monitor;
+    AgentDispatcher dispatcher(monitor);
     dispatcher.sendRegister(session);
  
     while (session.isValid()) {
@@ -64,7 +66,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
  
   const RegisterPayload reg =
       ProtocolParser::parseRegisterPayload(registerFrame->payload);
-  EXPECT_EQ(reg.hostname, "inferno-agent");
+  EXPECT_EQ(reg.hostname, "test-hostname");
  
   // ── Send COMMAND(OS_INFO) ─────────────────────────────────
   CommandPayload cmd;

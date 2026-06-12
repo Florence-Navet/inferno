@@ -3,6 +3,7 @@
 
 #include "system_monitor/i_system_monitor.hpp"
 
+#include <memory>
 
 #ifdef _WIN32
   #include "system_monitor/windows_system_monitor.hpp"

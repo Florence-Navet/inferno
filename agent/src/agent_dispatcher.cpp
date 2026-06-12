@@ -8,7 +8,8 @@
 #include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
 
-AgentDispatcher::AgentDispatcher() : Dispatcher("agent") {}
+AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)
+         : Dispatcher("agent"), monitor_(monitor) {}
 
 void AgentDispatcher::handleFrame(AgentSession& session, const Frame& frame) {
   switch (frame.header.type) {
@@ -76,12 +77,14 @@ void AgentDispatcher::onCommand(AgentSession& session,
 }
 
 void AgentDispatcher::sendRegister(AgentSession& session) {
-  RegisterPayload payload;
-  payload.os_type = OSType::LINUX;
-  payload.arch = ArchType::X64;
-  payload.hostname = "inferno-agent";
-  payload.os_version = "Linux";
-  payload.current_user = "agent";
+  //ask syst monitor for the real os info instead of hardcoding it
+    RegisterPayload payload = monitor_.getOsInfo();
+  // payload.os_type = OSType::LINUX;
+  // payload.arch = ArchType::X64;
+  // payload.hostname = "inferno-agent";
+  // payload.os_version = "Linux";
+  // payload.current_user = "agent";
+
 
   const std::vector<std::uint8_t> registerPayload =
       ProtocolSerializer::serializeRegisterPayload(payload);

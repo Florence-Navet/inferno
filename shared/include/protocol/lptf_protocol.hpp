@@ -47,10 +47,10 @@ constexpr std::size_t CPU_SAMPLE_FIXED_SIZE = sizeof(float) + sizeof(std::uint8_
 constexpr std::size_t MEM_SAMPLE_FIXED_SIZE = 5 * sizeof(std::uint64_t);
 
 // DISK: uint16_t device_len + 2 × uint64_t  (device string is variable)
-constexpr std::size_t DISK_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(std::uint64_t);
+constexpr std::size_t DISK_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(float);
 
 // NET: uint16_t iface_len + 2 × uint64_t  (iface string is variable)
-constexpr std::size_t NET_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(std::uint64_t);
+constexpr std::size_t NET_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(float);
 
 // METRICS top-level: 2 × uint8_t for disk_count + interface_count
 // (CpuSample and MemSample are inlined, variable themselves)
@@ -163,28 +163,28 @@ struct ProcessInfo {
 };
 
 struct CpuSample {
-    float total_percent;
+    float total_percent = 0.0f;
     std::vector<float> per_core; // one per logical core
 };
 
 struct MemSample {
-    std::uint64_t phys_total;
-    std::uint64_t phys_used;
-    std::uint64_t phys_available;
-    std::uint64_t swap_total;
-    std::uint64_t swap_used;
+    std::uint64_t phys_total = 0;
+    std::uint64_t phys_used = 0;
+    std::uint64_t phys_available = 0;
+    std::uint64_t swap_total = 0;
+    std::uint64_t swap_used = 0;
 };
 
 struct DiskSample {
     std::string   device;           // e.g. "sda", "C:"
-    std::uint64_t read_bytes_per_sec;
-    std::uint64_t write_bytes_per_sec;
+    float read_bytes_per_sec = 0.0f;
+    float write_bytes_per_sec = 0.0f;
 };
 
 struct NetSample {
     std::string   iface;            // e.g. "eth0", "Ethernet"
-    std::uint64_t rx_bytes_per_sec;
-    std::uint64_t tx_bytes_per_sec;
+    float rx_bytes_per_sec = 0.0f;
+    float tx_bytes_per_sec = 0.0f;
 };
 
 struct MetricsSample {

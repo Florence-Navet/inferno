@@ -24,8 +24,8 @@ std::vector<std::uint8_t> MetricsSerializer::serializeDiskSample(
   std::vector<std::uint8_t> diskSample(DISK_SAMPLE_FIXED_SIZE +
                                        sample.device.size());
   std::size_t offset{0};
-  ConvertEndian::writeU64BE(diskSample, offset, sample.read_bytes_per_sec);
-  ConvertEndian::writeU64BE(diskSample, offset, sample.write_bytes_per_sec);
+  ConvertEndian::writeFloat(diskSample, offset, sample.read_bytes_per_sec);
+  ConvertEndian::writeFloat(diskSample, offset, sample.write_bytes_per_sec);
   ConvertEndian::writeU16BE(diskSample, offset, sample.device.size());
   std::copy(sample.device.begin(), sample.device.end(),
             diskSample.begin() + offset);
@@ -37,8 +37,8 @@ std::vector<std::uint8_t> MetricsSerializer::serializeNetSample(
   std::vector<std::uint8_t> netSample(NET_SAMPLE_FIXED_SIZE +
                                       sample.iface.size());
   std::size_t offset{0};
-  ConvertEndian::writeU64BE(netSample, offset, sample.rx_bytes_per_sec);
-  ConvertEndian::writeU64BE(netSample, offset, sample.tx_bytes_per_sec);
+  ConvertEndian::writeFloat(netSample, offset, sample.rx_bytes_per_sec);
+  ConvertEndian::writeFloat(netSample, offset, sample.tx_bytes_per_sec);
   ConvertEndian::writeU16BE(netSample, offset, sample.iface.size());
   std::copy(sample.iface.begin(), sample.iface.end(),
             netSample.begin() + offset);

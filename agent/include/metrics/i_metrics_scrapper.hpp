@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "lptf_protocol.hpp"
+#include "protocol/lptf_protocol.hpp"
 
 // raw reading from /proc/stat — cumulative jiffies per core
 struct RawCpuSnapshot {

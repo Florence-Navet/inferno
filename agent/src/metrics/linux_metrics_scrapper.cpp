@@ -1,7 +1,10 @@
 #include "metrics/linux_metrics_scrapper.hpp"
 
 #include <fstream>
+#include <iostream>
 #include <sstream>
+
+#include "logger.hpp"
 
 std::ifstream LinuxMetricsScrapper::openFile(const std::string& path) {
   std::ifstream file(path);
@@ -10,6 +13,22 @@ std::ifstream LinuxMetricsScrapper::openFile(const std::string& path) {
   }
   return file;
 }
+
+void LinuxMetricsScrapper::cleaniFaceName(std::string& ifaceName) {
+  if (!ifaceName.empty() && ifaceName.back() == ':') {
+    ifaceName.pop_back();
+  }
+}
+
+void LinuxMetricsScrapper::skipUnusedValues(std::istringstream& lineStream,
+                                            const int index) {
+  std::uint64_t ignoredValue;
+  for (int i{0}; i < index; ++i) {
+    lineStream >> ignoredValue;
+  }
+}
+
+LinuxMetricsScrapper::LinuxMetricsScrapper() : firstSample_{true} {}
 
 MemSample LinuxMetricsScrapper::readMem() {
   std::ifstream file = openFile("/proc/meminfo");
@@ -48,16 +67,21 @@ CpuSample LinuxMetricsScrapper::readCpu() {
 
   if (firstSample_) {
     previousCpu_ = snapshot;
-    firstSample_ = false;
+    // firstSample_ = false; // should be done by sample() method!
     return cpu;  // first snapshot returns 0
   }
+
+  // Guard against empty snapshots
+  if (snapshot.total.empty() || previousCpu_.total.empty()) {
+    return cpu;
+  }
+
   cpu.total_percent = computeCpuPercent(snapshot, 0);
 
   for (std::size_t i{1}; i < snapshot.total.size(); ++i) {
     cpu.per_core.push_back(computeCpuPercent(snapshot, i));
   }
   previousCpu_ = snapshot;
-
   return cpu;
 }
 
@@ -104,4 +128,168 @@ RawCpuSnapshot LinuxMetricsScrapper::getRawCpuSnapshot() {
   }
 
   return snapshot;
+}
+
+std::map<std::string, RawNetSnapshot>
+LinuxMetricsScrapper::getRawNetSnapshots() {
+  std::ifstream file = openFile("/proc/net/dev");
+  std::map<std::string, RawNetSnapshot> snapshot;
+  std::string line;
+
+  // std::uint8_t lineCount{0};
+  while (std::getline(file, line)) {
+    // lineCount++;
+    // if (lineCount >= 2) {
+    std::istringstream lineStream(line);
+    skipUnusedValues(lineStream, 2);
+    std::string ifaceName;
+    lineStream >> ifaceName;
+    cleaniFaceName(ifaceName);
+
+    std::uint64_t receivedBytes;
+    std::uint64_t transmittedBytes;
+    lineStream >> receivedBytes;
+    skipUnusedValues(lineStream, 8);
+    lineStream >> transmittedBytes;
+
+    snapshot[ifaceName] = {receivedBytes, transmittedBytes};
+    // }
+  }
+  return snapshot;
+}
+
+std::vector<NetSample> LinuxMetricsScrapper::readNet(const float& elapsed) {
+  std::vector<NetSample> result;
+  std::map<std::string, RawNetSnapshot> currentNet = getRawNetSnapshots();
+  if (firstSample_ || previousNet_.empty()) {
+    previousNet_ = currentNet;
+    return result;
+  }
+
+  for (const auto& [ifaceName, currentSnapshot] : currentNet) {
+    if (previousNet_.find(ifaceName) != previousNet_.end()) {
+      const RawNetSnapshot& previousSnapshot = previousNet_[ifaceName];
+
+      std::uint64_t received_delta =
+          currentSnapshot.rx_bytes - previousSnapshot.rx_bytes;
+      std::uint64_t transmitted_delta =
+          currentSnapshot.tx_bytes - previousSnapshot.tx_bytes;
+
+      NetSample net;
+      net.iface = ifaceName;
+      net.rx_bytes_per_sec = static_cast<float>(received_delta) / elapsed;
+      net.tx_bytes_per_sec = static_cast<float>(transmitted_delta) / elapsed;
+      result.push_back(net);
+    }
+  }
+  previousNet_ = currentNet;
+  return result;
+}
+
+std::map<std::string, RawDiskSnapshot>
+LinuxMetricsScrapper::getRawDiskSnapshots() {
+  std::ifstream file = openFile("/proc/diskstats");
+  std::map<std::string, RawDiskSnapshot> snapshots;
+  std::string line;
+
+  while (std::getline(file, line)) {
+    // lineCount++;
+    // if (lineCount >= 2) {
+    std::istringstream lineStream(line);
+    skipUnusedValues(lineStream, 2);
+    std::string device;
+    lineStream >> device;
+    skipUnusedValues(lineStream, 3);
+
+    std::uint64_t read_sectors;
+    lineStream >> read_sectors;
+    std::uint64_t read_bytes = read_sectors * 512;  // a sector is 512 bytes
+
+    skipUnusedValues(lineStream, 4);
+    std::uint64_t write_sectors;
+    lineStream >> write_sectors;
+    std::uint64_t write_bytes = write_sectors * 512;
+
+    snapshots[device] = {read_bytes, write_bytes};
+  }
+  return snapshots;
+}
+
+std::vector<DiskSample> LinuxMetricsScrapper::readDisks(const float& elapsed) {
+  std::vector<DiskSample> result;
+  std::map<std::string, RawDiskSnapshot> currentDisks = getRawDiskSnapshots();
+
+  if (firstSample_ || previousDisks_.empty()) {
+    previousDisks_ = currentDisks;
+    return result;
+  }
+
+  for (const auto& [device, currentSnapshot] : currentDisks) {
+    if (previousDisks_.find(device) != previousDisks_.end()) {
+      const RawDiskSnapshot& previousSnapshot = previousDisks_[device];
+
+      std::uint64_t read_delta =
+          currentSnapshot.read_bytes - previousSnapshot.read_bytes;
+      std::uint64_t write_delta =
+          currentSnapshot.write_bytes - previousSnapshot.write_bytes;
+
+      DiskSample disk;
+      disk.device = device;
+      disk.read_bytes_per_sec = static_cast<float>(read_delta) / elapsed;
+      disk.write_bytes_per_sec = static_cast<float>(write_delta) / elapsed;
+
+      result.push_back(disk);
+    }
+  }
+  previousDisks_ = currentDisks;
+  return result;
+}
+
+MetricsSample LinuxMetricsScrapper::sample() {
+  Logger logger("LinuxMetricsScrapper");
+  std::ostringstream what;
+  MetricsSample sample;
+  auto now = std::chrono::steady_clock::now();
+
+  float elapsed = 0.0f;
+
+  if (!firstSample_) {
+    elapsed = std::chrono::duration<float>(now - lastSampleTime_).count();
+  }
+
+  try {
+    sample.cpu = readCpu();
+  } catch (const std::exception& e) {
+    what << "readCpu() failed: " << e.what() << std::endl;
+    logger.error(what.str());
+  }
+
+  try {
+    sample.mem = readMem();
+  } catch (const std::exception& e) {
+    what << "readMem() failed: " << e.what() << std::endl;
+    logger.error(what.str());
+  }
+
+  try {
+    sample.disks = readDisks(elapsed);
+  } catch (const std::exception& e) {
+    what << "readDisks() failed: " << e.what() << std::endl;
+    logger.error(what.str());
+  }
+
+  try {
+    sample.interfaces = readNet(elapsed);
+  } catch (const std::exception& e) {
+    what << "readNet() failed: " << e.what() << std::endl;
+    logger.error(what.str());
+  }
+
+  lastSampleTime_ = now;
+
+  if (firstSample_) {
+    firstSample_ = false;
+  }
+
+  return sample;
 }

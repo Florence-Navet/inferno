@@ -8,7 +8,7 @@
 // #include "socket/mock_socket_helpers.hpp"
 #include "socket/spy_socket.hpp"
 
-#include "fake_system_monitor.hpp"
+#include "system_monitor/fake_system_monitor.hpp"
  
 // ── AgentDispatcher tests ─────────────────────────────────────
 // Three tests: happy path, disconnect handling, unknown command.

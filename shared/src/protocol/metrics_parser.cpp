@@ -18,8 +18,8 @@ MemSample MetricsParser::parseMemSample(const std::vector<uint8_t>& input, std::
 
 DiskSample MetricsParser::parseDiskSample(const std::vector<uint8_t>& input, std::size_t& offset) {
   DiskSample disk;
-  disk.read_bytes_per_sec = ConvertEndian::readU64BE(input, offset);
-  disk.write_bytes_per_sec = ConvertEndian::readU64BE(input, offset);
+  disk.read_bytes_per_sec = ConvertEndian::readFloat(input, offset);
+  disk.write_bytes_per_sec = ConvertEndian::readFloat(input, offset);
   std::uint16_t deviceLen = ConvertEndian::readU16BE(input, offset);
   disk.device =
       std::string(input.begin() + offset, input.begin() + offset + deviceLen);
@@ -29,8 +29,8 @@ DiskSample MetricsParser::parseDiskSample(const std::vector<uint8_t>& input, std
 
 NetSample MetricsParser::parseNetSample(const std::vector<uint8_t>& input, std::size_t& offset) {
   NetSample net;
-  net.rx_bytes_per_sec = ConvertEndian::readU64BE(input, offset);
-  net.tx_bytes_per_sec = ConvertEndian::readU64BE(input, offset);
+  net.rx_bytes_per_sec = ConvertEndian::readFloat(input, offset);
+  net.tx_bytes_per_sec = ConvertEndian::readFloat(input, offset);
   std::uint16_t ifaceLen = ConvertEndian::readU16BE(input, offset);
   net.iface =
       std::string(input.begin() + offset, input.begin() + offset + ifaceLen);

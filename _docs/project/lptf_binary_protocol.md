@@ -168,15 +168,15 @@ struct MemSample {
 
 
 struct DiskSample {
-    uint64_t read_bytes_per_sec;
-    uint64_t write_bytes_per_sec;
+    float read_bytes_per_sec;
+    float write_bytes_per_sec;
     uint16_t device_len;
     uint8_t   device[device_len];           // e.g. "sda", "C:"
 };
 
 struct NetSample {
-    uint64_t rx_bytes_per_sec;
-    uint64_t tx_bytes_per_sec;
+    float rx_bytes_per_sec;
+    float tx_bytes_per_sec;
     uint16_t iface_len
     uint8_t   iface[iface_len];            // e.g. "eth0", "Ethernet"
 };

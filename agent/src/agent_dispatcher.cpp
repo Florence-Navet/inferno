@@ -9,7 +9,7 @@
 #include "socket/i_socket.hpp"
 
 AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)
-         : Dispatcher("agent"), monitor_(monitor) {}
+    : Dispatcher("agent"), monitor_(monitor) {}
 
 void AgentDispatcher::handleFrame(AgentSession& session, const Frame& frame) {
   switch (frame.header.type) {
@@ -57,12 +57,21 @@ void AgentDispatcher::onCommand(AgentSession& session,
       std::ostringstream what;
       what << "received COMMAND OS_INFO id=" << cmd.id;
       logger_.info(what.str());
-      // std::cout << "[agent] received COMMAND OS_INFO id=" << cmd.id <<
-      // "\n";
-
       return sendResponse(
           session, cmd.id, ResponseStatus::OK,
           ProtocolSerializer::toBytes("hello world from agent"));
+    }
+
+    if (cmd.type == CommandType::RUNNING_PROCESSES) {
+      std::ostringstream what;
+      what << "received COMMAND RUNNING_PROCESSES id=" << cmd.id;
+      logger_.info(what.str());
+
+      const std::vector<ProcessInfo> processes = monitor_.getProcessList();
+      const std::vector<std::uint8_t> processBytes =
+          ProtocolSerializer::serializeProcessInfoList(processes);
+
+      return sendResponse(session, cmd.id, ResponseStatus::OK, processBytes);
     }
 
     return sendError(session, ErrorType::UNKNOWN_COMMAND,
@@ -77,14 +86,13 @@ void AgentDispatcher::onCommand(AgentSession& session,
 }
 
 void AgentDispatcher::sendRegister(AgentSession& session) {
-  //ask syst monitor for the real os info instead of hardcoding it
-    RegisterPayload payload = monitor_.getOsInfo();
+  // ask syst monitor for the real os info instead of hardcoding it
+  RegisterPayload payload = monitor_.getOsInfo();
   // payload.os_type = OSType::LINUX;
   // payload.arch = ArchType::X64;
   // payload.hostname = "inferno-agent";
   // payload.os_version = "Linux";
   // payload.current_user = "agent";
-
 
   const std::vector<std::uint8_t> registerPayload =
       ProtocolSerializer::serializeRegisterPayload(payload);

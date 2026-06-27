@@ -10,6 +10,12 @@
 #include <pwd.h>
 #include <unistd.h>
 
+#include <dirent.h>
+#include <cctype>    // std::isdigit
+#include <sstream>
+#include <string>
+#include <vector>
+
 LinuxSystemMonitor::LinuxSystemMonitor() {
     // Initialization code, if needed
 }
@@ -17,6 +23,77 @@ LinuxSystemMonitor::LinuxSystemMonitor() {
 LinuxSystemMonitor::~LinuxSystemMonitor() {
     // Cleanup code, if needed
 }
+
+// ── getProcessList helpers (file-local) ──────────────────────
+// Each helper opens exactly one /proc file per process.
+// If the file can't be opened (process vanished), it returns a
+// safe default — the caller skips the entry when name is empty.
+ 
+namespace {
+ 
+// /proc/uptime  →  seconds since boot (first field)
+double getSystemUptimeSeconds() {
+  std::ifstream uptimeFile("/proc/uptime");
+  double uptimeSeconds = 0.0;
+  uptimeFile >> uptimeSeconds;
+  return uptimeSeconds;
+}
+ 
+// /proc/[pid]/comm  →  executable name, kernel-limited to 15 chars
+std::string readProcessCommName(uint32_t processId) {
+  std::ifstream commFile("/proc/" + std::to_string(processId) + "/comm");
+  std::string processName;
+  std::getline(commFile, processName);
+  return processName;  // empty = process vanished or kernel thread without comm
+}
+ 
+// /proc/[pid]/status  →  VmRSS line  →  resident memory in kB
+std::size_t readProcessVmRssKb(int processId) {
+  std::ifstream statusFile("/proc/" + std::to_string(processId) + "/status");
+  std::string currentLine;
+  while (std::getline(statusFile, currentLine)) {
+    if (currentLine.compare(0, 6, "VmRSS:") == 0) {
+      std::istringstream rssValueStream(currentLine.substr(6));
+      std::size_t residentMemoryKb = 0;
+      rssValueStream >> residentMemoryKb;
+      return residentMemoryKb;
+    }
+  }
+  return 0;  // kernel threads and zombie processes have no VmRSS
+}
+ 
+// /proc/[pid]/stat  →  utime + stime (fields 14 and 15, 1-indexed)
+unsigned long long readProcessCpuTicks(uint32_t processId) {
+  std::ifstream statFile("/proc/" + std::to_string(processId) + "/stat");
+  std::string statLine;
+  if (!std::getline(statFile, statLine)) return 0;
+ 
+  const auto closingParenthesisPos = statLine.rfind(')');
+  if (closingParenthesisPos == std::string::npos) return 0;
+ 
+  std::istringstream fieldsStream(statLine.substr(closingParenthesisPos + 2));
+  std::string skippedToken;
+  for (int i = 0; i < 11 && fieldsStream >> skippedToken; ++i) {}  // skip state..cmajflt
+ 
+  unsigned long long userModeTicks = 0, kernelModeTicks = 0;
+  if (fieldsStream >> userModeTicks >> kernelModeTicks) {
+    return userModeTicks + kernelModeTicks;
+  }
+  return 0;
+}
+ 
+// CPU lifetime average: what fraction of total uptime did this
+// process consume? Multiply by 100 for a percentage.
+// clockTicksPerSecond = CLK_TCK (typically 100 on Linux) converts jiffies to seconds.
+float calculateCpuPercentage(unsigned long long totalProcessTicks, double systemUptimeSeconds, long clockTicksPerSecond) {
+  if (systemUptimeSeconds <= 0.0 || clockTicksPerSecond <= 0) return 0.0f;
+  return static_cast<float>(totalProcessTicks)
+       / static_cast<float>(clockTicksPerSecond)
+       / static_cast<float>(systemUptimeSeconds)
+       * 100.0f;
+}
+ 
+}  // namespace
 
 RegisterPayload LinuxSystemMonitor::getOsInfo() {
         RegisterPayload info;
@@ -29,14 +106,49 @@ RegisterPayload LinuxSystemMonitor::getOsInfo() {
    
     return info;
 }
+ 
+// ── getProcessList ────────────────────────────────────────────
+//
+// Reads /proc at the moment of the call — the kernel maintains
+// the virtual filesystem in real time, so the snapshot is current.
+// Processes that die between readdir() and file open are skipped
+// silently (readProcessCommName returns empty string).
 std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
-    // Implement process list retrieval logic here
-    return std::vector<ProcessInfo>{};
+  const double systemUptimeSeconds = getSystemUptimeSeconds();
+  const long   clockTicksPerSecond = sysconf(_SC_CLK_TCK);
+ 
+  std::vector<ProcessInfo> processListResult;
+ 
+  DIR* procDirectory = opendir("/proc");
+  if (!procDirectory) return processListResult;
+ 
+  struct dirent* directoryEntry;
+  while ((directoryEntry = readdir(procDirectory)) != nullptr) {
+    // Only process directory entries that start with a digit (representing PIDs)
+    if (std::isdigit(static_cast<unsigned char>(directoryEntry->d_name[0]))) {
+      const int         processId   = std::stoi(directoryEntry->d_name);
+      const std::string processName = readProcessCommName(processId);
+      
+      // Ensure the process has not vanished (valid non-empty name)
+      if (!processName.empty()) {
+        const auto totalProcessTicks = readProcessCpuTicks(processId);
+        const float cpuUsagePercentage = calculateCpuPercentage(totalProcessTicks, systemUptimeSeconds, clockTicksPerSecond);
+        const std::size_t residentMemoryKb = readProcessVmRssKb(processId);
+
+        processListResult.push_back({
+          processId,
+          processName,
+          cpuUsagePercentage,
+          residentMemoryKb
+        });
+      }
+    }
+  }
+ 
+  closedir(procDirectory);
+  return processListResult;
 }
-// MetricsSample LinuxSystemMonitor::sampleMetrics() {
-//     // Implement metrics sampling logic here
-//     return MetricsSample{};
-// }
+
 std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
     // Implement shell command execution logic here
     (void) cmd; // not used yed

@@ -25,6 +25,12 @@ public:
 
     // read os vertion string (" Debian GNU/Linux 12")
     std::string readOsVersion();
+
+    // double getUptime();
+    // std::string readComm(int pid);
+    // std::size_t readVmRss(int pid);
+    // unsigned long long readCpuTicks(int pid);
+    // float toCpuPercent(unsigned long long ticks, double uptime, long hz);
 };
 
 

@@ -156,10 +156,10 @@ struct Frame {
 };
 
 struct ProcessInfo {
-  std::uint32_t pid;
-  float cpu_percent;  // 0.0 – 100.0
-  std::uint64_t mem_bytes;
-  std::string name;
+  std::uint32_t pid;       // kernel process id
+  std::string name;        // process name (up to 15 chars, from /proc/[pid]/status, -name, GetProcessImageFileName)
+  float cpu_percent;       // lifetime average CPU % (utime+stime / uptime)
+  std::uint64_t mem_bytes; // resident set size in kB (VmRSS from /proc/[pid]/status)
 };
 
 struct CpuSample {

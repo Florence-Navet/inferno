@@ -6,7 +6,6 @@
 
 #include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
-#include "fake_system_monitor.hpp"
 #include "helpers_test.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"

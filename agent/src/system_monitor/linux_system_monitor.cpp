@@ -32,73 +32,64 @@ LinuxSystemMonitor::~LinuxSystemMonitor() {
 namespace {
  
 // /proc/uptime  →  seconds since boot (first field)
-double getUptime() {
-  std::ifstream f("/proc/uptime");
-  double up = 0.0;
-  f >> up;
-  return up;
+double getSystemUptimeSeconds() {
+  std::ifstream uptimeFile("/proc/uptime");
+  double uptimeSeconds = 0.0;
+  uptimeFile >> uptimeSeconds;
+  return uptimeSeconds;
 }
  
 // /proc/[pid]/comm  →  executable name, kernel-limited to 15 chars
-std::string readComm(uint32_t pid) {
-  std::ifstream f("/proc/" + std::to_string(pid) + "/comm");
-  std::string name;
-  std::getline(f, name);
-  return name;  // empty = process vanished or kernel thread without comm
+std::string readProcessCommName(uint32_t processId) {
+  std::ifstream commFile("/proc/" + std::to_string(processId) + "/comm");
+  std::string processName;
+  std::getline(commFile, processName);
+  return processName;  // empty = process vanished or kernel thread without comm
 }
  
 // /proc/[pid]/status  →  VmRSS line  →  resident memory in kB
-std::size_t readVmRss(int pid) {
-  std::ifstream f("/proc/" + std::to_string(pid) + "/status");
-  std::string line;
-  while (std::getline(f, line)) {
-    if (line.compare(0, 6, "VmRSS:") == 0) {
-      std::istringstream iss(line.substr(6));
-      std::size_t kb = 0;
-      iss >> kb;
-      return kb;
+std::size_t readProcessVmRssKb(int processId) {
+  std::ifstream statusFile("/proc/" + std::to_string(processId) + "/status");
+  std::string currentLine;
+  while (std::getline(statusFile, currentLine)) {
+    if (currentLine.compare(0, 6, "VmRSS:") == 0) {
+      std::istringstream rssValueStream(currentLine.substr(6));
+      std::size_t residentMemoryKb = 0;
+      rssValueStream >> residentMemoryKb;
+      return residentMemoryKb;
     }
   }
   return 0;  // kernel threads and zombie processes have no VmRSS
 }
  
 // /proc/[pid]/stat  →  utime + stime (fields 14 and 15, 1-indexed)
-//
-// The stat line format is:
-//   pid (comm) state ppid pgrp session tty tty_pgrp flags
-//   minflt cminflt majflt cmajflt utime stime ...
-//
-// (comm) can contain spaces and '(' ')' characters, so we search
-// for the *last* ')' to find where the fixed-position fields start.
-// After that closing paren the fields are:
-//   state(1) ppid(2) pgrp(3) session(4) tty(5) tty_pgrp(6)
-//   flags(7) minflt(8) cminflt(9) majflt(10) cmajflt(11)
-//   utime(12) stime(13)   <- 0-indexed from the token after ')'
-unsigned long long readCpuTicks(uint32_t pid) {
-  std::ifstream f("/proc/" + std::to_string(pid) + "/stat");
-  std::string line;
-  if (!std::getline(f, line)) return 0;
+unsigned long long readProcessCpuTicks(uint32_t processId) {
+  std::ifstream statFile("/proc/" + std::to_string(processId) + "/stat");
+  std::string statLine;
+  if (!std::getline(statFile, statLine)) return 0;
  
-  const auto closing = line.rfind(')');
-  if (closing == std::string::npos) return 0;
+  const auto closingParenthesisPos = statLine.rfind(')');
+  if (closingParenthesisPos == std::string::npos) return 0;
  
-  std::istringstream iss(line.substr(closing + 2));
-  std::string tok;
-  for (int i = 0; i < 11 && iss >> tok; ++i) {}  // skip state..cmajflt
+  std::istringstream fieldsStream(statLine.substr(closingParenthesisPos + 2));
+  std::string skippedToken;
+  for (int i = 0; i < 11 && fieldsStream >> skippedToken; ++i) {}  // skip state..cmajflt
  
-  unsigned long long utime = 0, stime = 0;
-  if (iss >> utime >> stime) return utime + stime;
+  unsigned long long userModeTicks = 0, kernelModeTicks = 0;
+  if (fieldsStream >> userModeTicks >> kernelModeTicks) {
+    return userModeTicks + kernelModeTicks;
+  }
   return 0;
 }
  
 // CPU lifetime average: what fraction of total uptime did this
 // process consume? Multiply by 100 for a percentage.
-// hz = CLK_TCK (typically 100 on Linux) converts jiffies to seconds.
-float toCpuPercent(unsigned long long ticks, double uptime, long hz) {
-  if (uptime <= 0.0 || hz <= 0) return 0.0f;
-  return static_cast<float>(ticks)
-       / static_cast<float>(hz)
-       / static_cast<float>(uptime)
+// clockTicksPerSecond = CLK_TCK (typically 100 on Linux) converts jiffies to seconds.
+float calculateCpuPercentage(unsigned long long totalProcessTicks, double systemUptimeSeconds, long clockTicksPerSecond) {
+  if (systemUptimeSeconds <= 0.0 || clockTicksPerSecond <= 0) return 0.0f;
+  return static_cast<float>(totalProcessTicks)
+       / static_cast<float>(clockTicksPerSecond)
+       / static_cast<float>(systemUptimeSeconds)
        * 100.0f;
 }
  
@@ -121,39 +112,43 @@ RegisterPayload LinuxSystemMonitor::getOsInfo() {
 // Reads /proc at the moment of the call — the kernel maintains
 // the virtual filesystem in real time, so the snapshot is current.
 // Processes that die between readdir() and file open are skipped
-// silently (readComm returns empty string → continue).
+// silently (readProcessCommName returns empty string).
 std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
-  const double uptime = getUptime();
-  const long   hz     = sysconf(_SC_CLK_TCK);
+  const double systemUptimeSeconds = getSystemUptimeSeconds();
+  const long   clockTicksPerSecond = sysconf(_SC_CLK_TCK);
  
-  std::vector<ProcessInfo> result;
+  std::vector<ProcessInfo> processListResult;
  
-  DIR* proc = opendir("/proc");
-  if (!proc) return result;
+  DIR* procDirectory = opendir("/proc");
+  if (!procDirectory) return processListResult;
  
-  struct dirent* entry;
-  while ((entry = readdir(proc)) != nullptr) {
-    if (!std::isdigit(static_cast<unsigned char>(entry->d_name[0]))) continue;
- 
-    const int         pid  = std::stoi(entry->d_name);
-    const std::string name = readComm(pid);
-    if (name.empty()) continue;
- 
-    const auto ticks = readCpuTicks(pid);
-    result.push_back({pid,
-                      name,
-                      toCpuPercent(ticks, uptime, hz),
-                      readVmRss(pid)});
+  struct dirent* directoryEntry;
+  while ((directoryEntry = readdir(procDirectory)) != nullptr) {
+    // Only process directory entries that start with a digit (representing PIDs)
+    if (std::isdigit(static_cast<unsigned char>(directoryEntry->d_name[0]))) {
+      const int         processId   = std::stoi(directoryEntry->d_name);
+      const std::string processName = readProcessCommName(processId);
+      
+      // Ensure the process has not vanished (valid non-empty name)
+      if (!processName.empty()) {
+        const auto totalProcessTicks = readProcessCpuTicks(processId);
+        const float cpuUsagePercentage = calculateCpuPercentage(totalProcessTicks, systemUptimeSeconds, clockTicksPerSecond);
+        const std::size_t residentMemoryKb = readProcessVmRssKb(processId);
+
+        processListResult.push_back({
+          processId,
+          processName,
+          cpuUsagePercentage,
+          residentMemoryKb
+        });
+      }
+    }
   }
  
-  closedir(proc);
-  return result;
+  closedir(procDirectory);
+  return processListResult;
 }
 
-// MetricsSample LinuxSystemMonitor::sampleMetrics() {
-//     // Implement metrics sampling logic here
-//     return MetricsSample{};
-// }
 std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
     // Implement shell command execution logic here
     (void) cmd; // not used yed

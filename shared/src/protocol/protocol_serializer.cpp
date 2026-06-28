@@ -293,3 +293,20 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
 
   return finalList;
 }
+
+std::vector<std::uint8_t> ProtocolSerializer::serializeFrame(
+    const Frame& frame) {
+  if (frame.payload.size() > MAX_VALUE_INT16) {
+    throw InvalidSize("payload", std::to_string(frame.payload.size()));
+  }
+
+  const std::vector<std::uint8_t> headerBytes =
+      ProtocolSerializer::serializeHeader(frame.header);
+
+  std::vector<uint8_t> frameBytes;
+  frameBytes.reserve(headerBytes.size() + frame.payload.size());
+  frameBytes.insert(frameBytes.end(), headerBytes.begin(), headerBytes.end());
+  frameBytes.insert(frameBytes.end(), frame.payload.begin(),
+                    frame.payload.end());
+  return frameBytes;
+}

@@ -32,6 +32,9 @@ class ProtocolSerializer {
 
   static std::vector<std::uint8_t> serializeProcessInfoList(
       const std::vector<ProcessInfo>& infos);
+
+  static std::vector<std::uint8_t> serializeFrame(const Frame& frame);
+  
   static inline std::vector<std::uint8_t> toBytes(const std::string& s) {
     return std::vector<std::uint8_t>(s.begin(), s.end());
   }

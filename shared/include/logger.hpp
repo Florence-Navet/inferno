@@ -1,14 +1,10 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
 
-#include <string>
 #include <cstdint>
+#include <string>
 
-enum class Level : std::uint8_t {
-  INFO,
-  WARN,
-  ERROR
-};
+enum class Level : std::uint8_t { INFO, WARN, ERROR };
 
 class Logger {
  private:
@@ -21,6 +17,9 @@ class Logger {
   Logger() = delete;
   Logger(const Logger&) = delete;
   Logger& operator=(const Logger&) = delete;
+  // Move constructor so emplace into a map works
+  Logger(Logger&&) = default;
+  Logger& operator=(Logger&&) = default;
 
   void info(const std::string& what) const;
   void warn(const std::string& what) const;

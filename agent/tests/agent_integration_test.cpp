@@ -74,8 +74,9 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
   cmd.type = CommandType::OS_INFO;
   cmd.data = "";
   const auto cmdPayload = ProtocolSerializer::serializeCommandPayload(cmd);
-  ASSERT_TRUE(
-      serverSession.send(makeRawFrame(MessageType::COMMAND, cmdPayload)).ok());
+  ASSERT_NO_THROW(
+      serverSession.sendFrame(makeFrame(MessageType::COMMAND, cmdPayload))
+    );
 
   // ── Read RESPONSE ─────────────────────────────────────────
   serverSession.receiveIntoBuffer();
@@ -93,7 +94,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
           "hello world from agent"));  // TODO not a string anymore, byte vector
 
   // ── Send DISCONNECT — agent must close cleanly ────────────
-  ASSERT_TRUE(serverSession.send(makeRawFrame(MessageType::DISCONNECT)).ok());
+  ASSERT_NO_THROW(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)));
 
   agentThread.join();
   EXPECT_TRUE(agentExited);
@@ -146,8 +147,8 @@ TEST(AgentIntegration,
   cmd.type = CommandType::RUNNING_PROCESSES;
   cmd.data = "";
   const auto cmdPayload = ProtocolSerializer::serializeCommandPayload(cmd);
-  ASSERT_TRUE(
-      serverSession.send(makeRawFrame(MessageType::COMMAND, cmdPayload)).ok());
+  ASSERT_NO_THROW(
+      serverSession.sendFrame(makeFrame(MessageType::COMMAND, cmdPayload)));
 
   serverSession.receiveIntoBuffer();
   std::optional<Frame> responseFrame = serverSession.tryExtractFrame();
@@ -167,7 +168,8 @@ TEST(AgentIntegration,
   EXPECT_EQ(processList[1].pid, 1002u);
   EXPECT_EQ(processList[1].name, "proc-b");
 
-  ASSERT_TRUE(serverSession.send(makeRawFrame(MessageType::DISCONNECT)).ok());
+  // ASSERT_TRUE(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)).ok());
+   ASSERT_NO_THROW(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)));
 
   agentThread.join();
   EXPECT_TRUE(agentExited);

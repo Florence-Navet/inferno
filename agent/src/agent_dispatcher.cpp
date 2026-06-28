@@ -101,7 +101,8 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
       ProtocolHelper::createHeader(MessageType::REGISTER, registerPayload),
       registerPayload};
 
-  sendFrame(session, frame);
+  // sendFrame(session, frame);
+  session.sendFrame(frame);
   session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
   std::ostringstream what;
@@ -126,5 +127,6 @@ void AgentDispatcher::sendResponse(AgentSession& session, std::uint16_t id,
   Frame frame = {
       ProtocolHelper::createHeader(MessageType::RESPONSE, responsePayload),
       responsePayload};
-  sendFrame(session, frame);
+  // sendFrame(session, frame);
+  session.sendFrame(frame);
 }

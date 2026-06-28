@@ -1,8 +1,15 @@
 #include "agent_session.hpp"
 
+#include <sstream>
+
+#include "exception/socket_exception.hpp"
 #include "protocol/protocol_helper.hpp"
-#include "socket/tls_socket_factory.hpp"
+#include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
+#include "socket/tls_socket_factory.hpp"
+
+
+// AgentSession::AgentSession() :  {}
 
 std::optional<Frame> AgentSession::tryExtractFrame() {
   if (!header_ && buffer_.size() >= LPTF_HEADER_SIZE) {
@@ -42,12 +49,10 @@ void AgentSession::close() {
 }
 
 bool AgentSession::connect(const std::string& host, std::uint16_t port) {
-    return socket_ && socket_->connect(host, port);
+  return socket_ && socket_->connect(host, port);
 }
 
-int AgentSession::getFd() const {
-    return socket_ ? socket_->getFd() : -1;
-}
+int AgentSession::getFd() const { return socket_ ? socket_->getFd() : -1; }
 
 SocketResult AgentSession::send(const std::vector<std::uint8_t>& bytes) {
   return socket_->send(bytes);
@@ -92,4 +97,37 @@ SocketResult AgentSession::receiveIntoBuffer() {
 // Used for test only, create content inside buffer_
 void AgentSession::appendToBuffer(const std::vector<std::uint8_t>& bytes) {
   buffer_.insert(buffer_.end(), bytes.begin(), bytes.end());
+}
+
+void AgentSession::sendFrame(const Frame& frame) {
+  // LOG
+  std::ostringstream what;
+
+  std::vector<std::uint8_t> frameBytes =
+      ProtocolSerializer::serializeFrame(frame);
+  what << " sending " << ProtocolHelper::messageTypeToString(frame.header.type)
+       << " header+payload bytes=" << (LPTF_HEADER_SIZE + frame.payload.size());
+  logger_.info(what.str());
+
+  // Send frame
+  const SocketResult result = send(frameBytes);
+
+  if (!result.ok() ||
+      static_cast<std::size_t>(result.bytesTransferred) != frameBytes.size()) {
+    std::ostringstream what;
+    what << "send header failed type="
+         << ProtocolHelper::messageTypeToString(frame.header.type)
+         << " sent=" << result.bytesTransferred
+         << " expected=" << frameBytes.size()
+         << " status=" << static_cast<int>(result.error);
+
+    logger_.error(what.str());
+    throw SendFailure(ProtocolHelper::messageTypeToString(frame.header.type));
+  }
+
+  what.str("");
+  what.clear();
+  what << "end ok type="
+       << ProtocolHelper::messageTypeToString(frame.header.type);
+  logger_.info(what.str());
 }

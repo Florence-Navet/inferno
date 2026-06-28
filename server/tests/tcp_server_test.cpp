@@ -9,10 +9,11 @@
 #include <thread>
 
 #include "agent_session.hpp"
-#include "helpers_test.hpp"
+#include "builders/frame_builder.hpp"
+#include "fixtures/common.hpp"
+#include "fixtures/ports.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "socket/socket_factory.hpp"
-#include "test_constants.hpp"
 
 // ── Unit tests (no network) ───────────────────────────────────
 
@@ -21,23 +22,23 @@ TEST(TcpServerUnit,
   // Raw socket intentional: we're testing that TcpServer detects a port
   // conflict that was created outside the codebase.
   sockaddr_in address{};
-  address.sin_family      = AF_INET;
+  address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port        = htons(TestConstants::TCP_SERVER_OCCUPIED_PORT);
+  address.sin_port = htons(Ports::TcpServer::OCCUPIED_PORT);
   int occupier = ::socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_NE(occupier, -1);
-  ASSERT_EQ(::bind(occupier,
-                   reinterpret_cast<sockaddr*>(&address),
-                   sizeof(address)), 0);
+  ASSERT_EQ(
+      ::bind(occupier, reinterpret_cast<sockaddr*>(&address), sizeof(address)),
+      0);
 
-  TcpServer server(TestConstants::TCP_SERVER_OCCUPIED_PORT);
+  TcpServer server(Ports::TcpServer::OCCUPIED_PORT);
   EXPECT_FALSE(server.start());
   ::close(occupier);
 }
 
 TEST(TcpServerUnit,
      should_return_nullptr_when_acceptAgent_called_before_start) {
-  TcpServer server(TestConstants::TCP_SERVER_NOT_STARTED_PORT);
+  TcpServer server(Ports::TcpServer::NOT_STARTED_PORT);
   EXPECT_EQ(server.acceptAgent(), nullptr);
 }
 
@@ -45,20 +46,19 @@ TEST(TcpServerUnit,
 
 TEST(TcpServerIntegration,
      should_return_true_when_start_is_called_on_available_port) {
-  TcpServer server(TestConstants::TCP_SERVER_AVAILABLE_PORT);
+  TcpServer server(Ports::TcpServer::AVAILABLE_PORT);
   EXPECT_TRUE(server.start());
 }
 
 TEST(TcpServerIntegration,
      should_return_false_when_start_is_called_a_second_time) {
-  TcpServer server(TestConstants::TCP_SERVER_DOUBLE_START_PORT);
+  TcpServer server(Ports::TcpServer::DOUBLE_START_PORT);
   server.start();
   EXPECT_FALSE(server.start());
 }
 
-TEST(TcpServerIntegration,
-     should_return_valid_socket_when_agent_connects) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_AGENT_CONNECT_PORT;
+TEST(TcpServerIntegration, should_return_valid_socket_when_agent_connects) {
+  const std::uint16_t port = Ports::TcpServer::AGENT_CONNECT_PORT;
   TcpServer server(port);
   server.start();
 
@@ -69,7 +69,7 @@ TEST(TcpServerIntegration,
     serverReadyFuture.wait();
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket) {
-      agentSocket->connect("127.0.0.1", port);
+      agentSocket->connect(Common::SERVER_HOST, port);
     }
   });
 
@@ -83,14 +83,15 @@ TEST(TcpServerIntegration,
 
 TEST(TcpServerIntegration,
      should_receive_and_echo_frame_sent_by_connected_agent) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_ECHO_PORT;
+  const std::uint16_t port = Ports::TcpServer::ECHO_PORT;
   TcpServer server(port);
-  server.start();               // setup
+  server.start();  // setup
 
   std::promise<void> serverReady;
   std::shared_future<void> serverReadyFuture = serverReady.get_future().share();
   std::promise<std::optional<ResponsePayload>> responsePromise;
-  std::future<std::optional<ResponsePayload>> responseFuture = responsePromise.get_future();
+  std::future<std::optional<ResponsePayload>> responseFuture =
+      responsePromise.get_future();
 
   // ── Agent thread ──────────────────────────────────────────
   std::thread agentThread([&] {
@@ -98,19 +99,33 @@ TEST(TcpServerIntegration,
     std::optional<ResponsePayload> response;
 
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
-    if (agentSocket && agentSocket->connect("127.0.0.1", port)) {
+    if (agentSocket && agentSocket->connect(Common::SERVER_HOST, port)) {
       AgentSession agentSession(std::move(agentSocket));
 
       // Send REGISTER using the shared helper
-      const auto registerFrame = makeRawFrame(MessageType::REGISTER,
-                                              makeRegisterPayload());
-      if (agentSession.send(registerFrame).ok()) {
+      // const auto registerFrame =
+      //     makeRawFrame(MessageType::REGISTER,
+      //     FrameBuilder::makeRegisterPayload());
+      try {
+        Frame frame = FrameBuilder::makeFrame(
+            MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+        agentSession.sendFrame(frame);
+        // send succeeded, continue with the rest
         agentSession.receiveIntoBuffer();
-        std::optional<Frame> frame = agentSession.tryExtractFrame();
-        if (frame && frame->header.type == MessageType::RESPONSE) {
-          response = ProtocolParser::parseResponsePayload(frame->payload);
+        std::optional<Frame> received = agentSession.tryExtractFrame();
+        if (received && received->header.type == MessageType::RESPONSE) {
+          response = ProtocolParser::parseResponsePayload(received->payload);
         }
+      } catch (const std::exception&) {
+        // send failed, response stays nullopt
       }
+      // if (agentSession.send(registerFrame).ok()) {
+      //   agentSession.receiveIntoBuffer();
+      //   std::optional<Frame> frame = agentSession.tryExtractFrame();
+      //   if (frame && frame->header.type == MessageType::RESPONSE) {
+      //     response = ProtocolParser::parseResponsePayload(frame->payload);
+      //   }
+      // }
     }
     responsePromise.set_value(response);
   });
@@ -128,9 +143,9 @@ TEST(TcpServerIntegration,
   EXPECT_EQ(registerFrame->header.type, MessageType::REGISTER);
 
   // Send RESPONSE using the shared helper
-  const auto responseFrame = makeRawFrame(MessageType::RESPONSE,
-                                          makeResponsePayload(7, "pong"));
-  ASSERT_TRUE(serverSession.send(responseFrame).ok());
+  const Frame responseFrame = FrameBuilder::makeFrame(
+      MessageType::RESPONSE, FrameBuilder::makeResponsePayload(7, "pong"));
+  ASSERT_NO_THROW(serverSession.sendFrame(responseFrame));
 
   agentThread.join();
 
@@ -141,11 +156,10 @@ TEST(TcpServerIntegration,
   EXPECT_EQ(response->data, ProtocolSerializer::toBytes("pong"));
 }
 
-TEST(TcpServerIntegration,
-     should_report_loopback_address_for_connected_agent) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_REMOTE_ADDR_PORT;
+TEST(TcpServerIntegration, should_report_loopback_address_for_connected_agent) {
+  const std::uint16_t port = Ports::TcpServer::REMOTE_ADDR_PORT;
   TcpServer server(port);
-  server.start();               // setup
+  server.start();  // setup
 
   std::promise<void> serverReady;
   std::shared_future<void> serverReadyFuture = serverReady.get_future().share();
@@ -156,15 +170,16 @@ TEST(TcpServerIntegration,
     serverReadyFuture.wait();
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket) {
-      agentSocket->connect("127.0.0.1", port);
-      serverDoneFuture.wait();  // keep socket alive until server has read the address
+      agentSocket->connect(Common::SERVER_HOST, port);
+      serverDoneFuture
+          .wait();  // keep socket alive until server has read the address
     }
   });
 
   serverReady.set_value();
   auto accepted = server.acceptAgent();
   ASSERT_NE(accepted, nullptr);
-  EXPECT_EQ(accepted->remoteAddress(), "127.0.0.1");
+  EXPECT_EQ(accepted->remoteAddress(), Common::SERVER_HOST);
   EXPECT_GT(accepted->remotePort(), 0);
 
   serverDone.set_value();

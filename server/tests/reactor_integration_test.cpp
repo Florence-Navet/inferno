@@ -5,14 +5,15 @@
 #include <thread>
 
 #include "agent_session.hpp"
-#include "helpers_test.hpp"
+#include "builders/frame_builder.hpp"
+#include "fixtures/common.hpp"
+#include "fixtures/ports.hpp"
 #include "poller/epoller.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
 #include "socket/socket_factory.hpp"
 #include "tcp_server.hpp"
-#include "test_constants.hpp"
 
 #if !defined(__linux__)
 
@@ -46,7 +47,7 @@ std::thread startReactorThread(TcpServer& server, Reactor& reactor,
 
 // ① Happy path — agent connects and sends REGISTER.
 TEST(ReactorIntegration, should_accept_register_without_error) {
-  const std::uint16_t port = TestConstants::REACTOR_HAPPY_PATH_PORT;
+  const std::uint16_t port = Ports::Reactor::HAPPY_PATH_PORT;
   TcpServer server(port);
   Epoller epoller;
   ServerDispatcher dispatcher;
@@ -57,10 +58,10 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
   reactorReady.get_future().wait();
 
   auto socket = SocketFactory::createTCP();
-  ASSERT_TRUE(socket->connect("127.0.0.1", port));
+  ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
 
-  const auto registerFrame =
-      makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
+  const auto registerFrame = FrameBuilder::makeRawFrame(
+      MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
   EXPECT_TRUE(socket->send(registerFrame).ok());
 
   reactor.stop();
@@ -68,9 +69,8 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
 }
 
 // ② Protocol enforcement — agent sends COMMAND before REGISTER → ERROR back.
-TEST(ReactorIntegration,
-     should_send_error_when_first_message_is_not_register) {
-  const std::uint16_t port = TestConstants::REACTOR_INVALID_FIRST_MESSAGE_PORT;
+TEST(ReactorIntegration, should_send_error_when_first_message_is_not_register) {
+  const std::uint16_t port = Ports::Reactor::INVALID_FIRST_MESSAGE_PORT;
   TcpServer server(port);
   Epoller epoller;
   ServerDispatcher dispatcher;
@@ -81,9 +81,9 @@ TEST(ReactorIntegration,
   reactorReady.get_future().wait();
 
   auto socket = SocketFactory::createTCP();
-  ASSERT_TRUE(socket->connect("127.0.0.1", port));
+  ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
 
-  const auto commandFrame = makeRawFrame(MessageType::COMMAND);
+  const auto commandFrame = FrameBuilder::makeRawFrame(MessageType::COMMAND);
   ASSERT_TRUE(socket->send(commandFrame).ok());
 
   AgentSession session(std::move(socket));
@@ -101,9 +101,8 @@ TEST(ReactorIntegration,
 // The second connection is made without sleeping: the OS queues it in the
 // backlog immediately after the first socket closes, and the reactor drains
 // both events (disconnect + new connection) on the next epoll_wait.
-TEST(ReactorIntegration,
-     should_keep_serving_after_first_agent_disconnects) {
-  const std::uint16_t port = TestConstants::REACTOR_DISCONNECT_PORT;
+TEST(ReactorIntegration, should_keep_serving_after_first_agent_disconnects) {
+  const std::uint16_t port = Ports::Reactor::DISCONNECT_PORT;
   TcpServer server(port);
   Epoller epoller;
   ServerDispatcher dispatcher;
@@ -116,18 +115,18 @@ TEST(ReactorIntegration,
   // First agent — scope exit closes the socket, reactor sees EPOLLHUP
   {
     auto socket = SocketFactory::createTCP();
-    ASSERT_TRUE(socket->connect("127.0.0.1", port));
-    const auto registerFrame =
-        makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
+    ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
+    const auto registerFrame = FrameBuilder::makeRawFrame(
+        MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 
   // Second agent — connects immediately; OS queues it in the backlog
   {
     auto socket = SocketFactory::createTCP();
-    ASSERT_TRUE(socket->connect("127.0.0.1", port));
-    const auto registerFrame =
-        makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
+    ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
+    const auto registerFrame = FrameBuilder::makeRawFrame(
+        MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 

@@ -22,9 +22,9 @@ services:
   #   restart: unless-stopped
 
   # ============================================
-  # C++ Shared library (Development)
+  # C++ common library (Development)
   # ============================================
-  shared:
+  common:
     profiles: [agent, server]
     attach: true
     build:
@@ -34,18 +34,21 @@ services:
     volumes:
       
       - type: bind
-        source: ./shared
-        target: /app/shared
+        source: ./common
+        target: /app/common
       - type: bind
         source: ./inferno.sh
         target: /app/inferno.sh
       - type: volume
-        source: shared-build
-        target: /app/shared/build
+        source: common-build
+        target: /app/common/build
       - type: bind
         source: ./certs
         target: /app/certs
-    command: ["bash", "./inferno.sh", "test", "shared"]
+      - type: bind
+        source: ./test_support
+        target: /app/test_support
+    command: ["bash", "./inferno.sh", "test", "common"]
     # command: ["bash"]
 
   # ============================================
@@ -56,7 +59,7 @@ services:
     attach: true
     depends_on:
     #   - inferno-db
-      shared:
+      common:
         condition: service_completed_successfully
     build:
       context: .
@@ -67,20 +70,23 @@ services:
         source: ./server
         target: /app/server
       - type: bind
-        source: ./shared
-        target: /app/shared
+        source: ./common
+        target: /app/common
       - type: bind
         source: ./inferno.sh
         target: /app/inferno.sh
       - type: volume
-        source: shared-build
-        target: /app/shared/build
+        source: common-build
+        target: /app/common/build
       - type: volume
         source: server-build
         target: /app/server/build
       - type: bind
         source: ./certs
         target: /app/certs
+      - type: bind
+        source: ./test_support
+        target: /app/test_support
     command: ["bash", "./inferno.sh", "test", "server"]
 
   # ============================================
@@ -122,7 +128,7 @@ services:
     attach: true
     profiles: [agent]
     depends_on:
-      shared:
+      common:
         condition: service_completed_successfully
     build:
       context: .
@@ -132,21 +138,25 @@ services:
         source: ./agent
         target: /app/agent
       - type: bind
-        source: ./shared
-        target: /app/shared
+        source: ./common
+        target: /app/common
       - type: bind
         source: ./inferno.sh
         target: /app/inferno.sh
       - type: volume
-        source: shared-build
-        target: /app/shared/build
+        source: common-build
+        target: /app/common/build
       - type: volume
         source: agent-build
         target: /app/agent/build
       - type: bind
         source: ./certs
         target: /app/certs
+      - type: bind
+        source: ./test_support
+        target: /app/test_support
     command: ["bash", "./inferno.sh", "test", "agent"]
+    # command : ["bash"]
 
 
   # ============================================
@@ -175,6 +185,6 @@ services:
 
 volumes:
   # inferno-data:
-  shared-build:
+  common-build:
   server-build:
   agent-build:

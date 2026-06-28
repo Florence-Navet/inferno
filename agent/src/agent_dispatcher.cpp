@@ -25,6 +25,45 @@ void AgentDispatcher::handleFrame(AgentSession& session, const Frame& frame) {
                        "Unexpected message type for agent");
   }
 }
+
+void AgentDispatcher::startMetrics(AgentSession& session,
+                                   const CommandPayload& command) {
+  logger_.info("received COMMAND START_METRICS id=" +
+               std::to_string(command.id));
+  metricsController_->start(session);
+  return sendResponse(session, command.id, ResponseStatus::OK, {});
+}
+
+void AgentDispatcher::stopMetrics(AgentSession& session,
+                                  const CommandPayload& command) {
+  logger_.info("received COMMAND STOP_METRICS id=" +
+               std::to_string(command.id));
+  metricsController_->stop();
+  return sendResponse(session, command.id, ResponseStatus::OK, {});
+}
+
+void AgentDispatcher::osInfo(AgentSession& session,
+                             const CommandPayload& command) {
+  std::ostringstream what;
+  what << "received COMMAND OS_INFO id=" << command.id;
+  logger_.info(what.str());
+  return sendResponse(session, command.id, ResponseStatus::OK,
+                      ProtocolSerializer::toBytes("hello world from agent"));
+}
+
+void AgentDispatcher::processesList(AgentSession& session,
+                                    const CommandPayload& command) {
+  std::ostringstream what;
+  what << "received COMMAND RUNNING_PROCESSES id=" << command.id;
+  logger_.info(what.str());
+
+  const std::vector<ProcessInfo> processes = monitor_.getProcessList();
+  const std::vector<std::uint8_t> processBytes =
+      ProtocolSerializer::serializeProcessInfoList(processes);
+
+  return sendResponse(session, command.id, ResponseStatus::OK, processBytes);
+}
+
 void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
   std::ostringstream what;
   try {
@@ -53,29 +92,30 @@ void AgentDispatcher::onCommand(AgentSession& session,
   try {
     const CommandPayload cmd = ProtocolParser::parseCommandPayload(payload);
 
-    if (cmd.type == CommandType::OS_INFO) {
-      std::ostringstream what;
-      what << "received COMMAND OS_INFO id=" << cmd.id;
-      logger_.info(what.str());
-      return sendResponse(
-          session, cmd.id, ResponseStatus::OK,
-          ProtocolSerializer::toBytes("hello world from agent"));
+    switch (cmd.type) {
+      case CommandType::OS_INFO:
+        return osInfo(session, cmd);
+      case CommandType::RUNNING_PROCESSES:
+        return processesList(session, cmd);
+      case CommandType::START_METRICS:
+        return startMetrics(session, cmd);
+      case CommandType::STOP_METRICS:
+        return stopMetrics(session, cmd);
+      default:
+        return sendError(session, ErrorType::UNKNOWN_COMMAND,
+                         "Command not implemented in minimal agent");
     }
 
-    if (cmd.type == CommandType::RUNNING_PROCESSES) {
-      std::ostringstream what;
-      what << "received COMMAND RUNNING_PROCESSES id=" << cmd.id;
-      logger_.info(what.str());
+    // if (cmd.type == CommandType::OS_INFO) {
+    //   return osInfo(session, cmd);
+    // }
 
-      const std::vector<ProcessInfo> processes = monitor_.getProcessList();
-      const std::vector<std::uint8_t> processBytes =
-          ProtocolSerializer::serializeProcessInfoList(processes);
+    // if (cmd.type == CommandType::RUNNING_PROCESSES) {
+    //   return processesList(session, cmd);
+    // }
 
-      return sendResponse(session, cmd.id, ResponseStatus::OK, processBytes);
-    }
-
-    return sendError(session, ErrorType::UNKNOWN_COMMAND,
-                     "Command not implemented in minimal agent");
+    // return sendError(session, ErrorType::UNKNOWN_COMMAND,
+    //                  "Command not implemented in minimal agent");
   } catch (const std::exception& ex) {
     std::ostringstream what;
     what << "invalid COMMAND payload: " << ex.what();
@@ -109,6 +149,11 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   what << "at the end of sendRegister";
   logger_.info(what.str());
   // session.registered_ = StatusRegister::SENT;
+}
+
+void AgentDispatcher::setMetricsController(
+    std::shared_ptr<MetricsController> controller) {
+  metricsController_ = controller;
 }
 
 void AgentDispatcher::sendResponse(AgentSession& session, std::uint16_t id,

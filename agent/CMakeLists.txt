@@ -10,21 +10,21 @@ find_package(OpenSSL REQUIRED)
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
 # When built in isolation (inside the agent container), this pulls it directly.
-if(NOT TARGET shared_lib)
-    set(_shared_lib "${CMAKE_CURRENT_SOURCE_DIR}/../shared/build/libshared_lib.a")
-    if(EXISTS "${_shared_lib}")
-        add_library(shared_lib STATIC IMPORTED GLOBAL)
-        set_target_properties(shared_lib PROPERTIES
-            IMPORTED_LOCATION "${_shared_lib}"
+if(NOT TARGET common_lib)
+    set(_common_lib "${CMAKE_CURRENT_SOURCE_DIR}/../common/build/libcommon_lib.a")
+    if(EXISTS "${_common_lib}")
+        add_library(common_lib STATIC IMPORTED GLOBAL)
+        set_target_properties(common_lib PROPERTIES
+            IMPORTED_LOCATION "${_common_lib}"
             INTERFACE_LINK_LIBRARIES "OpenSSL::SSL;OpenSSL::Crypto"
         )
-        target_include_directories(shared_lib INTERFACE
-            "${CMAKE_CURRENT_SOURCE_DIR}/../shared/include"
+        target_include_directories(common_lib INTERFACE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../common/include"
         )
     else()
         add_subdirectory(
-            ${CMAKE_CURRENT_SOURCE_DIR}/../shared
-            ${CMAKE_BINARY_DIR}/shared
+            ${CMAKE_CURRENT_SOURCE_DIR}/../common
+            ${CMAKE_BINARY_DIR}/common
         )
     endif()
 endif()
@@ -47,9 +47,9 @@ target_include_directories(agent_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link shared_lib as PUBLIC so both agent and tests inherit shared includes.
+# Link common_lib as PUBLIC so both agent and tests inherit common includes.
 target_link_libraries(agent_lib PUBLIC
-    shared_lib
+    common_lib
 )
 
 target_compile_options(agent_lib PRIVATE
@@ -88,7 +88,7 @@ add_executable(agent_tests
 
 target_include_directories(agent_tests PRIVATE
 ${CMAKE_CURRENT_SOURCE_DIR}/tests
-${CMAKE_CURRENT_SOURCE_DIR}/../shared/tests
+${CMAKE_CURRENT_SOURCE_DIR}/../common/tests
 )
 
 target_link_libraries(agent_tests PRIVATE

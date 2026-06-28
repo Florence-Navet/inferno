@@ -1,5 +1,5 @@
-#ifndef TEST_TCP_SERVER_HPP
-#define TEST_TCP_SERVER_HPP
+#ifndef STUB_TEST_TCP_SERVER_HPP
+#define STUB_TEST_TCP_SERVER_HPP
 
 #include <cstdint>
 #include <memory>
@@ -10,7 +10,7 @@
 // TestTcpServer — a minimal listen/accept wrapper for integration tests.
 //
 // Depends only on ISocket and SocketFactory, both in shared/.
-// Lives in shared/tests/ so both agent/tests and server/tests can use it.
+// Lives in test_support/stubs/ — available to all modules.
 //
 // It is NOT TcpServer — it has no logger, no reactor, no dispatcher.
 // Its only job: bind a port, accept one connection, hand back the ISocket.

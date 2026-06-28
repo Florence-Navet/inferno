@@ -9,7 +9,8 @@
 // #include "protocol/protocol_serializer.hpp"
 // #include "protocol/protocol_test_helpers.hpp"
 
-// ResponsePayload input makeResponsePayload(9, ResponseStatus::OK, 2, 1,
+// ResponsePayload input FrameBuilder::makeResponsePayload(9,
+// ResponseStatus::OK, 2, 1,
 //                                           "chunk");
 
 // TEST(ProtocolSerializerResponse,
@@ -18,7 +19,8 @@
 //   //   const ResponsePayload input{9, ResponseStatus::OK, 2, 1,
 //   //   {"c","h","u","n","k"}};
 //   //   const ResponsePayload input =
-//   //       makeResponsePayload(9, ResponseStatus::OK, 2, 1, "chunk")
+//   //       FrameBuilder::makeResponsePayload(9, ResponseStatus::OK, 2, 1,
+//   "chunk")
 //   //   std::uint16_t id, const std::string& data, std::uint8_t totalChunks =
 //   //   1,
 //   //     std::uint8_t chunkIndex =
@@ -40,11 +42,13 @@
 //      should_throw_InvalidFieldValue_when_status_is_unknown) {
 //   // Arrange
 //   //   const ResponsePayload input{
-//   //       9, static_cast<ResponseStatus>(TestHelpers::INVALID_ENUM_VALUE), 1,
+//   //       9, static_cast<ResponseStatus>(TestHelpers::INVALID_ENUM_VALUE),
+//   1,
 //   //       0,
 //   //       {""}};
 
-//   input.status = static_cast<ResponseStatus>(TestHelpers::INVALID_ENUM_VALUE);
+//   input.status =
+//   static_cast<ResponseStatus>(TestHelpers::INVALID_ENUM_VALUE);
 
 //   // Act & Assert
 //   EXPECT_THROW(ProtocolSerializer::serializeResponsePayload(input),

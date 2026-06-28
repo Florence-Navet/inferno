@@ -6,13 +6,14 @@
 
 #include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
-#include "helpers_test.hpp"
+#include "builders/frame_builder.hpp"
+#include "fixtures/common.hpp"
+#include "fixtures/ports.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
+#include "stubs/test_tcp_server.hpp"
 #include "system_monitor/fake_system_monitor.hpp"
-#include "test_constants.hpp"
-#include "test_tcp_server.hpp"
 
 // Full cycle: REGISTER → COMMAND(OS_INFO) → RESPONSE → DISCONNECT.
 //
@@ -24,7 +25,7 @@
 //   main thread  — server role: accept, read frames, send commands
 //   agent thread — agent role:  connect, register, dispatch
 TEST(AgentIntegration, should_register_respond_and_disconnect) {
-  const std::uint16_t port = TestConstants::AGENT_INTEGRATION_PORT;
+  const std::uint16_t port = Ports::Agent::INTEGRATION_PORT;
 
   TestTcpServer server(port);
   ASSERT_TRUE(server.start());
@@ -34,7 +35,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
   // ── Agent thread — real agent code, untouched ─────────────
   std::thread agentThread([&] {
     auto socket = SocketFactory::createTCP();
-    ASSERT_TRUE(socket && socket->connect("127.0.0.1", port));
+    ASSERT_TRUE(socket && socket->connect(Common::SERVER_HOST, port));
 
     AgentSession session(std::move(socket));
     FakeSystemMonitor monitor;
@@ -74,9 +75,8 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
   cmd.type = CommandType::OS_INFO;
   cmd.data = "";
   const auto cmdPayload = ProtocolSerializer::serializeCommandPayload(cmd);
-  ASSERT_NO_THROW(
-      serverSession.sendFrame(makeFrame(MessageType::COMMAND, cmdPayload))
-    );
+  ASSERT_NO_THROW(serverSession.sendFrame(
+      FrameBuilder::makeFrame(MessageType::COMMAND, cmdPayload)));
 
   // ── Read RESPONSE ─────────────────────────────────────────
   serverSession.receiveIntoBuffer();
@@ -94,7 +94,8 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
           "hello world from agent"));  // TODO not a string anymore, byte vector
 
   // ── Send DISCONNECT — agent must close cleanly ────────────
-  ASSERT_NO_THROW(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)));
+  ASSERT_NO_THROW(serverSession.sendFrame(
+      FrameBuilder::makeFrame(MessageType::DISCONNECT)));
 
   agentThread.join();
   EXPECT_TRUE(agentExited);
@@ -102,7 +103,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
 
 TEST(AgentIntegration,
      should_send_running_processes_and_server_should_parse_them) {
-  const std::uint16_t port = TestConstants::AGENT_INTEGRATION_PORT + 1;
+  const std::uint16_t port = Ports::Agent::INTEGRATION_PORT + 1;
 
   TestTcpServer server(port);
   ASSERT_TRUE(server.start());
@@ -111,7 +112,7 @@ TEST(AgentIntegration,
 
   std::thread agentThread([&] {
     auto socket = SocketFactory::createTCP();
-    ASSERT_TRUE(socket && socket->connect("127.0.0.1", port));
+    ASSERT_TRUE(socket && socket->connect(Common::SERVER_HOST, port));
 
     AgentSession session(std::move(socket));
     FakeSystemMonitor monitor;
@@ -147,8 +148,8 @@ TEST(AgentIntegration,
   cmd.type = CommandType::RUNNING_PROCESSES;
   cmd.data = "";
   const auto cmdPayload = ProtocolSerializer::serializeCommandPayload(cmd);
-  ASSERT_NO_THROW(
-      serverSession.sendFrame(makeFrame(MessageType::COMMAND, cmdPayload)));
+  ASSERT_NO_THROW(serverSession.sendFrame(
+      FrameBuilder::makeFrame(MessageType::COMMAND, cmdPayload)));
 
   serverSession.receiveIntoBuffer();
   std::optional<Frame> responseFrame = serverSession.tryExtractFrame();
@@ -168,8 +169,9 @@ TEST(AgentIntegration,
   EXPECT_EQ(processList[1].pid, 1002u);
   EXPECT_EQ(processList[1].name, "proc-b");
 
-  // ASSERT_TRUE(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)).ok());
-   ASSERT_NO_THROW(serverSession.sendFrame(makeFrame(MessageType::DISCONNECT)));
+  // ASSERT_TRUE(serverSession.sendFrame(FrameBuilder::makeFrame(MessageType::DISCONNECT)).ok());
+  ASSERT_NO_THROW(serverSession.sendFrame(
+      FrameBuilder::makeFrame(MessageType::DISCONNECT)));
 
   agentThread.join();
   EXPECT_TRUE(agentExited);

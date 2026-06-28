@@ -3,16 +3,15 @@
 #include <string>
 #include <vector>
 
+#include "builders/process_builder.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
-#include "test_constants.hpp"
-#include "helpers_test.hpp"
 
 TEST(ProtocolRoundTrip,
      should_preserve_process_info_through_serialize_then_parse) {
   // Arrange
-  ProcessInfo info = createProcessInfo();
+  ProcessInfo info = ProcessBuilder::createProcessInfo();
 
   // Act
   const std::vector<std::uint8_t> bytes =
@@ -29,12 +28,13 @@ TEST(ProtocolRoundTrip,
 TEST(ProtocolRoundTrip,
      should_preserve_process_info_list_through_serialize_then_parse) {
   // Arrange
-  std::vector<ProcessInfo> infos = createProcessInfoList();
+  std::vector<ProcessInfo> infos = ProcessBuilder::createProcessInfoList();
 
   // Act
   const std::vector<std::uint8_t> bytes =
       ProtocolSerializer::serializeProcessInfoList(infos);
-  const std::vector<ProcessInfo> result = ProtocolParser::parseProcessInfoList(bytes);
+  const std::vector<ProcessInfo> result =
+      ProtocolParser::parseProcessInfoList(bytes);
 
   // Assert
   EXPECT_EQ(result.size(), infos.size());

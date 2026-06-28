@@ -8,15 +8,17 @@
 // #include "protocol/protocol_serializer.hpp"
 // #include "test_constants.hpp"
 
-// ResponsePayload responsePayloadInput makeResponsePayload(9, ResponseStatus::OK, 3, 1,
+// ResponsePayload responsePayloadInput FrameBuilder::makeResponsePayload(9,
+// ResponseStatus::OK, 3, 1,
 //                                           "chunk");
 
 // TEST(ProtocolRoundTrip,
 //      should_preserve_register_payload_through_serialize_then_parse) {
 //   // Arrange
 //   RegisterPayload input{
-//       OSType::LINUX, ArchType::X64, TestConstants::TEST_HOSTNAME_STR,
-//       TestConstants::TEST_OS_VERSION_STR, TestConstants::TEST_CURRENT_USER_STR};
+//       OSType::LINUX, ArchType::X64, Protocol::TEST_HOSTNAME_STR,
+//       TestConstants::TEST_OS_VERSION_STR,
+//       TestConstants::TEST_CURRENT_USER_STR};
 
 //   // Act
 //   const std::vector<std::uint8_t> bytes =

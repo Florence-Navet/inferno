@@ -5,31 +5,25 @@
 #include <thread>
 #include <vector>
 
+#include "fixtures/common.hpp"
+#include "fixtures/ports.hpp"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
-#include "test_constants.hpp"
 
 class TLSSocketIntegrationTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        signal(SIGPIPE, SIG_IGN);
-    }
+ protected:
+  void SetUp() override { signal(SIGPIPE, SIG_IGN); }
 };
 
-
-namespace {
-const std::string SERVER_CERT = "certs/server.crt";
-const std::string SERVER_KEY = "certs/server.key";
-const std::string CA_CERT = "certs/ca.crt";
-}  // namespace
-
-TEST_F(TLSSocketIntegrationTest, should_echo_message_when_both_endpoints_use_tls) {
+TEST_F(TLSSocketIntegrationTest,
+       should_echo_message_when_both_endpoints_use_tls) {
   std::promise<void> serverReady;
   std::future<void> serverReadyFuture = serverReady.get_future();
 
   std::thread serverThread([&]() {
-    auto server = TLSSocketFactory::createServer(SERVER_CERT, SERVER_KEY);
-    server->bind(TestConstants::TLS_SOCKET_ECHO_PORT);
+    auto server =
+        TLSSocketFactory::createServer(Tls::SERVER_CERT, Tls::SERVER_KEY);
+    server->bind(Ports::Tls::ECHO_PORT);
     server->listen();
 
     serverReady.set_value();  // unblocks the client
@@ -46,9 +40,8 @@ TEST_F(TLSSocketIntegrationTest, should_echo_message_when_both_endpoints_use_tls
 
   serverReadyFuture.wait();  // client waits here until server is listening
 
-  auto client = TLSSocketFactory::createClient(CA_CERT);
-  ASSERT_TRUE(client->connect(TestConstants::SERVER_HOST,
-                              TestConstants::TLS_SOCKET_ECHO_PORT));
+  auto client = TLSSocketFactory::createClient(Tls::CA_CERT);
+  ASSERT_TRUE(client->connect(Common::SERVER_HOST, Ports::Tls::ECHO_PORT));
 
   const std::string message = "hello world";
   auto sendResult = client->send(
@@ -68,14 +61,14 @@ TEST_F(TLSSocketIntegrationTest, should_echo_message_when_both_endpoints_use_tls
 }
 
 TEST_F(TLSSocketIntegrationTest,
-     should_fail_to_connect_when_server_does_not_use_tls) {
+       should_fail_to_connect_when_server_does_not_use_tls) {
   std::promise<void> serverReady;
   std::future<void> serverReadyFuture = serverReady.get_future();
 
   std::thread serverThread([&]() {
     // plain TCP server — no TLS
     auto server = SocketFactory::createTCP();
-    server->bind(TestConstants::TLS_PLAIN_SERVER_PORT);
+    server->bind(Ports::Tls::PLAIN_SERVER_PORT);
     server->listen();
     serverReady.set_value();
     server->accept();  // accepts TCP but speaks no TLS
@@ -85,22 +78,24 @@ TEST_F(TLSSocketIntegrationTest,
 
   // TLS client tries to connect — SSL_connect will fail
   // because server sends no TLS handshake back
-  auto client = TLSSocketFactory::createClient(CA_CERT);
-  EXPECT_FALSE(client->connect(TestConstants::SERVER_HOST,
-                               TestConstants::TLS_PLAIN_SERVER_PORT));
+  auto client = TLSSocketFactory::createClient(Tls::CA_CERT);
+  EXPECT_FALSE(
+      client->connect(Common::SERVER_HOST, Ports::Tls::PLAIN_SERVER_PORT));
   client->close();
   serverThread.join();
 }
 
-TEST_F(TLSSocketIntegrationTest, should_fail_to_accept_when_client_does_not_use_tls) {
+TEST_F(TLSSocketIntegrationTest,
+       should_fail_to_accept_when_client_does_not_use_tls) {
   std::promise<void> serverReady;
   std::future<void> serverReadyFuture = serverReady.get_future();
 
   std::unique_ptr<ISocket> accepted;
 
   std::thread serverThread([&]() {
-    auto server = TLSSocketFactory::createServer(SERVER_CERT, SERVER_KEY);
-    server->bind(TestConstants::TLS_PLAIN_CLIENT_PORT);
+    auto server =
+        TLSSocketFactory::createServer(Tls::SERVER_CERT, Tls::SERVER_KEY);
+    server->bind(Ports::Tls::PLAIN_CLIENT_PORT);
     server->listen();
     serverReady.set_value();
 
@@ -112,8 +107,7 @@ TEST_F(TLSSocketIntegrationTest, should_fail_to_accept_when_client_does_not_use_
 
   // plain TCP client — connects at TCP level but speaks no TLS
   auto client = SocketFactory::createTCP();
-  client->connect(TestConstants::SERVER_HOST,
-                  TestConstants::TLS_PLAIN_CLIENT_PORT);
+  client->connect(Common::SERVER_HOST, Ports::Tls::PLAIN_CLIENT_PORT);
 
   client->close();
   serverThread.join();

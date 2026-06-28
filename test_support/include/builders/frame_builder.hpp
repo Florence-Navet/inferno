@@ -6,10 +6,10 @@
 #include <vector>
 
 #include "convert_endian.hpp"
+#include "fixtures/protocol.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_serializer.hpp"
-#include "fixtures/protocol.hpp"
 
 namespace FrameBuilder {
 inline Frame makeFrame(MessageType type,
@@ -76,6 +76,62 @@ inline std::vector<std::uint8_t> makeResponsePayload(
   p.data.assign(data.begin(), data.end());
 
   return ProtocolSerializer::serializeResponsePayload(p);
+}
+
+inline std::vector<std::uint8_t> makeRawResponsePayload(
+    std::uint16_t id, std::uint8_t rawStatus, std::uint8_t totalChunks,
+    std::uint8_t chunkIndex, std::uint16_t declaredLen,
+    const std::vector<std::uint8_t>& dataBytes = {}) {
+  std::vector<std::uint8_t> out(RESPONSE_FIXED_BYTES + dataBytes.size());
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(out, offset, id);
+  out[offset] = rawStatus;
+  offset++;
+  out[offset] = totalChunks;
+  offset++;
+  out[offset] = chunkIndex;
+  offset++;
+  ConvertEndian::writeU16BE(out, offset, declaredLen);
+  std::copy(dataBytes.begin(), dataBytes.end(),
+            out.begin() + RESPONSE_FIXED_BYTES);
+  return out;
+}
+
+inline std::vector<std::uint8_t> makeCommandPayload(
+    std::uint16_t id, std::uint8_t rawType, std::uint16_t declaredLen,
+    const std::vector<std::uint8_t>& dataBytes = {}) {
+  std::vector<std::uint8_t> out(COMMAND_FIXED_BYTES + dataBytes.size());
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(out, offset, id);           // offset advances to 2
+  out[offset] = rawType;                                // offset = 2
+  offset++;                                             // offset = 3
+  ConvertEndian::writeU16BE(out, offset, declaredLen);  // offset advances to 5
+  std::copy(dataBytes.begin(), dataBytes.end(),
+            out.begin() + COMMAND_FIXED_BYTES);
+  return out;
+}
+
+inline std::vector<std::uint8_t> makeDataPayload(
+    std::uint8_t rawSubtype, std::uint16_t declaredLen,
+    const std::vector<std::uint8_t>& dataBytes = {}) {
+  std::vector<std::uint8_t> out(DATA_FIXED_BYTES + dataBytes.size());
+  out[0] = rawSubtype;
+  std::size_t offset{1};
+  ConvertEndian::writeU16BE(out, offset, declaredLen);
+  std::copy(dataBytes.begin(), dataBytes.end(), out.begin() + DATA_FIXED_BYTES);
+  return out;
+}
+
+inline std::vector<std::uint8_t> makeErrorPayload(
+    std::uint8_t rawCode, std::uint16_t declaredLen,
+    const std::vector<std::uint8_t>& messageBytes = {}) {
+  std::vector<std::uint8_t> out(ERROR_FIXED_BYTES + messageBytes.size());
+  out[0] = rawCode;
+  std::size_t offset{1};
+  ConvertEndian::writeU16BE(out, offset, declaredLen);
+  std::copy(messageBytes.begin(), messageBytes.end(),
+            out.begin() + ERROR_FIXED_BYTES);
+  return out;
 }
 
 }  // namespace FrameBuilder

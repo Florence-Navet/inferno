@@ -1,98 +1,86 @@
-// #include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
-// #include <string>
-// #include <vector>
+#include <string>
+#include <vector>
 
-// #include "protocol/lptf_protocol.hpp"
-// #include "protocol/protocol_parser.hpp"
-// #include "protocol/protocol_serializer.hpp"
-// #include "test_constants.hpp"
+#include "builders/frame_builder.hpp"
+#include "fixtures/protocol.hpp"
+#include "protocol/lptf_protocol.hpp"
+#include "protocol/protocol_parser.hpp"
+#include "protocol/protocol_serializer.hpp"
 
-// ResponsePayload responsePayloadInput FrameBuilder::makeResponsePayload(9,
-// ResponseStatus::OK, 3, 1,
-//                                           "chunk");
+TEST(ProtocolRoundTrip,
+     should_preserve_register_payload_through_serialize_then_parse) {
+  RegisterPayload input{
+      OSType::LINUX, ArchType::X64,
+      Protocol::TEST_HOSTNAME_STR,
+      Protocol::TEST_OS_VERSION_STR,
+      Protocol::TEST_CURRENT_USER_STR};
 
-// TEST(ProtocolRoundTrip,
-//      should_preserve_register_payload_through_serialize_then_parse) {
-//   // Arrange
-//   RegisterPayload input{
-//       OSType::LINUX, ArchType::X64, Protocol::TEST_HOSTNAME_STR,
-//       TestConstants::TEST_OS_VERSION_STR,
-//       TestConstants::TEST_CURRENT_USER_STR};
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeRegisterPayload(input);
+  const RegisterPayload result = ProtocolParser::parseRegisterPayload(bytes);
 
-//   // Act
-//   const std::vector<std::uint8_t> bytes =
-//       ProtocolSerializer::serializeRegisterPayload(input);
-//   const RegisterPayload result = ProtocolParser::parseRegisterPayload(bytes);
+  EXPECT_EQ(result.os_type, input.os_type);
+  EXPECT_EQ(result.arch, input.arch);
+  EXPECT_EQ(result.hostname, input.hostname);
+  EXPECT_EQ(result.os_version, input.os_version);
+  EXPECT_EQ(result.current_user, input.current_user);
+}
 
-//   // Assert
-//   EXPECT_EQ(result.os_type, input.os_type);
-//   EXPECT_EQ(result.arch, input.arch);
-//   EXPECT_EQ(result.hostname, input.hostname);
-//   EXPECT_EQ(result.os_version, input.os_version);
-//   EXPECT_EQ(result.current_user, input.current_user);
-// }
+TEST(ProtocolRoundTrip,
+     should_preserve_command_payload_through_serialize_then_parse) {
+  CommandPayload input{42, CommandType::SHELL, "whoami"};
 
-// TEST(ProtocolRoundTrip,
-//      should_preserve_command_payload_through_serialize_then_parse) {
-//   // Arrange
-//   CommandPayload input{42, CommandType::SHELL, "whoami"};
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeCommandPayload(input);
+  const CommandPayload result = ProtocolParser::parseCommandPayload(bytes);
 
-//   // Act
-//   const std::vector<std::uint8_t> bytes =
-//       ProtocolSerializer::serializeCommandPayload(input);
-//   const CommandPayload result = ProtocolParser::parseCommandPayload(bytes);
+  EXPECT_EQ(result.id, input.id);
+  EXPECT_EQ(result.type, input.type);
+  EXPECT_EQ(result.data, input.data);
+}
 
-//   // Assert
-//   EXPECT_EQ(result.id, input.id);
-//   EXPECT_EQ(result.type, input.type);
-//   EXPECT_EQ(result.data, input.data);
-// }
+TEST(ProtocolRoundTrip,
+     should_preserve_response_payload_through_serialize_then_parse) {
+  ResponsePayload input;
+  input.id = 9;
+  input.status = ResponseStatus::OK;
+  input.total_chunks = 3;
+  input.chunk_index = 1;
+  input.data = {'c', 'h', 'u', 'n', 'k'};
 
-// TEST(ProtocolRoundTrip,
-//      should_preserve_response_payload_through_serialize_then_parse) {
-//   // Arrange
-// //   ResponsePayload input{9, ResponseStatus::OK, 3, 1, "chunk-data"};
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeResponsePayload(input);
+  const ResponsePayload result = ProtocolParser::parseResponsePayload(bytes);
 
-//   // Act
-//   const std::vector<std::uint8_t> bytes =
-//       ProtocolSerializer::serializeResponsePayload(responsePayloadInput);
-//   const ResponsePayload result = ProtocolParser::parseResponsePayload(bytes);
+  EXPECT_EQ(result.id, input.id);
+  EXPECT_EQ(result.status, input.status);
+  EXPECT_EQ(result.total_chunks, input.total_chunks);
+  EXPECT_EQ(result.chunk_index, input.chunk_index);
+  EXPECT_EQ(result.data, input.data);
+}
 
-//   // Assert
-//   EXPECT_EQ(result.id, responsePayloadInput.id);
-//   EXPECT_EQ(result.status, responsePayloadInput.status);
-//   EXPECT_EQ(result.total_chunks, responsePayloadInput.total_chunks);
-//   EXPECT_EQ(result.chunk_index, responsePayloadInput.chunk_index);
-//   EXPECT_EQ(result.data, responsePayloadInput.data);
-// }
+TEST(ProtocolRoundTrip,
+     should_preserve_data_payload_through_serialize_then_parse) {
+  DataPayload input{DataType::METRICS_SAMPLE, {'k', 'e', 'y', 's'}};
 
-// TEST(ProtocolRoundTrip,
-//      should_preserve_data_payload_through_serialize_then_parse) {
-//   // Arrange
-//   DataPayload input{DataType::KEYLOGGER, "keys"};
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeDataPayload(input);
+  const DataPayload result = ProtocolParser::parseDataPayload(bytes);
 
-//   // Act
-//   const std::vector<std::uint8_t> bytes =
-//       ProtocolSerializer::serializeDataPayload(input);
-//   const DataPayload result = ProtocolParser::parseDataPayload(bytes);
+  EXPECT_EQ(result.subtype, input.subtype);
+  EXPECT_EQ(result.data, input.data);
+}
 
-//   // Assert
-//   EXPECT_EQ(result.subtype, input.subtype);
-//   EXPECT_EQ(result.data, input.data);
-// }
+TEST(ProtocolRoundTrip,
+     should_preserve_error_payload_through_serialize_then_parse) {
+  ErrorPayload input{ErrorType::EXECUTION_FAILED, "boom"};
 
-// TEST(ProtocolRoundTrip,
-//      should_preserve_error_payload_through_serialize_then_parse) {
-//   // Arrange
-//   ErrorPayload input{ErrorType::EXECUTION_FAILED, "boom"};
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeErrorPayload(input);
+  const ErrorPayload result = ProtocolParser::parseErrorPayload(bytes);
 
-//   // Act
-//   const std::vector<std::uint8_t> bytes =
-//       ProtocolSerializer::serializeErrorPayload(input);
-//   const ErrorPayload result = ProtocolParser::parseErrorPayload(bytes);
-
-//   // Assert
-//   EXPECT_EQ(result.code, input.code);
-//   EXPECT_EQ(result.message, input.message);
-// }
+  EXPECT_EQ(result.code, input.code);
+  EXPECT_EQ(result.message, input.message);
+}

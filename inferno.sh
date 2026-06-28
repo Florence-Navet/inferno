@@ -24,7 +24,7 @@ source_dir() {
     case $1 in
         agent)  echo "$SCRIPT_DIR/agent" ;;
         server) echo "$SCRIPT_DIR/server" ;;
-        shared) echo "$SCRIPT_DIR/shared" ;;
+        common) echo "$SCRIPT_DIR/common" ;;
         all)    echo "$SCRIPT_DIR" ;;
     esac
 }
@@ -34,7 +34,7 @@ build_dir() {
     case $1 in
         agent)  echo "$SCRIPT_DIR/agent/build" ;;
         server) echo "$SCRIPT_DIR/server/build" ;;
-        shared) echo "$SCRIPT_DIR/shared/build" ;;
+        common) echo "$SCRIPT_DIR/common/build" ;;
         all)    echo "$SCRIPT_DIR/build" ;;
     esac
 }
@@ -44,7 +44,7 @@ cmake_target() {
     case $1 in
         agent)  echo "agent" ;;
         server) echo "server" ;;
-        shared) echo "shared_lib" ;;
+        common) echo "common_lib" ;;
         all)    echo "" ;;
     esac
 }
@@ -54,7 +54,7 @@ test_target() {
     case $1 in
         agent)  echo "agent_tests" ;;
         server) echo "server_tests" ;;
-        shared) echo "shared_tests" ;;
+        common) echo "common_tests" ;;
         all)    echo "" ;;
     esac
 }
@@ -77,7 +77,7 @@ ${YELLOW}Targets:${RESET}
   all                 Everything (default when no target given)
   agent               Agent only
   server              Server only
-  shared              Shared library only
+  common              common library only
 
 ${YELLOW}Examples:${RESET}
   ./inferno.sh build
@@ -97,20 +97,20 @@ cmd_build() {
     local target="${1:-all}"
     local src build
 
-    if [ "$target" != "shared" ] && [ "$target" != "all" ]; then
-        local shared_lib
-        shared_lib="$(source_dir shared)/build/libshared_lib.a"
-        if [ -f "$shared_lib" ] && [ ! "$(find "$(source_dir shared)/src" -newer "$shared_lib")" ]; then
-            info "Shared already up to date, skipping."
+    if [ "$target" != "common" ] && [ "$target" != "all" ]; then
+        local common_lib
+        common_lib="$(source_dir common)/build/libcommon_lib.a"
+        if [ -f "$common_lib" ] && [ ! "$(find "$(source_dir common)/src" -newer "$common_lib")" ]; then
+            info "common already up to date, skipping."
         else
-            local shared_build
-            shared_build=$(build_dir "shared")
-            if [ ! -f "$shared_build/build.ninja" ]; then
-                info "Configuring shared..."
-                cmake -S "$(source_dir shared)" -B "$shared_build" -G Ninja
+            local common_build
+            common_build=$(build_dir "common")
+            if [ ! -f "$common_build/build.ninja" ]; then
+                info "Configuring common..."
+                cmake -S "$(source_dir common)" -B "$common_build" -G Ninja
             fi
-            info "Building shared..."
-            cmake --build "$shared_build" -j"$(nproc)"
+            info "Building common..."
+            cmake --build "$common_build" -j"$(nproc)"
         fi
     fi
 
@@ -133,10 +133,10 @@ cmd_test() {
 
     cmd_build "$target"
 
-    # Always test shared — it's a dependency of everything
-    if [ "$target" != "shared" ] && [ "$target" != "all" ]; then
-        title "Testing: shared"
-        "$(build_dir shared)/shared_tests"
+    # Always test common — it's a dependency of everything
+    if [ "$target" != "common" ] && [ "$target" != "all" ]; then
+        title "Testing: common"
+        "$(build_dir common)/common_tests"
     fi
 
     title "Testing: $target"

@@ -41,6 +41,7 @@ void Reactor::onNewConnection() {
          << incoming->remotePort();
     logger_.info(what.str());
     agents_.emplace(fd, AgentSession(std::move(incoming)));
+    // agents_.try_emplace(fd, std::move(incoming)); // no longer need moveable constructor for logger
   }
 }
 

@@ -10,21 +10,21 @@ find_package(OpenSSL REQUIRED)
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
 # When built in isolation (inside the agent container), this pulls it directly.
-if(NOT TARGET shared_lib)
-    set(_shared_lib "${CMAKE_CURRENT_SOURCE_DIR}/../shared/build/libshared_lib.a")
-    if(EXISTS "${_shared_lib}")
-        add_library(shared_lib STATIC IMPORTED GLOBAL)
-        set_target_properties(shared_lib PROPERTIES
-            IMPORTED_LOCATION "${_shared_lib}"
+if(NOT TARGET common_lib)
+    set(_common_lib "${CMAKE_CURRENT_SOURCE_DIR}/../common/build/libcommon_lib.a")
+    if(EXISTS "${_common_lib}")
+        add_library(common_lib STATIC IMPORTED GLOBAL)
+        set_target_properties(common_lib PROPERTIES
+            IMPORTED_LOCATION "${_common_lib}"
             INTERFACE_LINK_LIBRARIES "OpenSSL::SSL;OpenSSL::Crypto"
         )
-        target_include_directories(shared_lib INTERFACE
-            "${CMAKE_CURRENT_SOURCE_DIR}/../shared/include"
+        target_include_directories(common_lib INTERFACE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../common/include"
         )
     else()
         add_subdirectory(
-            ${CMAKE_CURRENT_SOURCE_DIR}/../shared
-            ${CMAKE_BINARY_DIR}/shared
+            ${CMAKE_CURRENT_SOURCE_DIR}/../common
+            ${CMAKE_BINARY_DIR}/common
         )
     endif()
 endif()
@@ -34,6 +34,8 @@ add_library(agent_lib STATIC
     src/agent_dispatcher.cpp
     src/agent_loop.cpp
     src/metrics/linux_metrics_scrapper.cpp
+    src/metrics/metrics_controller.cpp
+    src/metrics/metrics_scrapper_factory.cpp
     src/system_monitor/linux_system_monitor.cpp
     src/system_monitor/system_monitor_factory.cpp
     # src/socket/SocketLinux.cpp    ← add as you create files
@@ -45,9 +47,9 @@ target_include_directories(agent_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link shared_lib as PUBLIC so both agent and tests inherit shared includes.
+# Link common_lib as PUBLIC so both agent and tests inherit common includes.
 target_link_libraries(agent_lib PUBLIC
-    shared_lib
+    common_lib
 )
 
 target_compile_options(agent_lib PRIVATE
@@ -69,10 +71,16 @@ target_compile_options(agent PRIVATE
 enable_testing()
 find_package(GTest REQUIRED)
 
+if(NOT TARGET test_support)
+    add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_support
+        ${CMAKE_CURRENT_BINARY_DIR}/test_support
+    )
+endif()
+
 add_executable(agent_tests
     tests/agent_dispatcher_test.cpp
     tests/agent_integration_test.cpp
-    tests/main_test.cpp
     tests/system_monitor/linux_system_monitor_test.cpp
     tests/metrics/linux_metrics_scrapper_test.cpp
     # tests/test_socket_linux.cpp   ← add as you create tests
@@ -80,14 +88,15 @@ add_executable(agent_tests
 
 target_include_directories(agent_tests PRIVATE
 ${CMAKE_CURRENT_SOURCE_DIR}/tests
-${CMAKE_CURRENT_SOURCE_DIR}/../shared/tests
+${CMAKE_CURRENT_SOURCE_DIR}/../common/tests
 )
 
 target_link_libraries(agent_tests PRIVATE
-agent_lib           # brings in shared_lib transitively
-GTest::gtest
-GTest::gmock
-GTest::gtest_main
+    agent_lib           # brings in shared_lib transitively
+    test_support
+    GTest::gtest
+    GTest::gmock
+    GTest::gtest_main
 )
 
 target_compile_options(agent_tests PRIVATE

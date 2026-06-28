@@ -135,7 +135,8 @@ void ServerDispatcher::sendCommand(AgentSession& agent, CommandType type,
 
   Frame frame = {ProtocolHelper::createHeader(MessageType::COMMAND, payload),
                  payload};
-  sendFrame(agent, frame);
+  // sendFrame(agent, frame);
+  agent.sendFrame(frame);
   // sendRaw(agent, MessageType::COMMAND, payload);
   std::ostringstream what;
   what << "[COMMAND] id=" << command.id
@@ -150,7 +151,8 @@ void ServerDispatcher::sendDisconnect(AgentSession& agent) {
   Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
                  payload};
   // sendRaw(agent, MessageType::DISCONNECT);
-  sendFrame(agent, frame);
+  // sendFrame(agent, frame);
+  agent.sendFrame(frame);
   logger_.info("[DISCONNECT]");
   // std::cout << "[→ DISCONNECT]\n";
   //   running = false;

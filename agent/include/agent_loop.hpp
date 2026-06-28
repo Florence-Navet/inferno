@@ -7,15 +7,21 @@
 
 #include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
-#include "poller/i_poller.hpp"
 #include "logger.hpp"
+#include "metrics/metrics_controller.hpp"
+#include "poller/i_poller.hpp"
 
 class AgentLoop {
  public:
   // heartbeatMs — how long to wait for server data before sending HEALTHCHECK
   // retryMs     — how long to wait between reconnection attempts
   AgentLoop(IPoller& poller, AgentDispatcher& dispatcher, std::string host,
-            std::uint16_t port, int heartbeatMs, int retryMs, const bool encryption = false);
+            std::uint16_t port, int heartbeatMs, int retryMs,
+            const bool encryption = false);
+
+  AgentLoop(IPoller& poller, AgentDispatcher& dispatcher, std::string host,
+            std::uint16_t port, int heartbeatMs, int retryMs, std::shared_ptr<MetricsController> metricsController,
+            const bool encryption = false);
 
   AgentLoop(const AgentLoop&) = delete;
   AgentLoop& operator=(const AgentLoop&) = delete;
@@ -45,6 +51,7 @@ class AgentLoop {
 
   IPoller& poller_;
   AgentDispatcher& dispatcher_;
+  std::shared_ptr<MetricsController> metricsController_;
   std::string host_;
   std::uint16_t port_;
   int heartbeatMs_;

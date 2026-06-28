@@ -8,21 +8,21 @@ find_package(OpenSSL REQUIRED)
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
 # When built in isolation (inside the agent container), this pulls it directly.
-if(NOT TARGET shared_lib)
-    set(_shared_lib "${CMAKE_CURRENT_SOURCE_DIR}/../shared/build/libshared_lib.a")
-    if(EXISTS "${_shared_lib}")
-        add_library(shared_lib STATIC IMPORTED GLOBAL)
-        set_target_properties(shared_lib PROPERTIES
-            IMPORTED_LOCATION "${_shared_lib}"
+if(NOT TARGET common_lib)
+    set(_common_lib "${CMAKE_CURRENT_SOURCE_DIR}/../common/build/libcommon_lib.a")
+    if(EXISTS "${_common_lib}")
+        add_library(common_lib STATIC IMPORTED GLOBAL)
+        set_target_properties(common_lib PROPERTIES
+            IMPORTED_LOCATION "${_common_lib}"
             INTERFACE_LINK_LIBRARIES "OpenSSL::SSL;OpenSSL::Crypto"
         )
-        target_include_directories(shared_lib INTERFACE
-            "${CMAKE_CURRENT_SOURCE_DIR}/../shared/include"
+        target_include_directories(common_lib INTERFACE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../common/include"
         )
     else()
         add_subdirectory(
-            ${CMAKE_CURRENT_SOURCE_DIR}/../shared
-            ${CMAKE_BINARY_DIR}/shared
+            ${CMAKE_CURRENT_SOURCE_DIR}/../common
+            ${CMAKE_BINARY_DIR}/common
         )
     endif()
 endif()
@@ -42,7 +42,7 @@ target_include_directories(server_lib PUBLIC
 )
 
 target_link_libraries(server_lib PUBLIC
-    shared_lib
+    common_lib
     
 )
 
@@ -65,6 +65,13 @@ target_compile_options(server PRIVATE
 enable_testing()
 find_package(GTest REQUIRED)
 
+if(NOT TARGET test_support)
+    add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_support
+        ${CMAKE_CURRENT_BINARY_DIR}/test_support
+    )
+endif()
+
 add_executable(server_tests
     # tests/agent_session_test.cpp
     tests/server_dispatcher_test.cpp
@@ -75,11 +82,12 @@ add_executable(server_tests
 
 target_include_directories(server_tests PRIVATE
 ${CMAKE_CURRENT_SOURCE_DIR}/tests
-${CMAKE_CURRENT_SOURCE_DIR}/../shared/tests
+${CMAKE_CURRENT_SOURCE_DIR}/../common/tests
 )
 
 target_link_libraries(server_tests PRIVATE
 server_lib
+test_support
 GTest::gtest
 GTest::gmock
 GTest::gtest_main

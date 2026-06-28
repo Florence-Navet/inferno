@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 
+#include "metrics/metrics_scrapper_factory.hpp"
+
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
                      std::string host, std::uint16_t port, int heartbeatMs,
                      int retryMs, const bool encryption)
@@ -16,15 +18,36 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
       running_(true),
       connected_(false),
       session_(encryption) {
-        logger_.info("TLS = " + std::string(encryption ? "true" : "false"));
-      }
+  metricsController_ = std::make_shared<MetricsController>(METRICS_INTERVAL_MS);
+  dispatcher_.setMetricsController(metricsController_);
+  logger_.info("TLS = " + std::string(encryption ? "true" : "false"));
+}
+
+AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
+                     std::string host, std::uint16_t port, int heartbeatMs,
+                     int retryMs,
+                     std::shared_ptr<MetricsController> metricsController,
+                     const bool encryption)
+    : poller_(poller),
+      dispatcher_(dispatcher),
+      host_(std::move(host)),
+      port_(port),
+      heartbeatMs_(heartbeatMs),
+      retryMs_(retryMs),
+      running_(true),
+      connected_(false),
+      metricsController_(metricsController),
+      session_(encryption) {
+  dispatcher_.setMetricsController(metricsController_);
+}
 
 // ─── effectiveTimeout
 // ─────────────────────────────────────────────────────────
 //
-// The single loop uses two different timeouts depending on state:
-//  - connected:     heartbeatMs_ — if server is silent this long, send
-//  HEALTHCHECK
+// The single loop uses three different timeouts depending on state:
+//  - connected and metrics stream isn't active:     heartbeatMs_ — if server is
+//  silent this long, send HEALTHCHECK
+//  - connected and metrics stream active: metricsController.msUntilNextSample()
 //  - disconnected:  retryMs_     — wait this long before the next connect
 //  attempt
 //
@@ -32,7 +55,13 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
 // blocks for retryMs_ then returns 0 — triggering tryReconnect().
 // This replaces ::sleep() entirely.
 int AgentLoop::effectiveTimeout() const {
-  return connected_ ? heartbeatMs_ : retryMs_;
+  // return connected_ ? heartbeatMs_ : retryMs_;
+  if (!connected_) {
+    return retryMs_;
+  }
+  return metricsController_->isActive()
+             ? metricsController_->msUntilNextSample()
+             : heartbeatMs_;
 }
 
 // ─── run
@@ -51,6 +80,10 @@ void AgentLoop::run() {
   while (running_) {
     std::vector<ReadyEvent> events;
     const int pollResult = poller_.wait(events, effectiveTimeout());
+
+    if (connected_ && metricsController_->isActive() &&
+        metricsController_->isDue())
+      metricsController_->tick(session_);
 
     if (!connected_) {
       tryReconnect();
@@ -146,7 +179,7 @@ void AgentLoop::onReadable() {
     std::optional<Frame> frame;
     while (session_.isValid() && (frame = session_.tryExtractFrame())) {
       dispatcher_.handleFrame(session_, frame.value());
-    //   frame = session_.tryExtractFrame();
+      //   frame = session_.tryExtractFrame();
     }
 
     if (!session_.isValid()) {

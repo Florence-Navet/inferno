@@ -34,6 +34,8 @@ add_library(agent_lib STATIC
     src/agent_dispatcher.cpp
     src/agent_loop.cpp
     src/metrics/linux_metrics_scrapper.cpp
+    src/metrics/metrics_controller.cpp
+    src/metrics/metrics_scrapper_factory.cpp
     src/system_monitor/linux_system_monitor.cpp
     src/system_monitor/system_monitor_factory.cpp
     # src/socket/SocketLinux.cpp    ← add as you create files

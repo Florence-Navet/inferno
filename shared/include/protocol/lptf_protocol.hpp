@@ -56,6 +56,8 @@ constexpr std::size_t NET_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof
 // (CpuSample and MemSample are inlined, variable themselves)
 constexpr std::size_t METRICS_SAMPLE_FIXED_SIZE = sizeof(std::uint8_t) * 2;
 
+constexpr int METRICS_INTERVAL_MS = 1000;
+
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
   DATA = 1,

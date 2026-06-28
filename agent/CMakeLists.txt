@@ -71,10 +71,16 @@ target_compile_options(agent PRIVATE
 enable_testing()
 find_package(GTest REQUIRED)
 
+if(NOT TARGET test_support)
+    add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_support
+        ${CMAKE_CURRENT_BINARY_DIR}/test_support
+    )
+endif()
+
 add_executable(agent_tests
     tests/agent_dispatcher_test.cpp
     tests/agent_integration_test.cpp
-    tests/main_test.cpp
     tests/system_monitor/linux_system_monitor_test.cpp
     tests/metrics/linux_metrics_scrapper_test.cpp
     # tests/test_socket_linux.cpp   ← add as you create tests
@@ -86,10 +92,11 @@ ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tests
 )
 
 target_link_libraries(agent_tests PRIVATE
-agent_lib           # brings in shared_lib transitively
-GTest::gtest
-GTest::gmock
-GTest::gtest_main
+    agent_lib           # brings in shared_lib transitively
+    test_support
+    GTest::gtest
+    GTest::gmock
+    GTest::gtest_main
 )
 
 target_compile_options(agent_tests PRIVATE

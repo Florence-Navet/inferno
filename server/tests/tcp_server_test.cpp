@@ -9,10 +9,11 @@
 #include <thread>
 
 #include "agent_session.hpp"
-#include "helpers_test.hpp"
+#include "builders/frame_builder.hpp"
+#include "fixtures/common.hpp"
+#include "fixtures/ports.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "socket/socket_factory.hpp"
-#include "test_constants.hpp"
 
 // ── Unit tests (no network) ───────────────────────────────────
 
@@ -23,21 +24,21 @@ TEST(TcpServerUnit,
   sockaddr_in address{};
   address.sin_family = AF_INET;
   address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(TestConstants::TCP_SERVER_OCCUPIED_PORT);
+  address.sin_port = htons(Ports::TcpServer::OCCUPIED_PORT);
   int occupier = ::socket(AF_INET, SOCK_STREAM, 0);
   ASSERT_NE(occupier, -1);
   ASSERT_EQ(
       ::bind(occupier, reinterpret_cast<sockaddr*>(&address), sizeof(address)),
       0);
 
-  TcpServer server(TestConstants::TCP_SERVER_OCCUPIED_PORT);
+  TcpServer server(Ports::TcpServer::OCCUPIED_PORT);
   EXPECT_FALSE(server.start());
   ::close(occupier);
 }
 
 TEST(TcpServerUnit,
      should_return_nullptr_when_acceptAgent_called_before_start) {
-  TcpServer server(TestConstants::TCP_SERVER_NOT_STARTED_PORT);
+  TcpServer server(Ports::TcpServer::NOT_STARTED_PORT);
   EXPECT_EQ(server.acceptAgent(), nullptr);
 }
 
@@ -45,19 +46,19 @@ TEST(TcpServerUnit,
 
 TEST(TcpServerIntegration,
      should_return_true_when_start_is_called_on_available_port) {
-  TcpServer server(TestConstants::TCP_SERVER_AVAILABLE_PORT);
+  TcpServer server(Ports::TcpServer::AVAILABLE_PORT);
   EXPECT_TRUE(server.start());
 }
 
 TEST(TcpServerIntegration,
      should_return_false_when_start_is_called_a_second_time) {
-  TcpServer server(TestConstants::TCP_SERVER_DOUBLE_START_PORT);
+  TcpServer server(Ports::TcpServer::DOUBLE_START_PORT);
   server.start();
   EXPECT_FALSE(server.start());
 }
 
 TEST(TcpServerIntegration, should_return_valid_socket_when_agent_connects) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_AGENT_CONNECT_PORT;
+  const std::uint16_t port = Ports::TcpServer::AGENT_CONNECT_PORT;
   TcpServer server(port);
   server.start();
 
@@ -68,7 +69,7 @@ TEST(TcpServerIntegration, should_return_valid_socket_when_agent_connects) {
     serverReadyFuture.wait();
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket) {
-      agentSocket->connect("127.0.0.1", port);
+      agentSocket->connect(Common::SERVER_HOST, port);
     }
   });
 
@@ -82,7 +83,7 @@ TEST(TcpServerIntegration, should_return_valid_socket_when_agent_connects) {
 
 TEST(TcpServerIntegration,
      should_receive_and_echo_frame_sent_by_connected_agent) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_ECHO_PORT;
+  const std::uint16_t port = Ports::TcpServer::ECHO_PORT;
   TcpServer server(port);
   server.start();  // setup
 
@@ -98,14 +99,16 @@ TEST(TcpServerIntegration,
     std::optional<ResponsePayload> response;
 
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
-    if (agentSocket && agentSocket->connect("127.0.0.1", port)) {
+    if (agentSocket && agentSocket->connect(Common::SERVER_HOST, port)) {
       AgentSession agentSession(std::move(agentSocket));
 
       // Send REGISTER using the shared helper
       // const auto registerFrame =
-      //     makeRawFrame(MessageType::REGISTER, makeRegisterPayload());
+      //     makeRawFrame(MessageType::REGISTER,
+      //     FrameBuilder::makeRegisterPayload());
       try {
-        Frame frame = makeFrame(MessageType::REGISTER, makeRegisterPayload());
+        Frame frame = FrameBuilder::makeFrame(
+            MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
         agentSession.sendFrame(frame);
         // send succeeded, continue with the rest
         agentSession.receiveIntoBuffer();
@@ -140,8 +143,8 @@ TEST(TcpServerIntegration,
   EXPECT_EQ(registerFrame->header.type, MessageType::REGISTER);
 
   // Send RESPONSE using the shared helper
-  const Frame responseFrame =
-      makeFrame(MessageType::RESPONSE, makeResponsePayload(7, "pong"));
+  const Frame responseFrame = FrameBuilder::makeFrame(
+      MessageType::RESPONSE, FrameBuilder::makeResponsePayload(7, "pong"));
   ASSERT_NO_THROW(serverSession.sendFrame(responseFrame));
 
   agentThread.join();
@@ -154,7 +157,7 @@ TEST(TcpServerIntegration,
 }
 
 TEST(TcpServerIntegration, should_report_loopback_address_for_connected_agent) {
-  const std::uint16_t port = TestConstants::TCP_SERVER_REMOTE_ADDR_PORT;
+  const std::uint16_t port = Ports::TcpServer::REMOTE_ADDR_PORT;
   TcpServer server(port);
   server.start();  // setup
 
@@ -167,7 +170,7 @@ TEST(TcpServerIntegration, should_report_loopback_address_for_connected_agent) {
     serverReadyFuture.wait();
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket) {
-      agentSocket->connect("127.0.0.1", port);
+      agentSocket->connect(Common::SERVER_HOST, port);
       serverDoneFuture
           .wait();  // keep socket alive until server has read the address
     }
@@ -176,7 +179,7 @@ TEST(TcpServerIntegration, should_report_loopback_address_for_connected_agent) {
   serverReady.set_value();
   auto accepted = server.acceptAgent();
   ASSERT_NE(accepted, nullptr);
-  EXPECT_EQ(accepted->remoteAddress(), "127.0.0.1");
+  EXPECT_EQ(accepted->remoteAddress(), Common::SERVER_HOST);
   EXPECT_GT(accepted->remotePort(), 0);
 
   serverDone.set_value();

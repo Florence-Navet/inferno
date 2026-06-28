@@ -12,11 +12,13 @@
 
 // namespace {
 
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 // // Helpers
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 
-// // std::vector<std::uint8_t> makeRegisterPayload(
+// // std::vector<std::uint8_t> FrameBuilder::makeRegisterPayload(
 // //     const std::uint8_t rawOs,
 // //     const std::uint8_t rawArch,
 // //     const std::uint16_t declaredHostnameLen,
@@ -53,13 +55,16 @@
 
 // }  // namespace
 
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 // // Happy path
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 
 // TEST(ProtocolParserRegister,
 //      should_parse_register_payload_when_input_is_valid) {
-//   // const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   // const std::vector<std::uint8_t> input =
+//   FrameBuilder::makeRegisterPayload(
 //   //     static_cast<std::uint8_t>(OSType::LINUX),
 //   //     static_cast<std::uint8_t>(ArchType::X64),
 //   //     static_cast<std::uint16_t>(kHostname.size()),
@@ -68,13 +73,14 @@
 //   //     bytesFromString(kHostname),
 //   //     bytesFromString(kOsVersion),
 //   //     bytesFromString(kCurrentUser));
-//   const std::vector<std::uint8_t> input = makeRegisterPayload();
+//   const std::vector<std::uint8_t> input =
+//   FrameBuilder::makeRegisterPayload();
 
 //   const RegisterPayload result = ProtocolParser::parseRegisterPayload(input);
 
 //   EXPECT_EQ(result.os_type, OSType::LINUX);
 //   EXPECT_EQ(result.arch, ArchType::X64);
-//   EXPECT_EQ(result.hostname, TestConstants::TEST_HOSTNAME_STR);
+//   EXPECT_EQ(result.hostname, Protocol::TEST_HOSTNAME_STR);
 //   EXPECT_EQ(result.os_version, TestConstants::TEST_OS_VERSION_STR);
 //   EXPECT_EQ(result.current_user, TestConstants::TEST_CURRENT_USER_STR);
 // }
@@ -86,12 +92,12 @@
 
 //   const std::string longHostname(maxHostnameLen, 'a');
 
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
 //       static_cast<std::uint8_t>(OSType::MAC),
 //       static_cast<std::uint8_t>(ArchType::ARM),
 //       static_cast<std::uint16_t>(longHostname.size()),
-//       TestConstants::TEST_OS_VERSION_LEN, TestConstants::TEST_CURRENT_USER_LEN,
-//       bytesFromString(longHostname));
+//       TestConstants::TEST_OS_VERSION_LEN,
+//       TestConstants::TEST_CURRENT_USER_LEN, bytesFromString(longHostname));
 
 //   const RegisterPayload result = ProtocolParser::parseRegisterPayload(input);
 
@@ -106,11 +112,11 @@
 // TEST(ProtocolParserRegister, should_decode_hostname_length_as_big_endian) {
 //   const std::string longHostname(300, 'z');
 
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
 //       static_cast<std::uint8_t>(OSType::WINDOWS),
 //       static_cast<std::uint8_t>(ArchType::X86), 300,
-//       TestConstants::TEST_OS_VERSION_LEN, TestConstants::TEST_CURRENT_USER_LEN,
-//       bytesFromString(longHostname));
+//       TestConstants::TEST_OS_VERSION_LEN,
+//       TestConstants::TEST_CURRENT_USER_LEN, bytesFromString(longHostname));
 
 //   const RegisterPayload result = ProtocolParser::parseRegisterPayload(input);
 
@@ -119,9 +125,11 @@
 //   EXPECT_EQ(result.hostname[299], 'z');
 // }
 
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 // // Structural / size errors
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 
 // TEST(ProtocolParserRegister,
 //      should_reject_payload_shorter_than_fixed_register_fields) {
@@ -137,12 +145,13 @@
 //   // hostname declared as 0 — must be rejected by validateNotNullLength
 
 //   const std::vector<std::uint8_t> input =
-//       makeRegisterPayload(static_cast<std::uint8_t>(OSType::WINDOWS),
+//       FrameBuilder::makeRegisterPayload(static_cast<std::uint8_t>(OSType::WINDOWS),
 //                           static_cast<std::uint8_t>(ArchType::X86), 0x00,
 //                           TestConstants::TEST_OS_VERSION_LEN,
 //                           TestConstants::TEST_CURRENT_USER_LEN, {});
 
-//   // const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   // const std::vector<std::uint8_t> input =
+//   FrameBuilder::makeRegisterPayload(
 //   //     static_cast<std::uint8_t>(OSType::WINDOWS),
 //   //     static_cast<std::uint8_t>(ArchType::X86),
 //   //     0,  // hostname_len = 0
@@ -154,7 +163,7 @@
 // }
 
 // TEST(ProtocolParserRegister, should_reject_empty_os_version) {
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
 //       static_cast<std::uint8_t>(OSType::LINUX),
 //       static_cast<std::uint8_t>(ArchType::X64),
 //       TestConstants::TEST_HOSTNAME_LEN,
@@ -166,7 +175,7 @@
 // }
 
 // TEST(ProtocolParserRegister, should_reject_empty_current_user) {
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
 //       static_cast<std::uint8_t>(OSType::LINUX),
 //       static_cast<std::uint8_t>(ArchType::X64),
 //       TestConstants::TEST_HOSTNAME_LEN, TestConstants::TEST_OS_VERSION_LEN,
@@ -179,37 +188,44 @@
 // // Declared hostname length is larger than the bytes actually present
 // TEST(ProtocolParserRegister,
 //      should_reject_when_declared_hostname_length_exceeds_available_bytes) {
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
 //       static_cast<std::uint8_t>(OSType::LINUX),
 //       static_cast<std::uint8_t>(ArchType::X64),
 //       10,  // claims 10 bytes
-//       TestConstants::TEST_OS_VERSION_LEN, TestConstants::TEST_CURRENT_USER_LEN,
-//       bytesFromString("abc"),  // only 3 bytes
-//       TestConstants::TEST_OS_VERSION, TestConstants::TEST_CURRENT_USER);
+//       TestConstants::TEST_OS_VERSION_LEN,
+//       TestConstants::TEST_CURRENT_USER_LEN, bytesFromString("abc"),  // only
+//       3 bytes TestConstants::TEST_OS_VERSION,
+//       TestConstants::TEST_CURRENT_USER);
 
 //   EXPECT_THROW(ProtocolParser::parseRegisterPayload(input), InvalidSize);
 // }
 
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 // // Invalid enum values
-// // ---------------------------------------------------------------------------
+// //
+// ---------------------------------------------------------------------------
 
 // TEST(ProtocolParserRegister, should_reject_unknown_os_type) {
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
-//       TestHelpers::INVALID_ENUM_VALUE, static_cast<std::uint8_t>(ArchType::X64),
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
+//       TestHelpers::INVALID_ENUM_VALUE,
+//       static_cast<std::uint8_t>(ArchType::X64),
 //       TestConstants::TEST_HOSTNAME_LEN, TestConstants::TEST_OS_VERSION_LEN,
 //       TestConstants::TEST_CURRENT_USER_LEN, TestConstants::TEST_HOSTNAME,
 //       TestConstants::TEST_OS_VERSION, TestConstants::TEST_CURRENT_USER);
 
-//   EXPECT_THROW(ProtocolParser::parseRegisterPayload(input), InvalidFieldValue);
+//   EXPECT_THROW(ProtocolParser::parseRegisterPayload(input),
+//   InvalidFieldValue);
 // }
 
 // TEST(ProtocolParserRegister, should_reject_unknown_arch) {
-//   const std::vector<std::uint8_t> input = makeRegisterPayload(
-//       static_cast<std::uint8_t>(OSType::LINUX), TestHelpers::INVALID_ENUM_VALUE,
-//       TestConstants::TEST_HOSTNAME_LEN, TestConstants::TEST_OS_VERSION_LEN,
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeRegisterPayload(
+//       static_cast<std::uint8_t>(OSType::LINUX),
+//       TestHelpers::INVALID_ENUM_VALUE, TestConstants::TEST_HOSTNAME_LEN,
+//       TestConstants::TEST_OS_VERSION_LEN,
 //       TestConstants::TEST_CURRENT_USER_LEN, TestConstants::TEST_HOSTNAME,
 //       TestConstants::TEST_OS_VERSION, TestConstants::TEST_CURRENT_USER);
 
-//   EXPECT_THROW(ProtocolParser::parseRegisterPayload(input), InvalidFieldValue);
+//   EXPECT_THROW(ProtocolParser::parseRegisterPayload(input),
+//   InvalidFieldValue);
 // }

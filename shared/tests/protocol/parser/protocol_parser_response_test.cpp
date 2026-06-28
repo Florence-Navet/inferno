@@ -8,7 +8,7 @@
 
 // namespace {
 
-// std::vector<std::uint8_t> makeResponsePayload(
+// std::vector<std::uint8_t> FrameBuilder::makeResponsePayload(
 //     std::uint16_t id, std::uint8_t rawStatus, std::uint8_t totalChunks,
 //     std::uint8_t chunkIndex, std::uint16_t declaredLen,
 //     const std::vector<std::uint8_t>& dataBytes) {
@@ -30,7 +30,8 @@
 // TEST(ProtocolParserResponse, should_parse_response_when_input_is_valid) {
 //   const std::string data = "ok";
 //   const std::vector<std::uint8_t> input =
-//       makeResponsePayload(9, static_cast<std::uint8_t>(ResponseStatus::OK), 1,
+//       FrameBuilder::makeResponsePayload(9,
+//       static_cast<std::uint8_t>(ResponseStatus::OK), 1,
 //                           0, static_cast<std::uint16_t>(data.size()),
 //                           TestHelpers::bytesFromString(data));
 
@@ -45,36 +46,42 @@
 
 // TEST(ProtocolParserResponse,
 //      should_reject_payload_shorter_than_fixed_response_fields) {
-//   const std::vector<std::uint8_t> input = {0x00, 0x09, 0x00, 0x01, 0x00, 0x00};
+//   const std::vector<std::uint8_t> input = {0x00, 0x09, 0x00, 0x01, 0x00,
+//   0x00};
 
 //   EXPECT_THROW(ProtocolParser::parseResponsePayload(input), InvalidSize);
 // }
 
 // TEST(ProtocolParserResponse, should_reject_unknown_status_value) {
 //   const std::vector<std::uint8_t> input =
-//       makeResponsePayload(9, TestHelpers::INVALID_ENUM_VALUE, 1, 0, 0, {});
+//       FrameBuilder::makeResponsePayload(9, TestHelpers::INVALID_ENUM_VALUE,
+//       1, 0, 0, {});
 
-//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input), InvalidFieldValue);
+//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input),
+//   InvalidFieldValue);
 // }
 
 // TEST(ProtocolParserResponse, should_reject_zero_total_chunks) {
-//   const std::vector<std::uint8_t> input = makeResponsePayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeResponsePayload(
 //       9, static_cast<std::uint8_t>(ResponseStatus::OK), 0, 0, 0, {});
 
-//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input), InvalidFieldValue);
+//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input),
+//   InvalidFieldValue);
 // }
 
 // TEST(ProtocolParserResponse, should_reject_chunk_index_out_of_range) {
-//   const std::vector<std::uint8_t> input = makeResponsePayload(
+//   const std::vector<std::uint8_t> input = FrameBuilder::makeResponsePayload(
 //       9, static_cast<std::uint8_t>(ResponseStatus::OK), 2, 2, 0, {});
 
-//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input), InvalidFieldValue);
+//   EXPECT_THROW(ProtocolParser::parseResponsePayload(input),
+//   InvalidFieldValue);
 // }
 
 // TEST(ProtocolParserResponse,
 //      should_reject_when_declared_data_length_mismatches_payload_size) {
 //   const std::vector<std::uint8_t> input =
-//       makeResponsePayload(9, static_cast<std::uint8_t>(ResponseStatus::OK), 1,
+//       FrameBuilder::makeResponsePayload(9,
+//       static_cast<std::uint8_t>(ResponseStatus::OK), 1,
 //                           0, 10, TestHelpers::bytesFromString("abc"));
 
 //   EXPECT_THROW(ProtocolParser::parseResponsePayload(input), InvalidSize);

@@ -3,14 +3,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "helpers_test.hpp"
+// #include "helpers_test.hpp"
+#include "builders/frame_builder.hpp"
 #include "protocol/protocol_parser.hpp"
 // #include "socket/mock_socket_helpers.hpp"
+#include "stubs/spy_socket.hpp"
 #include "system_monitor/fake_system_monitor.hpp"
-#include "socket/spy_socket.hpp"
 
-#include "system_monitor/fake_system_monitor.hpp"
- 
 // ── AgentDispatcher tests ─────────────────────────────────────
 // Three tests: happy path, disconnect handling, unknown command.
 // The agent dispatcher is the mirror of the server dispatcher:
@@ -33,7 +32,8 @@ TEST(AgentDispatcher,
   cmd.data = "";
   const auto payload = ProtocolSerializer::serializeCommandPayload(cmd);
 
-  dispatcher.handleFrame(session, makeFrame(MessageType::COMMAND, payload));
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
 
   ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(spy.messageType(), MessageType::RESPONSE);
@@ -56,7 +56,8 @@ TEST(AgentDispatcher, should_close_session_and_send_nothing_on_disconnect) {
   FakeSystemMonitor monitor;
   AgentDispatcher dispatcher(monitor);
 
-  dispatcher.handleFrame(session, makeFrame(MessageType::DISCONNECT));
+  dispatcher.handleFrame(session,
+                         FrameBuilder::makeFrame(MessageType::DISCONNECT));
 
   EXPECT_FALSE(session.isValid());  // socket closed
   EXPECT_TRUE(spy.nothingSent());   // no reply to DISCONNECT
@@ -78,7 +79,8 @@ TEST(AgentDispatcher,
   cmd.data = "";
   const auto payload = ProtocolSerializer::serializeCommandPayload(cmd);
 
-  dispatcher.handleFrame(session, makeFrame(MessageType::COMMAND, payload));
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
 
   ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(spy.messageType(), MessageType::RESPONSE);

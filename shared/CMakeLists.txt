@@ -42,6 +42,11 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
     enable_testing()
     find_package(GTest REQUIRED)
 
+    add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_support
+        ${CMAKE_CURRENT_BINARY_DIR}/test_support
+    )
+
     set(PARSER_TESTS
         tests/protocol/parser/protocol_parser_command_test.cpp
         tests/protocol/parser/protocol_parser_data_test.cpp
@@ -81,6 +86,7 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoShared")
 
     target_link_libraries(shared_tests PRIVATE
         shared_lib
+        test_support
         GTest::gtest
         GTest::gmock
         GTest::gtest_main

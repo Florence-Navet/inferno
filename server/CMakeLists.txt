@@ -65,6 +65,13 @@ target_compile_options(server PRIVATE
 enable_testing()
 find_package(GTest REQUIRED)
 
+if(NOT TARGET test_support)
+    add_subdirectory(
+        ${CMAKE_CURRENT_SOURCE_DIR}/../test_support
+        ${CMAKE_CURRENT_BINARY_DIR}/test_support
+    )
+endif()
+
 add_executable(server_tests
     # tests/agent_session_test.cpp
     tests/server_dispatcher_test.cpp
@@ -80,6 +87,7 @@ ${CMAKE_CURRENT_SOURCE_DIR}/../shared/tests
 
 target_link_libraries(server_tests PRIVATE
 server_lib
+test_support
 GTest::gtest
 GTest::gmock
 GTest::gtest_main

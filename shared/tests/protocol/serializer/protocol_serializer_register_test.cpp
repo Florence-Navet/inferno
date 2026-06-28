@@ -14,11 +14,12 @@
 //      should_produce_corresponding_byteArray_when_registerPayload_is_valid) {
 //   // Arrange
 //   const RegisterPayload input{
-//       OSType::LINUX, ArchType::X64, TestConstants::TEST_HOSTNAME_STR,
-//       TestConstants::TEST_OS_VERSION_STR, TestConstants::TEST_CURRENT_USER_STR};
+//       OSType::LINUX, ArchType::X64, Protocol::TEST_HOSTNAME_STR,
+//       TestConstants::TEST_OS_VERSION_STR,
+//       TestConstants::TEST_CURRENT_USER_STR};
 
 //   const std::vector<std::uint8_t> expected =
-//       makeRegisterPayload(static_cast<std::uint8_t>(OSType::LINUX),
+//       FrameBuilder::makeRegisterPayload(static_cast<std::uint8_t>(OSType::LINUX),
 //                           static_cast<std::uint8_t>(ArchType::X64));
 
 //   //   const std::vector<std::uint8_t> expected = {
@@ -84,10 +85,12 @@
 // //      should_throw_InvalidSize_when_hostname_size_exceeds_max) {
 // //   // Arrange
 // //   const std::uint16_t maxLen =
-// //       REGISTER_MAX_HOSTNAME_LEN - TestConstants::TEST_OS_VERSION_LEN - TestConstants::TEST_CURRENT_USER_LEN;
+// //       REGISTER_MAX_HOSTNAME_LEN - TestConstants::TEST_OS_VERSION_LEN -
+// TestConstants::TEST_CURRENT_USER_LEN;
 // //   const RegisterPayload input{
 // //       OSType::LINUX, ArchType::X64, std::string(maxLen + 1, 'a'),
-// //       TestConstants::TEST_OS_VERSION_STR, TestConstants::TEST_CURRENT_USER_STR};
+// //       TestConstants::TEST_OS_VERSION_STR,
+// TestConstants::TEST_CURRENT_USER_STR};
 
 // //   // Act & Assert
 // //   EXPECT_THROW(ProtocolSerializer::serializeRegisterPayload(input),

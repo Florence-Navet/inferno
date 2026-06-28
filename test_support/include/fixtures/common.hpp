@@ -9,7 +9,8 @@ namespace Common {
 inline const std::string SERVER_HOST = "127.0.0.1";  // or localhost?
 constexpr std::uint8_t INVALID_ENUM_VALUE = 255;
 
-inline std::vector<std::uint8_t> bytesFromString(const std::string& value) {
+inline std::vector<std::uint8_t> bytesFromString(
+    const std::string& value) {
   return std::vector<std::uint8_t>(value.begin(), value.end());
 }
 

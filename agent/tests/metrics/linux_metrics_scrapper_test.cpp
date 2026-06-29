@@ -1,108 +1,34 @@
+#ifdef __linux__
 #include "metrics/linux_metrics_scrapper.hpp"
 
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <thread>
 
+#include "fixtures/metrics_file_writer.hpp"
+
 class LinuxMetricsScrapperTest : public ::testing::Test {
+ public:
+  LinuxMetricsScrapperTest() : procRoot("/tmp/fake_proc"), scrapper(procRoot) {}
+
  protected:
+  std::string procRoot;
   LinuxMetricsScrapper scrapper;
-  bool createdProc = false;
 
  protected:
   void SetUp() override {
     // Create fake /proc files for testing
-    createFakeProc();
+    // createFakeProc();
+    std::filesystem::create_directories(procRoot + "/net");
+    MetricsFileWriter::createFakeProc(procRoot);
   }
 
-  void TearDown() override {
-    if (createdProc) {
-      system(
-          "rm -f /proc/stat /proc/meminfo /proc/diskstats /proc/net/dev "
-          "2>/dev/null");
-    }
-  }
-
-  void createFakeProc() {
-    std::ifstream stat("/proc/stat");
-    if (!stat || stat.peek() == std::ifstream::traits_type::eof()) {
-      // /proc/stat is missing or empty, create fake ones
-      createdProc = true;
-
-      system("mkdir -p /proc 2>/dev/null");
-
-      std::ofstream out("/proc/stat");
-      out << "cpu  1000 0 2000 3000000 500 0 0 0 0 0\n";
-      out << "cpu0 500 0 1000 1500000 250 0 0 0 0 0\n";
-      out << "cpu1 500 0 1000 1500000 250 0 0 0 0 0\n";
-      out.close();
-
-      std::ofstream mem("/proc/meminfo");
-      mem << "MemTotal:        8000000 kB\n";
-      mem << "MemAvailable:    6000000 kB\n";
-      mem << "SwapTotal:       2000000 kB\n";
-      mem << "SwapFree:        2000000 kB\n";
-      mem.close();
-
-      std::ofstream disk("/proc/diskstats");
-      disk << "   8        0 sda 12345 0 98765 0 54321 0 432100 0 0 0 0 0 0 0 "
-              "0\n";
-      disk.close();
-
-      std::ofstream net("/proc/net/dev");
-      net << "Inter-|   Receive                                                "
-             "|  Transmit\n";
-      net << " face |bytes    packets errs drop fifo frame compressed "
-             "multicast|bytes    packets errs drop fifo colls carrier "
-             "compressed\n";
-      net << "    lo: 1000000     100    0    0    0     0          0         "
-             "0  1000000     100    0    0    0     0       0          0\n";
-      net << "  eth0: 5000000     500    0    0    0     0          0         "
-             "0  2000000     200    0    0    0     0       0          0\n";
-      net.close();
-    }
-  }
-
-  void updateFakeProcFiles() {
-    if (createdProc) {
-      // Update /proc/stat with different values (simulating time passing)
-      std::ofstream out("/proc/stat");
-      out << "cpu  2000 0 4000 6000000 1000 0 0 0 0 0\n";
-      out << "cpu0 1000 0 2000 3000000 500 0 0 0 0 0\n";
-      out << "cpu1 1000 0 2000 3000000 500 0 0 0 0 0\n";
-      out.close();
-
-      // Update /proc/meminfo
-      std::ofstream mem("/proc/meminfo");
-      mem << "MemTotal:        8000000 kB\n";
-      mem << "MemAvailable:    5900000 kB\n";
-      mem << "SwapTotal:       2000000 kB\n";
-      mem << "SwapFree:        1900000 kB\n";
-      mem.close();
-
-      // Update /proc/diskstats (more reads/writes)
-      std::ofstream disk("/proc/diskstats");
-      disk << "   8        0 sda 12500 0 99765 0 55000 0 440100 0 0 0 0 0 0 0 "
-              "0\n";
-      disk.close();
-
-      // Update /proc/net/dev (more bytes)
-      std::ofstream net("/proc/net/dev");
-      net << "Inter-|   Receive                                                "
-             "|  Transmit\n";
-      net << " face |bytes    packets errs drop fifo frame compressed "
-             "multicast|bytes    packets errs drop fifo colls carrier "
-             "compressed\n";
-      net << "    lo: 1100000     110    0    0    0     0          0         "
-             "0  1100000     110    0    0    0     0       0          0\n";
-      net << "  eth0: 5500000     550    0    0    0     0          0         "
-             "0  2500000     250    0    0    0     0       0          0\n";
-      net.close();
-    }
-  }
+  void TearDown() override { std::filesystem::remove_all(procRoot); }
 };
 
 // Test 1: First sample should return mostly empty data
@@ -127,15 +53,16 @@ TEST_F(LinuxMetricsScrapperTest, FirstSampleReturnsEmptyMetrics) {
 TEST_F(LinuxMetricsScrapperTest, SecondSampleReturnsMetrics) {
   scrapper.sample();  // First call (establishes baseline)
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  updateFakeProcFiles();
+  MetricsFileWriter::updateFakeProcFiles(procRoot);
   MetricsSample sample = scrapper.sample();  // Second call (computes rates)
 
   // CPU should have values now
   EXPECT_GT(sample.cpu.total_percent, -0.01f);
   // Allow tiny negative due to rounding
 
-  // EXPECT_EQ(sample.cpu.per_core.size(), 16);
-  EXPECT_GT(sample.cpu.per_core.size(), 0u); // TODO : windows read actual file and not test file?
+  EXPECT_EQ(sample.cpu.per_core.size(), 2u);
+  // EXPECT_GT(sample.cpu.per_core.size(),
+  //           0u);  // TODO : windows read actual file and not test file?
   // Match the 16 cores in fake /proc/stat
   //   EXPECT_GT(sample.cpu.per_core.size(), 0);  // Just check we got some
   //   cores
@@ -155,10 +82,10 @@ TEST_F(LinuxMetricsScrapperTest, MultipleSamplesAreConsistent) {
   scrapper.sample();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-  updateFakeProcFiles();
+  MetricsFileWriter::updateFakeProcFiles(procRoot);
   MetricsSample sample1 = scrapper.sample();
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  updateFakeProcFiles();
+  MetricsFileWriter::updateFakeProcFiles(procRoot);
   MetricsSample sample2 = scrapper.sample();
 
   // Both should have same CPU core count
@@ -173,7 +100,7 @@ TEST_F(LinuxMetricsScrapperTest, MultipleSamplesAreConsistent) {
 TEST_F(LinuxMetricsScrapperTest, CpuPercentIsInValidRange) {
   scrapper.sample();
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  updateFakeProcFiles();
+  MetricsFileWriter::updateFakeProcFiles(procRoot);
   MetricsSample sample = scrapper.sample();
 
   EXPECT_GE(sample.cpu.total_percent, 0.0f);
@@ -184,3 +111,5 @@ TEST_F(LinuxMetricsScrapperTest, CpuPercentIsInValidRange) {
     EXPECT_LE(core_percent, 100.0f);
   }
 }
+
+#endif

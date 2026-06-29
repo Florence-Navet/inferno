@@ -6,10 +6,10 @@
 
 #include "logger.hpp"
 
-std::ifstream LinuxMetricsScrapper::openFile(const std::string& path) {
-  std::ifstream file(path);
+std::ifstream LinuxMetricsScrapper::openFile(const std::string& relativePath) {
+  std::ifstream file(procRoot_ + "/" + relativePath);
   if (!file) {
-    throw std::runtime_error("Failed to open" + path);
+    throw std::runtime_error("Failed to open" + relativePath);
   }
   return file;
 }
@@ -28,10 +28,10 @@ void LinuxMetricsScrapper::skipUnusedValues(std::istringstream& lineStream,
   }
 }
 
-LinuxMetricsScrapper::LinuxMetricsScrapper() : firstSample_{true} {}
+LinuxMetricsScrapper::LinuxMetricsScrapper(std::string procRoot) : procRoot_(procRoot), firstSample_{true} {}
 
 MemSample LinuxMetricsScrapper::readMem() {
-  std::ifstream file = openFile("/proc/meminfo");
+  std::ifstream file = openFile("meminfo");
   MemSample mem{};
 
   std::string line;
@@ -98,7 +98,7 @@ float LinuxMetricsScrapper::computeCpuPercent(const RawCpuSnapshot& snapshot,
 }
 
 RawCpuSnapshot LinuxMetricsScrapper::getRawCpuSnapshot() {
-  std::ifstream file = openFile("/proc/stat");
+  std::ifstream file = openFile("stat");
   RawCpuSnapshot snapshot;
   std::string line;
   std::string key;
@@ -132,7 +132,7 @@ RawCpuSnapshot LinuxMetricsScrapper::getRawCpuSnapshot() {
 
 std::map<std::string, RawNetSnapshot>
 LinuxMetricsScrapper::getRawNetSnapshots() {
-  std::ifstream file = openFile("/proc/net/dev");
+  std::ifstream file = openFile("net/dev");
   std::map<std::string, RawNetSnapshot> snapshot;
   std::string line;
 
@@ -188,7 +188,7 @@ std::vector<NetSample> LinuxMetricsScrapper::readNet(const float& elapsed) {
 
 std::map<std::string, RawDiskSnapshot>
 LinuxMetricsScrapper::getRawDiskSnapshots() {
-  std::ifstream file = openFile("/proc/diskstats");
+  std::ifstream file = openFile("diskstats");
   std::map<std::string, RawDiskSnapshot> snapshots;
   std::string line;
 

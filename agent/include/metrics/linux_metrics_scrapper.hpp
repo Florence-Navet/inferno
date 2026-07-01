@@ -8,10 +8,11 @@
 
 class LinuxMetricsScrapper : public IMetricsScrapper {
  public:
-  LinuxMetricsScrapper();
+  LinuxMetricsScrapper(std::string procRoot = "/proc");
   MetricsSample sample() override;
 
  private:
+ std::string procRoot_;
   // delta state
   RawCpuSnapshot previousCpu_;
   std::map<std::string, RawDiskSnapshot> previousDisks_;
@@ -24,7 +25,7 @@ class LinuxMetricsScrapper : public IMetricsScrapper {
   MemSample readMem();
   std::vector<DiskSample> readDisks(const float& elapsed);
   std::vector<NetSample> readNet(const float& elapsed);
-  std::ifstream openFile(const std::string& path);
+  std::ifstream openFile(const std::string& relativePath);
   float computeCpuPercent(const RawCpuSnapshot& snapshot,
                           const std::size_t& index);
   RawCpuSnapshot getRawCpuSnapshot();

@@ -24,19 +24,18 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
 }
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
-                     std::string host, std::uint16_t port, int heartbeatMs,
-                     int retryMs,
                      std::shared_ptr<MetricsController> metricsController,
-                     const bool encryption)
+                     std::string host, std::uint16_t port, int heartbeatMs,
+                     int retryMs, const bool encryption)
     : poller_(poller),
       dispatcher_(dispatcher),
+      metricsController_(metricsController),
       host_(std::move(host)),
       port_(port),
       heartbeatMs_(heartbeatMs),
       retryMs_(retryMs),
       running_(true),
       connected_(false),
-      metricsController_(metricsController),
       session_(encryption) {
   dispatcher_.setMetricsController(metricsController_);
 }

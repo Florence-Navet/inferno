@@ -12,8 +12,8 @@
 #include "protocol/protocol_parser.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
+#include "stubs/fake_system_monitor.hpp"
 #include "stubs/test_tcp_server.hpp"
-#include "system_monitor/fake_system_monitor.hpp"
 
 // Full cycle: REGISTER → COMMAND(OS_INFO) → RESPONSE → DISCONNECT.
 //

@@ -19,8 +19,9 @@ class AgentLoop {
             std::uint16_t port, int heartbeatMs, int retryMs,
             const bool encryption = false);
 
-  AgentLoop(IPoller& poller, AgentDispatcher& dispatcher, std::string host,
-            std::uint16_t port, int heartbeatMs, int retryMs, std::shared_ptr<MetricsController> metricsController,
+  AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
+            std::shared_ptr<MetricsController> metricsController,
+            std::string host, std::uint16_t port, int heartbeatMs, int retryMs,
             const bool encryption = false);
 
   AgentLoop(const AgentLoop&) = delete;

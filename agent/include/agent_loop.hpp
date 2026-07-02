@@ -52,6 +52,7 @@ class AgentLoop {
 
   IPoller& poller_;
   AgentDispatcher& dispatcher_;
+  std::shared_ptr<MetricsController> metricsController_;
   std::string host_;
   std::uint16_t port_;
   int heartbeatMs_;
@@ -59,7 +60,6 @@ class AgentLoop {
 
   bool running_;
   bool connected_;
-  std::shared_ptr<MetricsController> metricsController_;
 
   // Persists across reconnections. resetSession() swaps the socket internally;
   // agentInfo_ (hostname, arch, os) is never cleared.

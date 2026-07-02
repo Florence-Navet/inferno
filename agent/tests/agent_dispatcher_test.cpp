@@ -9,7 +9,7 @@
 // #include "socket/mock_socket_helpers.hpp"
 #include <memory>
 
-#include "metrics/metrics_controller_factory.hpp"
+#include "builders/metrics_controller_test_factory.hpp"
 #include "stubs/fake_system_monitor.hpp"
 #include "stubs/spy_socket.hpp"
 
@@ -120,7 +120,6 @@ TEST_F(AgentDispatcherTest,
 
 TEST_F(AgentDispatcherTest,
        should_deactivate_metrics_controller_on_stop_metrics_command) {
-
   controller->start(session);
 
   CommandPayload cmd;

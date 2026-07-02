@@ -126,7 +126,7 @@ std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
   while ((directoryEntry = readdir(procDirectory)) != nullptr) {
     // Only process directory entries that start with a digit (representing PIDs)
     if (std::isdigit(static_cast<unsigned char>(directoryEntry->d_name[0]))) {
-      const int         processId   = std::stoi(directoryEntry->d_name);
+      const std::uint32_t         processId   = static_cast<std::uint32_t>(std::stoi(directoryEntry->d_name));
       const std::string processName = readProcessCommName(processId);
       
       // Ensure the process has not vanished (valid non-empty name)

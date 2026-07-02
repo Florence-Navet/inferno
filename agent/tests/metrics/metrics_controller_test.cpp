@@ -4,15 +4,16 @@
 #include <gtest/gtest.h>
 
 #include "agent_session.hpp"
+#include "builders/metrics_controller_test_factory.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "stubs/fake_metrics_scrapper.hpp"
 #include "stubs/spy_socket.hpp"
-#include "metrics/metrics_controller_factory.hpp"
 
 class MetricsControllerTest : public ::testing::Test {
  public:
   MetricsControllerTest()
-      : session(makeSession(spy)), controller(MetricsControllerTestFactory::make(scrapperPtr)) {}
+      : session(makeSession(spy)),
+        controller(MetricsControllerTestFactory::make(scrapperPtr)) {}
 
  protected:
   SpySocket spy;

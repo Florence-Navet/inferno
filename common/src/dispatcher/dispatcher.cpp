@@ -2,10 +2,6 @@
 
 #include <sstream>
 
-void Dispatcher::sendFrame(AgentSession& session, Frame& frame) {
-  // session.sendFrame(frame);
-}
-
 void Dispatcher::onError(const std::vector<std::uint8_t>& payload) {
   const ErrorPayload error = ProtocolParser::parseErrorPayload(payload);
   std::ostringstream what;

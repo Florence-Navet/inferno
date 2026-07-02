@@ -24,7 +24,7 @@ class IDispatcher {
   virtual void sendError(AgentSession& agent, ErrorType code, const std::string& msg) = 0;
 
   // ── I/O ─────────────────────────────────────────────
-  virtual void sendFrame(AgentSession& session, Frame& frame) = 0;
+  // virtual void sendFrame(AgentSession& session, Frame& frame) = 0;
 
 };
 

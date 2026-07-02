@@ -29,9 +29,6 @@ class Dispatcher : public IDispatcher {
   // ── Outgoing message builders ───────────────────────
   void sendError(AgentSession& agent, ErrorType code, const std::string& msg);
 
-  // ── I/O ─────────────────────────────────────────────
-  void sendFrame(AgentSession& session, Frame& frame);
-
  protected:
   Logger logger_;
 };

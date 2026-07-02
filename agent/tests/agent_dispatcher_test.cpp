@@ -7,8 +7,29 @@
 #include "builders/frame_builder.hpp"
 #include "protocol/protocol_parser.hpp"
 // #include "socket/mock_socket_helpers.hpp"
+#include <memory>
+
+#include "builders/metrics_controller_test_factory.hpp"
+#include "stubs/fake_system_monitor.hpp"
 #include "stubs/spy_socket.hpp"
-#include "system_monitor/fake_system_monitor.hpp"
+
+class AgentDispatcherTest : public ::testing::Test {
+ public:
+  AgentDispatcherTest()
+      : session(makeSession(spy)),
+        dispatcher(monitor),
+        controller(MetricsControllerTestFactory::make(scrapperPtr)) {}
+
+ protected:
+  SpySocket spy;
+  FakeSystemMonitor monitor;
+  AgentSession session;
+  AgentDispatcher dispatcher;
+  FakeMetricsScrapper* scrapperPtr = nullptr;
+  std::shared_ptr<MetricsController> controller;
+
+  void SetUp() override { dispatcher.setMetricsController(controller); }
+};
 
 // ── AgentDispatcher tests ─────────────────────────────────────
 // Three tests: happy path, disconnect handling, unknown command.
@@ -19,13 +40,8 @@
 // ① Happy path — OS_INFO command arrives, response is sent back.
 // Verifies: message type, response id matches command id, status OK,
 // data is non-empty, chunk fields are correct for a single-chunk response.
-TEST(AgentDispatcher,
-     should_send_response_with_matching_id_on_os_info_command) {
-  SpySocket spy;
-  AgentSession session = makeSession(spy);
-  FakeSystemMonitor monitor;
-  AgentDispatcher dispatcher(monitor);
-
+TEST_F(AgentDispatcherTest,
+       should_send_response_with_matching_id_on_os_info_command) {
   CommandPayload cmd;
   cmd.id = 42;
   cmd.type = CommandType::OS_INFO;
@@ -50,12 +66,8 @@ TEST(AgentDispatcher,
 // ② DISCONNECT — server sends it, agent must close the session.
 // Verifies: socket is closed (isValid() false), nothing sent back.
 // The agent must NOT reply to DISCONNECT — it just closes.
-TEST(AgentDispatcher, should_close_session_and_send_nothing_on_disconnect) {
-  SpySocket spy;
-  AgentSession session = makeSession(spy);
-  FakeSystemMonitor monitor;
-  AgentDispatcher dispatcher(monitor);
-
+TEST_F(AgentDispatcherTest,
+       should_close_session_and_send_nothing_on_disconnect) {
   dispatcher.handleFrame(session,
                          FrameBuilder::makeFrame(MessageType::DISCONNECT));
 
@@ -66,13 +78,8 @@ TEST(AgentDispatcher, should_close_session_and_send_nothing_on_disconnect) {
 // ③ Unknown command — agent receives a CommandType it doesn't implement.
 // Verifies: ERROR frame sent back, not a crash or silent ignore.
 // Covers any future CommandType added to the enum before the agent handles it.
-TEST(AgentDispatcher,
-     should_send_response_with_process_list_on_running_processes_command) {
-  SpySocket spy;
-  AgentSession session = makeSession(spy);
-  FakeSystemMonitor monitor;
-  AgentDispatcher dispatcher(monitor);
-
+TEST_F(AgentDispatcherTest,
+       should_send_response_with_process_list_on_running_processes_command) {
   CommandPayload cmd;
   cmd.id = 1;
   cmd.type = CommandType::RUNNING_PROCESSES;
@@ -95,4 +102,34 @@ TEST(AgentDispatcher,
   ASSERT_EQ(processes.size(), 2u);
   EXPECT_EQ(processes[0].pid, 1001u);
   EXPECT_EQ(processes[0].name, "proc-a");
+}
+
+TEST_F(AgentDispatcherTest,
+       should_activate_metrics_controller_on_start_metrics_command) {
+  CommandPayload cmd;
+  cmd.id = 1;
+  cmd.type = CommandType::START_METRICS;
+  cmd.data = "";
+  const auto payload = ProtocolSerializer::serializeCommandPayload(cmd);
+
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  EXPECT_TRUE(controller->isActive());
+}
+
+TEST_F(AgentDispatcherTest,
+       should_deactivate_metrics_controller_on_stop_metrics_command) {
+  controller->start(session);
+
+  CommandPayload cmd;
+  cmd.id = 1;
+  cmd.type = CommandType::STOP_METRICS;
+  cmd.data = "";
+  const auto payload = ProtocolSerializer::serializeCommandPayload(cmd);
+
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  EXPECT_FALSE(controller->isActive());
 }

@@ -25,5 +25,6 @@ inline std::vector<ProcessInfo> createProcessInfoList(
   }
   return infos;
 }
+
 }  // namespace ProcessBuilder
 #endif

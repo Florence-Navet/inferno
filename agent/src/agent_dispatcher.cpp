@@ -31,7 +31,7 @@ void AgentDispatcher::startMetrics(AgentSession& session,
   logger_.info("received COMMAND START_METRICS id=" +
                std::to_string(command.id));
   metricsController_->start(session);
-  return sendResponse(session, command.id, ResponseStatus::OK, {});
+  return send(session, command.id, ResponseStatus::OK, {});
 }
 
 void AgentDispatcher::stopMetrics(AgentSession& session,
@@ -39,7 +39,7 @@ void AgentDispatcher::stopMetrics(AgentSession& session,
   logger_.info("received COMMAND STOP_METRICS id=" +
                std::to_string(command.id));
   metricsController_->stop();
-  return sendResponse(session, command.id, ResponseStatus::OK, {});
+  return send(session, command.id, ResponseStatus::OK, {});
 }
 
 void AgentDispatcher::osInfo(AgentSession& session,
@@ -47,8 +47,14 @@ void AgentDispatcher::osInfo(AgentSession& session,
   std::ostringstream what;
   what << "received COMMAND OS_INFO id=" << command.id;
   logger_.info(what.str());
-  return sendResponse(session, command.id, ResponseStatus::OK,
-                      ProtocolSerializer::toBytes("hello world from agent"));
+
+  RegisterPayload payload = monitor_.getOsInfo();
+
+  const std::vector<std::uint8_t> registerPayload =
+      ProtocolSerializer::serializeRegisterPayload(payload);
+
+  send(session, command.id, ResponseStatus::OK, registerPayload);
+
 }
 
 void AgentDispatcher::processesList(AgentSession& session,
@@ -61,7 +67,7 @@ void AgentDispatcher::processesList(AgentSession& session,
   const std::vector<std::uint8_t> processBytes =
       ProtocolSerializer::serializeProcessInfoList(processes);
 
-  return sendResponse(session, command.id, ResponseStatus::OK, processBytes);
+  return send(session, command.id, ResponseStatus::OK, processBytes);
 }
 
 void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
@@ -106,16 +112,6 @@ void AgentDispatcher::onCommand(AgentSession& session,
                          "Command not implemented in minimal agent");
     }
 
-    // if (cmd.type == CommandType::OS_INFO) {
-    //   return osInfo(session, cmd);
-    // }
-
-    // if (cmd.type == CommandType::RUNNING_PROCESSES) {
-    //   return processesList(session, cmd);
-    // }
-
-    // return sendError(session, ErrorType::UNKNOWN_COMMAND,
-    //                  "Command not implemented in minimal agent");
   } catch (const std::exception& ex) {
     std::ostringstream what;
     what << "invalid COMMAND payload: " << ex.what();
@@ -126,29 +122,18 @@ void AgentDispatcher::onCommand(AgentSession& session,
 }
 
 void AgentDispatcher::sendRegister(AgentSession& session) {
-  // ask syst monitor for the real os info instead of hardcoding it
+  std::ostringstream what;
+  CommandPayload command;
+  command.id = 0;
+  command.type = CommandType::OS_INFO;
   RegisterPayload payload = monitor_.getOsInfo();
-  // payload.os_type = OSType::LINUX;
-  // payload.arch = ArchType::X64;
-  // payload.hostname = "inferno-agent";
-  // payload.os_version = "Linux";
-  // payload.current_user = "agent";
-
-  const std::vector<std::uint8_t> registerPayload =
-      ProtocolSerializer::serializeRegisterPayload(payload);
-
-  Frame frame = {
-      ProtocolHelper::createHeader(MessageType::REGISTER, registerPayload),
-      registerPayload};
-
-  // sendFrame(session, frame);
-  session.sendFrame(frame);
   session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
-  std::ostringstream what;
   what << "at the end of sendRegister";
   logger_.info(what.str());
-  // session.registered_ = StatusRegister::SENT;
+  send(session, command.id, ResponseStatus::OK,
+       ProtocolSerializer::serializeRegisterPayload(payload),
+       MessageType::REGISTER);
 }
 
 void AgentDispatcher::setMetricsController(
@@ -156,22 +141,27 @@ void AgentDispatcher::setMetricsController(
   metricsController_ = controller;
 }
 
-void AgentDispatcher::sendResponse(AgentSession& session, std::uint16_t id,
-                                   ResponseStatus status,
-                                   const std::vector<std::uint8_t>& data) {
-  ResponsePayload payload;
-  payload.id = id;
-  payload.status = status;
-  payload.total_chunks = 1;
-  payload.chunk_index = 0;
-  payload.data = data;
+void AgentDispatcher::send(AgentSession& session, std::uint16_t id,
+                           ResponseStatus status,
+                           const std::vector<std::uint8_t>& data,
+                           MessageType type) {
+  std::vector<uint8_t> responsePayload;
+  if (type == MessageType::RESPONSE) {
+    ResponsePayload payload;
+    payload.id = id;
+    payload.status = status;
+    payload.total_chunks = 1;
+    payload.chunk_index = 0;
+    payload.data = data;
 
-  const std::vector<std::uint8_t> responsePayload =
-      ProtocolSerializer::serializeResponsePayload(payload);
+    responsePayload = ProtocolSerializer::serializeResponsePayload(payload);
+  }
 
-  Frame frame = {
-      ProtocolHelper::createHeader(MessageType::RESPONSE, responsePayload),
-      responsePayload};
-  // sendFrame(session, frame);
+  if (type == MessageType::REGISTER) {
+    responsePayload = data;
+  }
+
+  Frame frame = {ProtocolHelper::createHeader(type, responsePayload),
+                 responsePayload};
   session.sendFrame(frame);
 }

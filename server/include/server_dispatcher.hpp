@@ -17,6 +17,8 @@ class ServerDispatcher : public Dispatcher {
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
 
   void handleFrame(AgentSession& agent, const Frame& frame) override;
+  void sendCommand(AgentSession& agent, CommandType type,
+                   const std::string& data = "");
 
  private:
   // ── Incoming message handlers ───────────────────────
@@ -26,8 +28,6 @@ class ServerDispatcher : public Dispatcher {
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);
 
-  void sendCommand(AgentSession& agent, CommandType type,
-                   const std::string& data = "");
   void sendDisconnect(AgentSession& agent);
 
   std::uint16_t nextId();

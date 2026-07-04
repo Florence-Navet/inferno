@@ -38,9 +38,9 @@ class AgentDispatcher : public Dispatcher {
   std::shared_ptr<MetricsController> metricsController_{nullptr};
 
   // StatusRegister registered_{StatusRegister::REJECTED};
-  void sendResponse(AgentSession& session, std::uint16_t id,
+  void send(AgentSession& session, std::uint16_t id,
                     ResponseStatus status,
-                    const std::vector<std::uint8_t>& data);
+                    const std::vector<std::uint8_t>& data, MessageType type = MessageType::RESPONSE);
   void onCommand(AgentSession& session,
                  const std::vector<std::uint8_t>& payload);
   void onDisconnect(AgentSession& session);

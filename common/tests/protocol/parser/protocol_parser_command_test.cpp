@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
 
 #include "builders/frame_builder.hpp"
-#include "fixtures/common.hpp"
 #include "convert_endian.hpp"
 #include "exception/lptf_exception.hpp"
+#include "fixtures/common.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_parser.hpp"
 
 TEST(ProtocolParserCommand, should_parse_shell_command_when_input_is_valid) {
   const std::string data = "whoami";
-  const std::vector<std::uint8_t> input = FrameBuilder::makeCommandPayload(
+  const std::vector<std::uint8_t> input = FrameBuilder::makeRawCommandPayload(
       42, static_cast<std::uint8_t>(CommandType::SHELL),
-      static_cast<std::uint16_t>(data.size()), Common::bytesFromString(data));
+      Common::bytesFromString(data));
 
   const CommandPayload result = ProtocolParser::parseCommandPayload(input);
 
@@ -21,7 +21,7 @@ TEST(ProtocolParserCommand, should_parse_shell_command_when_input_is_valid) {
 }
 
 TEST(ProtocolParserCommand, should_parse_os_info_command_with_empty_data) {
-  const std::vector<std::uint8_t> input = FrameBuilder::makeCommandPayload(
+  const std::vector<std::uint8_t> input = FrameBuilder::makeRawCommandPayload(
       7, static_cast<std::uint8_t>(CommandType::OS_INFO), 0, {});
 
   const CommandPayload result = ProtocolParser::parseCommandPayload(input);
@@ -39,7 +39,7 @@ TEST(ProtocolParserCommand, should_reject_payload_shorter_than_fixed_fields) {
 
 TEST(ProtocolParserCommand,
      should_reject_when_declared_data_length_mismatches_payload_size) {
-  const std::vector<std::uint8_t> input = FrameBuilder::makeCommandPayload(
+  const std::vector<std::uint8_t> input = FrameBuilder::makeRawCommandPayload(
       1, static_cast<std::uint8_t>(CommandType::SHELL), 10,
       Common::bytesFromString("abc"));
 
@@ -48,14 +48,14 @@ TEST(ProtocolParserCommand,
 
 TEST(ProtocolParserCommand, should_reject_unknown_command_type) {
   const std::vector<std::uint8_t> input =
-      FrameBuilder::makeCommandPayload(1, Common::INVALID_ENUM_VALUE, 0, {});
+      FrameBuilder::makeRawCommandPayload(1, Common::INVALID_ENUM_VALUE, 0, {});
 
   EXPECT_THROW(ProtocolParser::parseCommandPayload(input), InvalidFieldValue);
 }
 
 TEST(ProtocolParserCommand, should_ignore_data_for_non_shell_command) {
-  const std::vector<std::uint8_t> input = FrameBuilder::makeCommandPayload(
-      1, static_cast<std::uint8_t>(CommandType::OS_INFO), 3,
+  const std::vector<std::uint8_t> input = FrameBuilder::makeRawCommandPayload(
+      1, static_cast<std::uint8_t>(CommandType::OS_INFO),
       Common::bytesFromString("abc"));
 
   const CommandPayload command = ProtocolParser::parseCommandPayload(input);

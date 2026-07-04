@@ -45,18 +45,18 @@ void ServerDispatcher::onRegister(AgentSession& agent,
   agent.setAgentInfo(agentInfo);
   // agent.setRegistered(true);
   std::ostringstream what;
-  what << "[REGISTER] hostname=" << agentInfo.hostname
-       << " user="<< agentInfo.current_user
-       << "  os=" << static_cast<int>(agentInfo.os_type)
-       << "  arch=" << static_cast<int>(agentInfo.arch)
-       <<" version=" <<agentInfo.os_version;
+  what << "[REGISTER] \nhostname=" << agentInfo.hostname
+       << "\nuser="<< agentInfo.current_user
+       << "\nos=" << static_cast<int>(agentInfo.os_type)
+       << "\narch=" << static_cast<int>(agentInfo.arch)
+       <<"\nversion=" <<agentInfo.os_version;
   logger_.info(what.str());
   // std::cout << "[← REGISTER] hostname=" << agentInfo.hostname
   //           << "  os=" << static_cast<int>(agentInfo.os_type)
   //           << "  arch=" << static_cast<int>(agentInfo.arch) << "\n";
 
   // First command: ask the agent for OS info.
-  sendCommand(agent, CommandType::OS_INFO);
+  // sendCommand(agent, CommandType::OS_INFO);
 }
 
 // A RESPONSE carries the same id as the COMMAND it answers,
@@ -67,10 +67,10 @@ void ServerDispatcher::onResponse(AgentSession& agent,
       ProtocolParser::parseResponsePayload(payload);
   std::ostringstream what;
 
-  what << "[RESPONSE] id=" << response.id
-       << "  chunk=" << static_cast<int>(response.chunk_index) + 1 << "/"
+  what << "[RESPONSE] \nid=" << response.id
+       << "  \nchunk=" << static_cast<int>(response.chunk_index) + 1 << "/"
        << static_cast<int>(response.total_chunks)
-       << "  status=" << static_cast<int>(response.status) << "\n"
+       << "  \nstatus=" << static_cast<int>(response.status) << "\n"
        << ProtocolParser::toString(response.data);
 
   logger_.info(what.str());

@@ -23,7 +23,7 @@ inline const std::uint16_t TEST_OS_VERSION_LEN =
 inline const std::vector<std::uint8_t> TEST_OS_VERSION{
     TEST_OS_VERSION_STR.begin(), TEST_OS_VERSION_STR.end()};
 
-inline const std::string TEST_CURRENT_USER_STR = "root";
+inline const std::string TEST_CURRENT_USER_STR = "test-currentuser";
 
 inline const std::uint16_t TEST_CURRENT_USER_LEN =
     static_cast<std::uint16_t>(TEST_CURRENT_USER_STR.size());

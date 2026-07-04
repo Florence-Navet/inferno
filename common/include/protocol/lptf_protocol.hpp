@@ -35,22 +35,24 @@ constexpr std::size_t DATA_FIXED_BYTES =
 constexpr std::size_t ERROR_FIXED_BYTES =
     sizeof(std::uint16_t) + sizeof(std::uint8_t);
 
-constexpr std::size_t PROCESS_INFO_FIXED_SIZE = sizeof(std::uint32_t) +
-    sizeof(float) +
-    sizeof(std::uint64_t) +
+constexpr std::size_t PROCESS_INFO_FIXED_SIZE =
+    sizeof(std::uint32_t) + sizeof(float) + sizeof(std::uint64_t) +
     sizeof(std::uint16_t);
 
-    // CPU: float total + uint8_t count  (per_core is variable)
-constexpr std::size_t CPU_SAMPLE_FIXED_SIZE = sizeof(float) + sizeof(std::uint8_t);
+// CPU: float total + uint8_t count  (per_core is variable)
+constexpr std::size_t CPU_SAMPLE_FIXED_SIZE =
+    sizeof(float) + sizeof(std::uint8_t);
 
 // MEM: 5 × uint64_t, fully fixed
 constexpr std::size_t MEM_SAMPLE_FIXED_SIZE = 5 * sizeof(std::uint64_t);
 
 // DISK: uint16_t device_len + 2 × uint64_t  (device string is variable)
-constexpr std::size_t DISK_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(float);
+constexpr std::size_t DISK_SAMPLE_FIXED_SIZE =
+    sizeof(std::uint16_t) + 2 * sizeof(float);
 
 // NET: uint16_t iface_len + 2 × uint64_t  (iface string is variable)
-constexpr std::size_t NET_SAMPLE_FIXED_SIZE = sizeof(std::uint16_t) + 2 * sizeof(float);
+constexpr std::size_t NET_SAMPLE_FIXED_SIZE =
+    sizeof(std::uint16_t) + 2 * sizeof(float);
 
 // METRICS top-level: 2 × uint8_t for disk_count + interface_count
 // (CpuSample and MemSample are inlined, variable themselves)
@@ -124,6 +126,12 @@ struct RegisterPayload {
   std::string hostname;
   std::string os_version;    // new — "Ubuntu 22.04", "Windows 11"
   std::string current_user;  // new — getenv("USER") / GetUserName()
+
+  bool operator==(const RegisterPayload& other) const {
+    return os_type == other.os_type && arch == other.arch &&
+           hostname == other.hostname && os_version == other.os_version &&
+           current_user == other.current_user;
+  }
 };
 
 struct CommandPayload {
@@ -143,7 +151,7 @@ struct ResponsePayload {
 struct DataPayload {
   DataType subtype;
   // std::string data;
-  std::vector<std::uint8_t> data; 
+  std::vector<std::uint8_t> data;
 };
 
 struct ErrorPayload {
@@ -158,42 +166,44 @@ struct Frame {
 };
 
 struct ProcessInfo {
-  std::uint32_t pid;       // kernel process id
-  std::string name;        // process name (up to 15 chars, from /proc/[pid]/status, -name, GetProcessImageFileName)
-  float cpu_percent;       // lifetime average CPU % (utime+stime / uptime)
-  std::uint64_t mem_bytes; // resident set size in kB (VmRSS from /proc/[pid]/status)
+  std::uint32_t pid = 0;  // kernel process id
+  std::string name = "";  // process name (up to 15 chars, from
+                          // /proc/[pid]/status, -name, GetProcessImageFileName)
+  float cpu_percent = 0.0f;  // lifetime average CPU % (utime+stime / uptime)
+  std::uint64_t mem_bytes =
+      0;  // resident set size in kB (VmRSS from /proc/[pid]/status)
 };
 
 struct CpuSample {
-    float total_percent = 0.0f;
-    std::vector<float> per_core; // one per logical core
+  float total_percent = 0.0f;
+  std::vector<float> per_core;  // one per logical core
 };
 
 struct MemSample {
-    std::uint64_t phys_total = 0;
-    std::uint64_t phys_used = 0;
-    std::uint64_t phys_available = 0;
-    std::uint64_t swap_total = 0;
-    std::uint64_t swap_used = 0;
+  std::uint64_t phys_total = 0;
+  std::uint64_t phys_used = 0;
+  std::uint64_t phys_available = 0;
+  std::uint64_t swap_total = 0;
+  std::uint64_t swap_used = 0;
 };
 
 struct DiskSample {
-    std::string   device;           // e.g. "sda", "C:"
-    float read_bytes_per_sec = 0.0f;
-    float write_bytes_per_sec = 0.0f;
+  std::string device;  // e.g. "sda", "C:"
+  float read_bytes_per_sec = 0.0f;
+  float write_bytes_per_sec = 0.0f;
 };
 
 struct NetSample {
-    std::string   iface;            // e.g. "eth0", "Ethernet"
-    float rx_bytes_per_sec = 0.0f;
-    float tx_bytes_per_sec = 0.0f;
+  std::string iface;  // e.g. "eth0", "Ethernet"
+  float rx_bytes_per_sec = 0.0f;
+  float tx_bytes_per_sec = 0.0f;
 };
 
 struct MetricsSample {
-    CpuSample             cpu;
-    MemSample             mem;
-    std::vector<DiskSample> disks;
-    std::vector<NetSample>  interfaces;
+  CpuSample cpu;
+  MemSample mem;
+  std::vector<DiskSample> disks;
+  std::vector<NetSample> interfaces;
 };
 
 #endif

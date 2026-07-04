@@ -7,6 +7,7 @@
 #include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
 #include "builders/frame_builder.hpp"
+#include "builders/os_info_builder.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
 #include "protocol/protocol_parser.hpp"
@@ -67,7 +68,7 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
 
   const RegisterPayload reg =
       ProtocolParser::parseRegisterPayload(registerFrame->payload);
-  EXPECT_EQ(reg.hostname, "test-hostname");
+  EXPECT_EQ(reg.hostname, "agent-01");
 
   // ── Send COMMAND(OS_INFO) ─────────────────────────────────
   CommandPayload cmd;
@@ -88,10 +89,8 @@ TEST(AgentIntegration, should_register_respond_and_disconnect) {
       ProtocolParser::parseResponsePayload(responseFrame->payload);
   EXPECT_EQ(response.id, 0);
   EXPECT_EQ(response.status, ResponseStatus::OK);
-  EXPECT_EQ(
-      response.data,
-      ProtocolSerializer::toBytes(
-          "hello world from agent"));  // TODO not a string anymore, byte vector
+  EXPECT_EQ(ProtocolParser::parseRegisterPayload(response.data),
+            OsInfoBuilder::create());  // TODO not a string anymore, byte vector
 
   // ── Send DISCONNECT — agent must close cleanly ────────────
   ASSERT_NO_THROW(serverSession.sendFrame(

@@ -97,7 +97,7 @@ inline std::vector<std::uint8_t> makeRawResponsePayload(
   return out;
 }
 
-inline std::vector<std::uint8_t> makeCommandPayload(
+inline std::vector<std::uint8_t> makeRawCommandPayload(
     std::uint16_t id, std::uint8_t rawType, std::uint16_t declaredLen,
     const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(COMMAND_FIXED_BYTES + dataBytes.size());
@@ -105,6 +105,32 @@ inline std::vector<std::uint8_t> makeCommandPayload(
   ConvertEndian::writeU16BE(out, offset, id);           // offset advances to 2
   out[offset] = rawType;                                // offset = 2
   offset++;                                             // offset = 3
+  ConvertEndian::writeU16BE(out, offset, declaredLen);  // offset advances to 5
+  std::copy(dataBytes.begin(), dataBytes.end(),
+            out.begin() + COMMAND_FIXED_BYTES);
+  return out;
+}
+
+inline CommandPayload makeCommandPayload(
+    std::uint16_t id, const CommandType& type,
+    const std::string& dataBytes = "") {
+  CommandPayload command;
+  command.id = id;
+  command.type = type;
+  command.data = dataBytes;
+  return command;
+}
+
+inline std::vector<std::uint8_t> makeRawCommandPayload(
+    std::uint16_t id, std::uint8_t rawType,
+    const std::vector<std::uint8_t>& dataBytes = {}) {
+  std::vector<std::uint8_t> out(COMMAND_FIXED_BYTES + dataBytes.size());
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(out, offset, id);  // offset advances to 2
+  out[offset] = rawType;                       // offset = 2
+  offset++;                                    // offset = 3
+  const std::uint16_t declaredLen =
+      static_cast<std::uint16_t>(dataBytes.size());
   ConvertEndian::writeU16BE(out, offset, declaredLen);  // offset advances to 5
   std::copy(dataBytes.begin(), dataBytes.end(),
             out.begin() + COMMAND_FIXED_BYTES);

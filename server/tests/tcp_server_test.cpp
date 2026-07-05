@@ -105,10 +105,10 @@ TEST(TcpServerIntegration,
       // Send REGISTER using the shared helper
       // const auto registerFrame =
       //     makeRawFrame(MessageType::REGISTER,
-      //     FrameBuilder::makeRegisterPayload());
+      //     FrameBuilder::makeRawOsInfoPayload());
       try {
         Frame frame = FrameBuilder::makeFrame(
-            MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+            MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
         agentSession.sendFrame(frame);
         // send succeeded, continue with the rest
         agentSession.receiveIntoBuffer();

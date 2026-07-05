@@ -18,10 +18,11 @@ inline ProcessInfo createProcessInfo(std::uint32_t pid = 1234,
 }
 
 inline std::vector<ProcessInfo> createProcessInfoList(
-    int howMayProcess = 3) {
+    std::uint32_t howMayProcess = 3) {
   std::vector<ProcessInfo> infos;
-  for (int i{0}; i < howMayProcess; ++i) {
-    infos.insert(infos.end(), ProcessBuilder::createProcessInfo());
+  std::uint32_t pid = 1234;
+  for (std::uint32_t i{0}; i < howMayProcess; ++i) {
+    infos.insert(infos.end(), ProcessBuilder::createProcessInfo(pid += i));
   }
   return infos;
 }

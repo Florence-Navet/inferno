@@ -16,8 +16,8 @@ class ProtocolSerializer {
   ProtocolSerializer& operator=(const ProtocolSerializer&) = delete;
 
   static std::vector<std::uint8_t> serializeHeader(const LptfHeader& header);
-  static std::vector<std::uint8_t> serializeRegisterPayload(
-      const RegisterPayload& payload);
+  static std::vector<std::uint8_t> serializeOsInfoPayload(
+      const OsInfoPayload& payload);
   static std::vector<std::uint8_t> serializeCommandPayload(
       const CommandPayload& payload);
   static std::vector<std::uint8_t> serializeResponsePayload(
@@ -34,7 +34,7 @@ class ProtocolSerializer {
       const std::vector<ProcessInfo>& infos);
 
   static std::vector<std::uint8_t> serializeFrame(const Frame& frame);
-  
+
   static inline std::vector<std::uint8_t> toBytes(const std::string& s) {
     return std::vector<std::uint8_t>(s.begin(), s.end());
   }

@@ -1,7 +1,10 @@
 #include "system_monitor/linux_system_monitor.hpp"
 
-
+#include <arpa/inet.h>  // inet_ntop()
+#include <ifaddrs.h>    // getifaddrs()
+#include <net/if.h>
 #include <pwd.h>
+#include <sys/socket.h>   // address family constants
 #include <sys/utsname.h>  // uname()
 #include <unistd.h>       // gethostname()
 #include <unistd.h>
@@ -12,6 +15,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "system_monitor/i_system_monitor.hpp"
 
 LinuxSystemMonitor::LinuxSystemMonitor() {
   // Initialization code, if needed
@@ -95,14 +100,15 @@ float calculateCpuPercentage(unsigned long long totalProcessTicks,
 
 }  // namespace
 
-RegisterPayload LinuxSystemMonitor::getOsInfo() {
-  RegisterPayload info;
+OsInfoPayload LinuxSystemMonitor::getOsInfo() {
+  OsInfoPayload info;
 
   info.os_type = OSType::LINUX;
   info.hostname = readHostName();
   info.current_user = readCurrentUser();
   info.arch = readArch();
   info.os_version = readOsVersion();
+  info.ip = readIpAddress();
 
   return info;
 }
@@ -131,28 +137,6 @@ std::vector<ProcessInfo> LinuxSystemMonitor::getProcessList() {
     if (!info.name.empty()) {
       processListResult.push_back(info);
     }
-    // if (std::isdigit(static_cast<unsigned char>(directoryEntry->d_name[0])))
-    // {
-    //   const std::uint32_t processId =
-    //       static_cast<std::uint32_t>(std::stoi(directoryEntry->d_name));
-    //   const std::string processName = readProcessCommName(processId);
-
-    //   // Ensure the process has not vanished (valid non-empty name)
-    // //   if (!processName.empty()) {
-    // //     //     const auto totalProcessTicks =
-    // readProcessCpuTicks(processId);
-    // //     //     const float cpuUsagePercentage = calculateCpuPercentage(
-    // //     //         totalProcessTicks, systemUptimeSeconds,
-    // clockTicksPerSecond);
-    // //     //     const std::size_t residentMemoryKb =
-    // //     //     readProcessVmRssKb(processId);
-
-    // //     //     processListResult.push_back(
-    // //     //         {processId, processName, cpuUsagePercentage,
-    // //     //         residentMemoryKb});
-    // //     //   }
-    // //   }
-    // }
   }
   closedir(procDirectory);
   return processListResult;
@@ -162,7 +146,6 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
     dirent* directoryEntry, const double& systemUptimeSeconds,
     const long& clockTicksPerSecond) {
   ProcessInfo info;
-
   // Only process directory entries that start with a digit (representing
   // PIDs)
   if (std::isdigit(static_cast<unsigned char>(directoryEntry->d_name[0]))) {
@@ -246,6 +229,9 @@ std::string LinuxSystemMonitor::readOsVersion() {
 
   if (!file.is_open()) {
     return std::string{};
+#include <arpa/inet.h>   // inet_ntop()
+#include <ifaddrs.h>     // getifaddrs()
+#include <sys/socket.h>  // address family constants
   }
 
   // TODO : read the file line by line and find PRETTY_NAME
@@ -269,4 +255,71 @@ std::string LinuxSystemMonitor::readOsVersion() {
   }
 
   return std::string{};
+}
+// std::string LinuxSystemMonitor::readIpAddress() {
+//   struct ifaddrs* ifaddr = nullptr;
+//   std::string result;
+
+//   if (getifaddrs(&ifaddr) == -1) {
+//     // return std::string{};  // Error retrieving interfaces
+//     throw std::runtime_error("Failed to retrieve network interfaces");
+//   }
+
+//   for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+//     if (ifa->ifa_addr == nullptr) continue;
+
+//     // Skip loopback and interfaces that aren't up
+//     if ((ifa->ifa_flags & IFF_LOOPBACK) || !(ifa->ifa_flags & IFF_UP)) {
+//       continue;
+//     }
+
+//     // Only handle IPv4 for now
+//     if (ifa->ifa_addr->sa_family == AF_INET) {
+//       struct sockaddr_in* ipv4 =
+//           reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+
+//       char addressBuffer[INET_ADDRSTRLEN];
+//       inet_ntop(AF_INET, &ipv4->sin_addr, addressBuffer, INET_ADDRSTRLEN);
+
+//       result = std::string{addressBuffer};
+//       break;  // Return first valid non-loopback interface
+//     }
+//   }
+
+//   freeifaddrs(ifaddr);
+//   return result;
+// }
+
+std::string LinuxSystemMonitor::readIpAddress() {
+  struct ifaddrs* ifaddr = nullptr;
+  std::string result;
+
+  if (getifaddrs(&ifaddr) == -1) {
+    throw std::runtime_error("Failed to retrieve network interfaces");
+  }
+
+  for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr != nullptr) {
+      // Skip loopback and interfaces that aren't up
+      if (!(ifa->ifa_flags & IFF_LOOPBACK) && (ifa->ifa_flags & IFF_UP)) {
+        // Only handle IPv4 for now
+        if (ifa->ifa_addr->sa_family == AF_INET) {
+          struct sockaddr_in* ipv4 =
+              reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
+
+          char addressBuffer[INET_ADDRSTRLEN];
+          inet_ntop(AF_INET, &ipv4->sin_addr, addressBuffer, INET_ADDRSTRLEN);
+
+          result = std::string{addressBuffer};
+          freeifaddrs(ifaddr);
+          
+          return result;// Return first valid non-loopback interface
+        }
+      }
+    }
+  }
+
+  freeifaddrs(ifaddr);
+  throw std::runtime_error("Failed to retrieve network interfaces");
+  // return result;
 }

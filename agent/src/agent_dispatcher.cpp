@@ -48,13 +48,12 @@ void AgentDispatcher::osInfo(AgentSession& session,
   what << "received COMMAND OS_INFO id=" << command.id;
   logger_.info(what.str());
 
-  RegisterPayload payload = monitor_.getOsInfo();
+  OsInfoPayload payload = monitor_.getOsInfo();
 
-  const std::vector<std::uint8_t> registerPayload =
-      ProtocolSerializer::serializeRegisterPayload(payload);
+  const std::vector<std::uint8_t> OsInfoPayload =
+      ProtocolSerializer::serializeOsInfoPayload(payload);
 
-  send(session, command.id, ResponseStatus::OK, registerPayload);
-
+  send(session, command.id, ResponseStatus::OK, OsInfoPayload);
 }
 
 void AgentDispatcher::processesList(AgentSession& session,
@@ -126,13 +125,13 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   CommandPayload command;
   command.id = 0;
   command.type = CommandType::OS_INFO;
-  RegisterPayload payload = monitor_.getOsInfo();
+  OsInfoPayload payload = monitor_.getOsInfo();
   session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
   what << "at the end of sendRegister";
   logger_.info(what.str());
   send(session, command.id, ResponseStatus::OK,
-       ProtocolSerializer::serializeRegisterPayload(payload),
+       ProtocolSerializer::serializeOsInfoPayload(payload),
        MessageType::REGISTER);
 }
 

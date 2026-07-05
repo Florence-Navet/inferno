@@ -8,7 +8,6 @@
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
 
-
 // AgentSession::AgentSession() :  {}
 
 std::optional<Frame> AgentSession::tryExtractFrame() {
@@ -59,14 +58,14 @@ SocketResult AgentSession::send(const std::vector<std::uint8_t>& bytes) {
 }
 
 // ===== Register payload related methods =====
-const RegisterPayload& AgentSession::getAgentInfo() const {
+const OsInfoPayload& AgentSession::getAgentInfo() const {
   if (!isRegistered_) {
     throw std::runtime_error("Agent not registered");
   }
   return agentInfo_;
 }
 
-void AgentSession::setAgentInfo(const RegisterPayload& info) {
+void AgentSession::setAgentInfo(const OsInfoPayload& info) {
   agentInfo_ = info;
   isRegistered_ = true;
 }

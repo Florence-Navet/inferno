@@ -10,7 +10,7 @@ class LinuxSystemMonitor : public ISystemMonitor {
   LinuxSystemMonitor();
   ~LinuxSystemMonitor() override;
 
-  RegisterPayload getOsInfo() override;
+  OsInfoPayload getOsInfo() override;
   std::vector<ProcessInfo> getProcessList() override;
   // MetricsSample sampleMetrics()                     override;
   std::string executeShell(const std::string& command) override;
@@ -27,6 +27,8 @@ class LinuxSystemMonitor : public ISystemMonitor {
 
   // read os vertion string (" Debian GNU/Linux 12")
   std::string readOsVersion();
+
+  std::string readIpAddress();  // New method
 
   // double getUptime();
   // std::string readComm(int pid);

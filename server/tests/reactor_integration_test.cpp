@@ -61,7 +61,7 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
   ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
 
   const auto registerFrame = FrameBuilder::makeRawFrame(
-      MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+      MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
   EXPECT_TRUE(socket->send(registerFrame).ok());
 
   reactor.stop();
@@ -117,7 +117,7 @@ TEST(ReactorIntegration, should_keep_serving_after_first_agent_disconnects) {
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
     const auto registerFrame = FrameBuilder::makeRawFrame(
-        MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+        MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 
@@ -126,7 +126,7 @@ TEST(ReactorIntegration, should_keep_serving_after_first_agent_disconnects) {
     auto socket = SocketFactory::createTCP();
     ASSERT_TRUE(socket->connect(Common::SERVER_HOST, port));
     const auto registerFrame = FrameBuilder::makeRawFrame(
-        MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+        MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
     EXPECT_TRUE(socket->send(registerFrame).ok());
   }
 

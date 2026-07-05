@@ -36,7 +36,7 @@ void copyString(std::vector<std::uint8_t>& out, std::size_t offset,
   }
 }
 
-void validateRegisterPayload(const RegisterPayload& payload) {
+void validateOsInfoPayload(const OsInfoPayload& payload) {
   if (payload.os_type >= OSType::END) {
     throw InvalidFieldValue(
         "os_type", std::to_string(static_cast<std::uint8_t>(payload.os_type)));
@@ -57,6 +57,10 @@ void validateRegisterPayload(const RegisterPayload& payload) {
     throw InvalidSize("register current_user length", "0");
   }
 
+  if (payload.ip.empty()) {
+    throw InvalidSize("register ip length", "0");
+  }
+
   if (payload.hostname.size() > REGISTER_MAX_HOSTNAME_LEN) {
     throw InvalidSize("register hostname length",
                       std::to_string(payload.hostname.size()));
@@ -67,6 +71,8 @@ void validateRegisterPayload(const RegisterPayload& payload) {
   ensureFitsU16(payload.os_version.size(), "register os_version length");
 
   ensureFitsU16(payload.current_user.size(), "register current_user length");
+
+  ensureFitsU16(payload.ip.size(), "register ip length");
 }
 
 void validateCommandPayload(const CommandPayload& payload) {
@@ -148,13 +154,13 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
   return headerInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
-    const RegisterPayload& payload) {
-  validateRegisterPayload(payload);
+std::vector<std::uint8_t> ProtocolSerializer::serializeOsInfoPayload(
+    const OsInfoPayload& payload) {
+  validateOsInfoPayload(payload);
 
   const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size() +
                               payload.os_version.size() +
-                              payload.current_user.size()};
+                              payload.current_user.size() + payload.ip.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.os_type);
@@ -172,6 +178,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
       payloadInByte, offset,
       static_cast<std::uint16_t>(payload.current_user.size()));
 
+  ConvertEndian::writeU16BE(payloadInByte, offset,
+                            static_cast<std::uint16_t>(payload.ip.size()));
+
   copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
 
   copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
@@ -181,6 +190,11 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeRegisterPayload(
              REGISTER_FIXED_BYTES + payload.hostname.size() +
                  payload.os_version.size(),
              payload.current_user);
+
+  copyString(payloadInByte,
+             REGISTER_FIXED_BYTES + payload.hostname.size() +
+                 payload.os_version.size() + payload.current_user.size(),
+             payload.ip);
 
   return payloadInByte;
 }

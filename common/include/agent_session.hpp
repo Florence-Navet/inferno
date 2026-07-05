@@ -38,8 +38,8 @@ class AgentSession {
   void sendFrame(const Frame& frame);
 
   // ===== Register payload related methods =====
-  const RegisterPayload& getAgentInfo() const;
-  void setAgentInfo(const RegisterPayload& info);
+  const OsInfoPayload& getAgentInfo() const;
+  void setAgentInfo(const OsInfoPayload& info);
 
   // ===== Register and registration state related method =====
   RegisterState getRegistered_() const { return registered_; };
@@ -63,7 +63,7 @@ class AgentSession {
   void consume(std::size_t n);
   std::vector<std::uint8_t> slice(std::size_t offset, std::size_t len) const;
 
-  RegisterPayload agentInfo_;
+  OsInfoPayload agentInfo_;
   bool isRegistered_ = false;
   bool encryption_;
   Logger logger_{"agent"};

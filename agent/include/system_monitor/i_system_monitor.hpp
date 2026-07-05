@@ -8,7 +8,7 @@
 class ISystemMonitor {
  public:
   virtual ~ISystemMonitor() = default;
-  virtual RegisterPayload getOsInfo() = 0;
+  virtual OsInfoPayload getOsInfo() = 0;
   virtual std::vector<ProcessInfo> getProcessList() = 0;
   // virtual MetricsSample sampleMetrics()                     = 0;
   virtual std::string executeShell(const std::string& command) = 0;

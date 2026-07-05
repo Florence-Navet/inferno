@@ -1,12 +1,12 @@
 #ifndef OS_INFO_BUILDER_HPP
 #define OS_INFO_BUILDER_HPP
 
-#include "protocol/lptf_protocol.hpp"
 #include "fixtures/protocol.hpp"
+#include "protocol/lptf_protocol.hpp"
 
 namespace OsInfoBuilder {
-inline RegisterPayload create() {
-  RegisterPayload info;
+inline OsInfoPayload create() {
+  OsInfoPayload info;
   info.os_type = OSType::LINUX;
   info.arch = ArchType::X64;
   // info.hostname = "agent-01";
@@ -15,8 +15,9 @@ inline RegisterPayload create() {
   // info.os_version = "test-osversion";
   // info.current_user = "test-currentuser";
   info.current_user = Protocol::TEST_CURRENT_USER_STR;
+  info.ip = Protocol::TEST_IP_STR;
   return info;
 }
-};  // namespace osInfoBuilder
+};  // namespace OsInfoBuilder
 
 #endif

@@ -11,21 +11,20 @@
 
 TEST(ProtocolRoundTrip,
      should_preserve_register_payload_through_serialize_then_parse) {
-  RegisterPayload input{
-      OSType::LINUX, ArchType::X64,
-      Protocol::TEST_HOSTNAME_STR,
-      Protocol::TEST_OS_VERSION_STR,
-      Protocol::TEST_CURRENT_USER_STR};
+
+  OsInfoPayload input = FrameBuilder::makeOsInfoPayload();
 
   const std::vector<std::uint8_t> bytes =
-      ProtocolSerializer::serializeRegisterPayload(input);
-  const RegisterPayload result = ProtocolParser::parseRegisterPayload(bytes);
+      ProtocolSerializer::serializeOsInfoPayload(input);
+  const OsInfoPayload result = ProtocolParser::parseOsInfoPayload(bytes);
 
-  EXPECT_EQ(result.os_type, input.os_type);
-  EXPECT_EQ(result.arch, input.arch);
-  EXPECT_EQ(result.hostname, input.hostname);
-  EXPECT_EQ(result.os_version, input.os_version);
-  EXPECT_EQ(result.current_user, input.current_user);
+  EXPECT_EQ(result, input);
+
+//   EXPECT_EQ(result.os_type, input.os_type);
+//   EXPECT_EQ(result.arch, input.arch);
+//   EXPECT_EQ(result.hostname, input.hostname);
+//   EXPECT_EQ(result.os_version, input.os_version);
+//   EXPECT_EQ(result.current_user, input.current_user);
 }
 
 TEST(ProtocolRoundTrip,

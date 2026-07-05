@@ -128,7 +128,7 @@ LptfHeader ProtocolParser::parseHeader(const std::vector<std::uint8_t>& input) {
   return header;
 }
 
-RegisterPayload ProtocolParser::parseRegisterPayload(
+OsInfoPayload ProtocolParser::parseOsInfoPayload(
     const std::vector<std::uint8_t>& input) {
   if (input.size() < REGISTER_FIXED_BYTES) {
     throw InvalidSize("register payload", std::to_string(input.size()));
@@ -138,20 +138,22 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
   const std::uint16_t hostnameLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t osVersionLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, offset)};
+  const std::uint16_t ipLen{ConvertEndian::readU16BE(input, offset)};
 
   const std::size_t maxFieldLen{MAX_VALUE_INT16 - REGISTER_FIXED_BYTES};
 
   validateNotNullLength(hostnameLen, maxFieldLen);
   validateNotNullLength(osVersionLen, maxFieldLen);
   validateNotNullLength(currentUserLen, maxFieldLen);
+  validateNotNullLength(ipLen, maxFieldLen);
 
   const std::size_t expectedSize{REGISTER_FIXED_BYTES + hostnameLen +
-                                 osVersionLen + currentUserLen};
+                                 osVersionLen + currentUserLen + ipLen};
   validateExpectedLength(input, expectedSize);
   // validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
   // TODO validateStringLength needs to check each string or all payload
 
-  RegisterPayload payload;
+  OsInfoPayload payload;
   payload.os_type = toOsType(input[0]);
   payload.arch = toArchType(input[1]);
   payload.hostname.assign(
@@ -167,6 +169,11 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
       reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES +
                                     hostnameLen + osVersionLen),
       currentUserLen);
+
+  payload.ip.assign(reinterpret_cast<const char*>(
+                        input.data() + REGISTER_FIXED_BYTES + hostnameLen +
+                        osVersionLen + currentUserLen),
+                    ipLen);
   return payload;
 }
 
@@ -185,11 +192,12 @@ DataPayload ProtocolParser::parseDataPayload(
   DataPayload payload;
   payload.subtype = toDataType(input[0]);
   // payload.data.assign(
-  //     reinterpret_cast<const char*>(input.data() + DATA_FIXED_BYTES), dataLen);
-  payload.data = std::vector<std::uint8_t>(
-    input.begin() + DATA_FIXED_BYTES,
-    input.begin() + DATA_FIXED_BYTES + dataLen);
-    
+  //     reinterpret_cast<const char*>(input.data() + DATA_FIXED_BYTES),
+  //     dataLen);
+  payload.data =
+      std::vector<std::uint8_t>(input.begin() + DATA_FIXED_BYTES,
+                                input.begin() + DATA_FIXED_BYTES + dataLen);
+
   return payload;
 }
 

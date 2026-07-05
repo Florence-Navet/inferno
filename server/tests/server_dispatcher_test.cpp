@@ -19,7 +19,7 @@
 
 //   dispatcher.handleFrame(
 //       session, FrameBuilder::makeFrame(MessageType::REGISTER,
-//                                        FrameBuilder::makeRegisterPayload()));
+//                                        FrameBuilder::makeRawOsInfoPayload()));
 
 //   EXPECT_TRUE(session.getIsRegistered());
 //   EXPECT_EQ(session.getAgentInfo().hostname, Protocol::TEST_HOSTNAME_STR);
@@ -39,11 +39,11 @@ TEST(ServerDispatcher, should_register_session_on_register) {
 
   dispatcher.handleFrame(
       session, FrameBuilder::makeFrame(MessageType::REGISTER,
-                                       FrameBuilder::makeRegisterPayload()));
+                                       FrameBuilder::makeRawOsInfoPayload()));
 
   EXPECT_TRUE(session.getIsRegistered());
   EXPECT_EQ(session.getAgentInfo().hostname, Protocol::TEST_HOSTNAME_STR);
-  // EXPECT_EQ(session.getAgentInfo(), FrameBuilder::makeRegisterPayload())
+  // EXPECT_EQ(session.getAgentInfo(), FrameBuilder::makeRawOsInfoPayload())
 }
 
 TEST(ServerDispatcher, should_send_error_when_unknown_message_type_received) {
@@ -78,8 +78,7 @@ TEST(ServerDispatcher,
 
     // extract frames via real RX pipeline
     while (auto frame = session.tryExtractFrame()) {
-      CommandPayload cmd =
-          ProtocolParser::parseCommandPayload(frame->payload);
+      CommandPayload cmd = ProtocolParser::parseCommandPayload(frame->payload);
 
       ids.push_back(cmd.id);
     }

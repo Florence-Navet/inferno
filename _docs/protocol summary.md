@@ -88,7 +88,7 @@ Each message is composed of:
 Sent by agent after connection.
 
 ```c++
-struct RegisterPayload {
+struct OsInfoPayload {
     uint8_t os_type;
     uint8_t arch;
     uint16_t hostname_length;

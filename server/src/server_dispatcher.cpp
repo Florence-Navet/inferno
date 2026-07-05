@@ -41,22 +41,17 @@ void ServerDispatcher::handleFrame(AgentSession& agent, const Frame& frame) {
 // Once we know who it is, we kick off the command sequence.
 void ServerDispatcher::onRegister(AgentSession& agent,
                                   const std::vector<std::uint8_t>& payload) {
-  RegisterPayload agentInfo = ProtocolParser::parseRegisterPayload(payload);
+  OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   agent.setAgentInfo(agentInfo);
-  // agent.setRegistered(true);
-  std::ostringstream what;
-  what << "[REGISTER] \nhostname=" << agentInfo.hostname
-       << "\nuser="<< agentInfo.current_user
-       << "\nos=" << static_cast<int>(agentInfo.os_type)
-       << "\narch=" << static_cast<int>(agentInfo.arch)
-       <<"\nversion=" <<agentInfo.os_version;
-  logger_.info(what.str());
-  // std::cout << "[← REGISTER] hostname=" << agentInfo.hostname
-  //           << "  os=" << static_cast<int>(agentInfo.os_type)
-  //           << "  arch=" << static_cast<int>(agentInfo.arch) << "\n";
 
-  // First command: ask the agent for OS info.
-  // sendCommand(agent, CommandType::OS_INFO);
+  std::ostringstream what;
+  what << "[REGISTER] \nhostname : " << agentInfo.hostname
+       << "\nuser : " << agentInfo.current_user
+       << "\nos : " << static_cast<int>(agentInfo.os_type)
+       << "\narch : " << static_cast<int>(agentInfo.arch)
+       << "\nversion : " << agentInfo.os_version
+       << "\nip : " << agentInfo.ip;
+  logger_.info(what.str());
 }
 
 // A RESPONSE carries the same id as the COMMAND it answers,
@@ -74,13 +69,7 @@ void ServerDispatcher::onResponse(AgentSession& agent,
        << ProtocolParser::toString(response.data);
 
   logger_.info(what.str());
-  // std::cout << "[← RESPONSE] id=" << response.id
-  //           << "  chunk=" << static_cast<int>(response.chunk_index) + 1 <<
-  //           "/"
-  //           << static_cast<int>(response.total_chunks)
-  //           << "  status=" << static_cast<int>(response.status) << "\n"
-  //           << response.data << "\n";
-
+  
   // Only act once all chunks of this response have arrived.
   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
   // if (lastChunk) sendDisconnect(agent);

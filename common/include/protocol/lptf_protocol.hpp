@@ -1,11 +1,13 @@
 #ifndef LPTF_PROTOCOL_HPP
 #define LPTF_PROTOCOL_HPP
-
+// #include <array>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <ostream>
 #include <string>
+#include <type_traits>
 #include <vector>
-
 // ! send() second arg is size_t
 constexpr std::uint8_t LPTF_VERSION = 1;
 constexpr std::uint8_t LPTF_HEADER_SIZE =
@@ -15,9 +17,9 @@ constexpr char LPTF_IDENTIFIER[4] = {'L', 'P', 'T', 'F'};
 constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER, 4);
 
 constexpr std::size_t REGISTER_FIXED_BYTES =
-    3 * sizeof(std::uint16_t) +
+    4 * sizeof(std::uint16_t) +
     2 * sizeof(std::uint8_t);  // hostname_len + os_version_len +
-                               // current_user_len + os_type + arch
+                               // current_user_len + ip_len + os_type + arch
 
 constexpr std::size_t KMAX_U16_VALUE = 65535u;
 constexpr std::uint16_t MAX_VALUE_INT16 =
@@ -59,6 +61,12 @@ constexpr std::size_t NET_SAMPLE_FIXED_SIZE =
 constexpr std::size_t METRICS_SAMPLE_FIXED_SIZE = sizeof(std::uint8_t) * 2;
 
 constexpr int METRICS_INTERVAL_MS = 1000;
+
+// template <typename E>
+template <typename E, std::enable_if_t<std::is_enum_v<E>, int> = 0>
+std::ostream& operator<<(std::ostream& os, E value) {
+  return os << static_cast<int>(value);
+}
 
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
@@ -115,54 +123,85 @@ enum class ResponseStatus : std::uint8_t {
 
 struct LptfHeader {
   char identifier[4];
-  std::uint8_t version;
-  MessageType type;
-  std::uint16_t size;
+  // std::array<char, 4> identifier;
+  std::uint8_t version = 0;
+  MessageType type = MessageType::END;
+  std::uint16_t size = 0;
+
+  bool operator==(const LptfHeader& other) const {
+    return std::equal(std::begin(identifier), std::end(identifier),
+                      std::begin(other.identifier)) &&
+           version == other.version && type == other.type && size == other.size;
+    // return identifier == other.identifier && version == other.version &&
+    //        type == other.type && size == other.size;
+  }
 };
 
-struct RegisterPayload {
-  OSType os_type;
-  ArchType arch;
-  std::string hostname;
-  std::string os_version;    // new — "Ubuntu 22.04", "Windows 11"
-  std::string current_user;  // new — getenv("USER") / GetUserName()
+struct OsInfoPayload {
+  OSType os_type = OSType::END;
+  ArchType arch = ArchType::END;
+  std::string hostname = "";
+  std::string os_version = "";    // new — "Ubuntu 22.04", "Windows 11"
+  std::string current_user = "";  // new — getenv("USER") / GetUserName()
+  std::string ip = "";
 
-  bool operator==(const RegisterPayload& other) const {
+  bool operator==(const OsInfoPayload& other) const {
     return os_type == other.os_type && arch == other.arch &&
            hostname == other.hostname && os_version == other.os_version &&
-           current_user == other.current_user;
+           current_user == other.current_user && ip == other.ip;
   }
 };
 
 struct CommandPayload {
-  std::uint16_t id;
-  CommandType type;
-  std::string data;
+  std::uint16_t id = 0;
+  CommandType type = CommandType::END;
+  std::string data = "";
+
+  bool operator==(const CommandPayload& other) const {
+    return id == other.id && data == other.data && type == other.type;
+  }
 };
 
 struct ResponsePayload {
-  std::uint16_t id;
-  ResponseStatus status;
-  std::uint8_t total_chunks;
-  std::uint8_t chunk_index;
-  std::vector<std::uint8_t> data;
+  std::uint16_t id = 0;
+  ResponseStatus status = ResponseStatus::END;
+  std::uint8_t total_chunks = 0;
+  std::uint8_t chunk_index = 0;
+  std::vector<std::uint8_t> data = {};
+
+  bool operator==(const ResponsePayload& other) const {
+    return id == other.id && status == other.status &&
+           total_chunks == other.total_chunks &&
+           chunk_index == other.chunk_index && data == other.data;
+  }
 };
 
 struct DataPayload {
-  DataType subtype;
-  // std::string data;
-  std::vector<std::uint8_t> data;
+  DataType subtype = DataType::END;
+  std::vector<std::uint8_t> data = {};
+
+  bool operator==(const DataPayload& other) const {
+    return subtype == other.subtype && data == other.data;
+  }
 };
 
 struct ErrorPayload {
-  ErrorType code;
-  std::string message;
+  ErrorType code = ErrorType::END;
+  std::string message = "";
+
+  bool operator==(const ErrorPayload& other) const {
+    return code == other.code && message == other.message;
+  }
 };
 
 // Generic struct for recv()
 struct Frame {
   LptfHeader header;
-  std::vector<std::uint8_t> payload;
+  std::vector<std::uint8_t> payload = {};
+
+  bool operator==(const Frame& other) const {
+    return header == other.header && payload == other.payload;
+  }
 };
 
 struct ProcessInfo {
@@ -172,11 +211,20 @@ struct ProcessInfo {
   float cpu_percent = 0.0f;  // lifetime average CPU % (utime+stime / uptime)
   std::uint64_t mem_bytes =
       0;  // resident set size in kB (VmRSS from /proc/[pid]/status)
+
+  bool operator==(const ProcessInfo& other) const {
+    return pid == other.pid && name == other.name &&
+           cpu_percent == other.cpu_percent && mem_bytes == other.mem_bytes;
+  }
 };
 
 struct CpuSample {
   float total_percent = 0.0f;
   std::vector<float> per_core;  // one per logical core
+
+  bool operator==(const CpuSample& other) const {
+    return total_percent == other.total_percent && per_core == other.per_core;
+  }
 };
 
 struct MemSample {
@@ -185,18 +233,35 @@ struct MemSample {
   std::uint64_t phys_available = 0;
   std::uint64_t swap_total = 0;
   std::uint64_t swap_used = 0;
+
+  bool operator==(const MemSample& other) const {
+    return phys_total == other.phys_total && phys_used == other.phys_used &&
+           phys_available == other.phys_available &&
+           swap_total == other.swap_total && swap_used == other.swap_used;
+  }
 };
 
 struct DiskSample {
   std::string device;  // e.g. "sda", "C:"
   float read_bytes_per_sec = 0.0f;
   float write_bytes_per_sec = 0.0f;
+
+  bool operator==(const DiskSample& other) const {
+    return device == other.device &&
+           read_bytes_per_sec == other.read_bytes_per_sec &&
+           write_bytes_per_sec == other.write_bytes_per_sec;
+  }
 };
 
 struct NetSample {
   std::string iface;  // e.g. "eth0", "Ethernet"
   float rx_bytes_per_sec = 0.0f;
   float tx_bytes_per_sec = 0.0f;
+
+  bool operator==(const NetSample& other) const {
+    return iface == other.iface && rx_bytes_per_sec == other.rx_bytes_per_sec &&
+           tx_bytes_per_sec == other.tx_bytes_per_sec;
+  }
 };
 
 struct MetricsSample {
@@ -204,6 +269,11 @@ struct MetricsSample {
   MemSample mem;
   std::vector<DiskSample> disks;
   std::vector<NetSample> interfaces;
+
+  bool operator==(const MetricsSample& other) const {
+    return cpu == other.cpu && mem == other.mem && disks == other.disks &&
+           interfaces == other.interfaces;
+  }
 };
 
 #endif

@@ -38,7 +38,7 @@ inline std::vector<std::uint8_t> makeRawFrame(
   return frame;
 }
 
-inline std::vector<std::uint8_t> makeRegisterPayload(
+inline std::vector<std::uint8_t> makeRawFailingOsInfoPayload(
     const std::uint8_t rawOs = static_cast<uint8_t>(OSType::LINUX),
     const std::uint8_t rawArch = static_cast<uint8_t>(ArchType::X64),
     const std::uint16_t declaredHostnameLen = Protocol::TEST_HOSTNAME_LEN,
@@ -48,7 +48,9 @@ inline std::vector<std::uint8_t> makeRegisterPayload(
     const std::vector<std::uint8_t>& hostnameBytes = Protocol::TEST_HOSTNAME,
     const std::vector<std::uint8_t>& osVersionBytes = Protocol::TEST_OS_VERSION,
     const std::vector<std::uint8_t>& currentUserBytes =
-        Protocol::TEST_CURRENT_USER) {
+        Protocol::TEST_CURRENT_USER,
+    const std::uint16_t declaredIpLen = Protocol::TEST_IP_LEN,
+    const std::vector<std::uint8_t>& ipBytes = Protocol::TEST_IP) {
   std::vector<std::uint8_t> out(REGISTER_FIXED_BYTES);
 
   out[0] = rawOs;
@@ -57,11 +59,35 @@ inline std::vector<std::uint8_t> makeRegisterPayload(
   ConvertEndian::writeU16BE(out, offset, declaredHostnameLen);
   ConvertEndian::writeU16BE(out, offset, declaredOsVersionLen);
   ConvertEndian::writeU16BE(out, offset, declaredCurrentUserLen);
+  ConvertEndian::writeU16BE(out, offset, declaredIpLen);
 
   out.insert(out.end(), hostnameBytes.begin(), hostnameBytes.end());
   out.insert(out.end(), osVersionBytes.begin(), osVersionBytes.end());
   out.insert(out.end(), currentUserBytes.begin(), currentUserBytes.end());
+  out.insert(out.end(), ipBytes.begin(), ipBytes.end());
   return out;
+}
+
+inline OsInfoPayload makeOsInfoPayload(
+    OSType os_type = OSType::LINUX, ArchType arch = ArchType::X64,
+    const std::string& hostname = Protocol::TEST_HOSTNAME_STR,
+    const std::string& os_version = Protocol::TEST_OS_VERSION_STR,
+    const std::string& current_user = Protocol::TEST_CURRENT_USER_STR,
+    const std::string& ip = Protocol::TEST_IP_STR) {
+  const OsInfoPayload info = {os_type,    arch,         hostname,
+                              os_version, current_user, ip};
+  return info;
+}
+
+inline std::vector<std::uint8_t> makeRawOsInfoPayload(
+    OSType os_type = OSType::LINUX, ArchType arch = ArchType::X64,
+    const std::string& hostname = Protocol::TEST_HOSTNAME_STR,
+    const std::string& os_version = Protocol::TEST_OS_VERSION_STR,
+    const std::string& current_user = Protocol::TEST_CURRENT_USER_STR,
+    const std::string& ip = Protocol::TEST_IP_STR) {
+  const OsInfoPayload info = {os_type,    arch,         hostname,
+                              os_version, current_user, ip};
+  return ProtocolSerializer::serializeOsInfoPayload(info);
 }
 
 inline std::vector<std::uint8_t> makeResponsePayload(
@@ -111,9 +137,9 @@ inline std::vector<std::uint8_t> makeRawCommandPayload(
   return out;
 }
 
-inline CommandPayload makeCommandPayload(
-    std::uint16_t id, const CommandType& type,
-    const std::string& dataBytes = "") {
+inline CommandPayload makeCommandPayload(std::uint16_t id,
+                                         const CommandType& type,
+                                         const std::string& dataBytes = "") {
   CommandPayload command;
   command.id = id;
   command.type = type;

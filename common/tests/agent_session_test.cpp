@@ -59,7 +59,8 @@ TEST(AgentSessionBuffer,
 TEST(AgentSessionBuffer,
      should_extract_frame_when_complete_frame_arrives_at_once) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = FrameBuilder::makeRegisterPayload();
+  const std::vector<std::uint8_t> payload =
+      FrameBuilder::makeRawOsInfoPayload();
   // feed(agentSession, makeRawFrame(MessageType::REGISTER, payload));
   agentSession.appendToBuffer(
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload));
@@ -94,7 +95,8 @@ TEST(AgentSessionFrameExtraction,
   // Bytes distincts pour détecter toute corruption ou décalage
   const std::vector<std::uint8_t> payload = {0x00, 0x01, 0x7F, 0x80,
                                              0xFF, 0xAB, 0xCD, 0xEF};
-  agentSession.appendToBuffer(FrameBuilder::makeRawFrame(MessageType::DATA, payload));
+  agentSession.appendToBuffer(
+      FrameBuilder::makeRawFrame(MessageType::DATA, payload));
 
   const std::optional<Frame> frame = agentSession.tryExtractFrame();
   ASSERT_TRUE(frame.has_value());
@@ -104,7 +106,8 @@ TEST(AgentSessionFrameExtraction,
 TEST(AgentSessionBuffer,
      should_consume_header_and_payload_bytes_after_extraction) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = FrameBuilder::makeRegisterPayload();
+  const std::vector<std::uint8_t> payload =
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> raw =
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload);
   agentSession.appendToBuffer(raw);
@@ -123,7 +126,7 @@ TEST(AgentSessionBuffer,
   const std::vector<std::uint8_t> frame1 =
       FrameBuilder::makeRawFrame(MessageType::DISCONNECT);
   const std::vector<std::uint8_t> frame2 = FrameBuilder::makeRawFrame(
-      MessageType::REGISTER, FrameBuilder::makeRegisterPayload());
+      MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
   const std::vector<std::uint8_t> frame2Header = std::vector<std::uint8_t>(
       frame2.begin(), frame2.begin() + LPTF_HEADER_SIZE);
 
@@ -148,7 +151,8 @@ TEST(
     AgentSessionReassembly,
     should_return_nullopt_for_every_byte_until_the_last_one_completes_the_frame) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = FrameBuilder::makeRegisterPayload();
+  const std::vector<std::uint8_t> payload =
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame =
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload);
 
@@ -168,7 +172,8 @@ TEST(
     AgentSessionBuffer,
     should_extract_frame_when_header_and_payload_arrive_in_separate_recv_calls) {
   AgentSession agentSession;
-  const std::vector<std::uint8_t> payload = FrameBuilder::makeRegisterPayload();
+  const std::vector<std::uint8_t> payload =
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame =
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload);
 
@@ -195,7 +200,7 @@ TEST(AgentSessionConsecutiveFrames,
      should_extract_first_frame_and_leave_second_frame_header_in_state) {
   AgentSession agentSession;
   const std::vector<std::uint8_t> payload2 =
-      FrameBuilder::makeRegisterPayload();
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame2 =
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload2);
 
@@ -218,7 +223,7 @@ TEST(AgentSessionBuffer,
      should_extract_two_consecutive_frames_without_data_loss) {
   AgentSession agentSession;
   const std::vector<std::uint8_t> payload1 =
-      FrameBuilder::makeRegisterPayload();
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> payload2 =
       FrameBuilder::makeResponsePayload(0, "result");
 
@@ -245,7 +250,7 @@ TEST(AgentSessionBuffer,
      should_extract_second_frame_only_after_it_becomes_complete) {
   AgentSession agentSession;
   const std::vector<std::uint8_t> payload2 =
-      FrameBuilder::makeRegisterPayload();
+      FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> raw2 =
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload2);
 

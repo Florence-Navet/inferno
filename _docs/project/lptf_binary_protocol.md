@@ -58,15 +58,17 @@ Payload immediately follows the header.
 Agent sends REGISTER immediately after connecting.
 
 ```c++
-    struct RegisterPayload {
+    struct OsInfoPayload {
         uint8_t os_type;        // 0=Windows, 1=Linux, 2=macOS
         uint8_t arch;           // 0=x86, 1=x64, 2=ARM
         uint16_t hostname_len;
         uint16_t os_version_len
         uint16_t current_user_len;
+        uint16_t ip_len;
         char hostname[hostname_len]; // UTF-8
         char os_version[os_version_len];
         char current_user[current_user_len];
+        char ip[ip_len];
     };
 ```
 

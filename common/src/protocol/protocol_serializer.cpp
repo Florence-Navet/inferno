@@ -5,145 +5,20 @@
 
 #include "convert_endian.hpp"
 #include "exception/lptf_exception.hpp"
+#include "protocol/protocol_helper.hpp"
 
-namespace {
-
-void ensureFitsU16(std::size_t sourceSize, const std::string& source) {
-  if (sourceSize > KMAX_U16_VALUE) {
-    throw InvalidSize(source, std::to_string(sourceSize));
-  }
-}
-
-void validateHeader(const LptfHeader& header) {
-  const std::string inputIdentifier(header.identifier,
-                                    sizeof(header.identifier));
-  if (inputIdentifier != LPTF_IDENTIFIER_STR) {
-    throw InvalidIdentifier(inputIdentifier);
-  }
-  if (header.version != LPTF_VERSION) {
-    throw UnsupportedVersion(std::to_string(header.version),
-                             "Version provided is not a number");
-  }
-  if (header.type >= MessageType::END) {
-    throw InvalidType(std::to_string(static_cast<std::uint8_t>(header.type)));
-  }
-}
-
-void copyString(std::vector<std::uint8_t>& out, std::size_t offset,
-                const std::string& value) {
-  for (std::size_t i = 0; i < value.size(); ++i) {
-    out[offset + i] = static_cast<std::uint8_t>(value[i]);
-  }
-}
-
-void validateOsInfoPayload(const OsInfoPayload& payload) {
-  if (payload.os_type >= OSType::END) {
-    throw InvalidFieldValue(
-        "os_type", std::to_string(static_cast<std::uint8_t>(payload.os_type)));
-  }
-  if (payload.arch >= ArchType::END) {
-    throw InvalidFieldValue(
-        "arch", std::to_string(static_cast<std::uint8_t>(payload.arch)));
-  }
-  if (payload.hostname.empty()) {
-    throw InvalidSize("register hostname length", "0");
-  }
-
-  if (payload.os_version.empty()) {
-    throw InvalidSize("register os_version length", "0");
-  }
-
-  if (payload.current_user.empty()) {
-    throw InvalidSize("register current_user length", "0");
-  }
-
-  if (payload.ip.empty()) {
-    throw InvalidSize("register ip length", "0");
-  }
-
-  if (payload.hostname.size() > REGISTER_MAX_HOSTNAME_LEN) {
-    throw InvalidSize("register hostname length",
-                      std::to_string(payload.hostname.size()));
-  }
-
-  ensureFitsU16(payload.hostname.size(), "register hostname length");
-
-  ensureFitsU16(payload.os_version.size(), "register os_version length");
-
-  ensureFitsU16(payload.current_user.size(), "register current_user length");
-
-  ensureFitsU16(payload.ip.size(), "register ip length");
-}
-
-void validateCommandPayload(const CommandPayload& payload) {
-  if (payload.type >= CommandType::END) {
-    throw InvalidFieldValue(
-        "command_type",
-        std::to_string(static_cast<std::uint8_t>(payload.type)));
-  }
-
-  ensureFitsU16(payload.data.size(), "command data length");
-
-  if (payload.type == CommandType::SHELL && payload.data.empty()) {
-    throw InvalidFieldValue(
-        "Data payload empty for a shell command, payload.data content : ",
-        payload.data);
-  }
-
-  if (payload.type != CommandType::SHELL && !payload.data.empty()) {
-    throw InvalidSize("command data length",
-                      std::to_string(payload.data.size()));
-  }
-}
-
-void validateResponsePayload(const ResponsePayload& payload) {
-  ensureFitsU16(payload.data.size(), "response data length");
-
-  if (payload.status >= ResponseStatus::END) {
-    throw InvalidFieldValue(
-        "response_status",
-        std::to_string(static_cast<std::uint8_t>(payload.status)));
-  }
-  if (payload.total_chunks == 0) {
-    throw InvalidFieldValue("total_chunks", "0");
-  }
-  if (payload.chunk_index >= payload.total_chunks) {
-    throw InvalidFieldValue(
-        "chunk_index",
-        std::to_string(static_cast<std::uint8_t>(payload.chunk_index)));
-  }
-}
-
-void validateDataPayload(const DataPayload& payload) {
-  if (payload.subtype >= DataType::END) {
-    throw InvalidFieldValue(
-        "data_type",
-        std::to_string(static_cast<std::uint8_t>(payload.subtype)));
-  }
-  ensureFitsU16(payload.data.size(), "data length");
-}
-
-void validateErrorPayload(const ErrorPayload& payload) {
-  if (payload.code >= ErrorType::END) {
-    throw InvalidFieldValue(
-        "error_code", std::to_string(static_cast<std::uint8_t>(payload.code)));
-  }
-  if (payload.message.empty()) {
-    throw InvalidSize("error message length", "0");
-  }
-  ensureFitsU16(payload.message.size(), "error message length");
-}
-}  // namespace
-
-std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
+namespace ProtocolSerializer
+{std::vector<std::uint8_t> serializeHeader(
     const LptfHeader& header) {
-  validateHeader(header);
+  ProtocolHelper::validateHeader(header);
 
   std::vector<std::uint8_t> headerInByte(LPTF_HEADER_SIZE);
 
-  for (std::size_t i = 0; i < sizeof(header.identifier); ++i) {
-    headerInByte[i] = header.identifier[i];
-  }
+  // for (std::size_t i = 0; i < sizeof(header.identifier); ++i) {
+  //   headerInByte[i] = header.identifier[i];
+  // }
+  std::copy(header.identifier.begin(), header.identifier.end(), 
+          headerInByte.begin());
 
   headerInByte[4] = header.version;
   headerInByte[5] = static_cast<std::uint8_t>(header.type);
@@ -154,9 +29,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeHeader(
   return headerInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeOsInfoPayload(
+std::vector<std::uint8_t> serializeOsInfoPayload(
     const OsInfoPayload& payload) {
-  validateOsInfoPayload(payload);
+  ProtocolHelper::validateOsInfoPayload(payload);
 
   const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size() +
                               payload.os_version.size() +
@@ -181,17 +56,17 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeOsInfoPayload(
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.ip.size()));
 
-  copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
+  ProtocolHelper::copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
 
-  copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
+  ProtocolHelper::copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
              payload.os_version);
 
-  copyString(payloadInByte,
+  ProtocolHelper::copyString(payloadInByte,
              REGISTER_FIXED_BYTES + payload.hostname.size() +
                  payload.os_version.size(),
              payload.current_user);
 
-  copyString(payloadInByte,
+  ProtocolHelper::copyString(payloadInByte,
              REGISTER_FIXED_BYTES + payload.hostname.size() +
                  payload.os_version.size() + payload.current_user.size(),
              payload.ip);
@@ -199,9 +74,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeOsInfoPayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeCommandPayload(
+std::vector<std::uint8_t> serializeCommandPayload(
     const CommandPayload& payload) {
-  validateCommandPayload(payload);
+  ProtocolHelper::validateCommandPayload(payload);
 
   const std::size_t finalSize{COMMAND_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
@@ -211,13 +86,13 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeCommandPayload(
   offset++;
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
-  copyString(payloadInByte, COMMAND_FIXED_BYTES, payload.data);
+  ProtocolHelper::copyString(payloadInByte, COMMAND_FIXED_BYTES, payload.data);
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeResponsePayload(
+std::vector<std::uint8_t> serializeResponsePayload(
     const ResponsePayload& payload) {
-  validateResponsePayload(payload);
+  ProtocolHelper::validateResponsePayload(payload);
 
   const std::size_t finalSize{RESPONSE_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
@@ -235,9 +110,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeResponsePayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeDataPayload(
+std::vector<std::uint8_t> serializeDataPayload(
     const DataPayload& payload) {
-  validateDataPayload(payload);
+  ProtocolHelper::validateDataPayload(payload);
 
   const std::size_t finalSize{DATA_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
@@ -253,9 +128,9 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeDataPayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeErrorPayload(
+std::vector<std::uint8_t> serializeErrorPayload(
     const ErrorPayload& payload) {
-  validateErrorPayload(payload);
+  ProtocolHelper::validateErrorPayload(payload);
 
   const std::size_t message_length{payload.message.size()};
   const std::size_t finalSize{ERROR_FIXED_BYTES + message_length};
@@ -265,12 +140,13 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeErrorPayload(
   std::size_t offset{1};
   ConvertEndian::writeU16BE(payloadInByte, offset, message_length);
 
-  copyString(payloadInByte, ERROR_FIXED_BYTES, payload.message);
+  ProtocolHelper::copyString(payloadInByte, ERROR_FIXED_BYTES, payload.message);
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfo(
+std::vector<std::uint8_t> serializeProcessInfo(
     const ProcessInfo& info) {
+  ProtocolHelper::validateProcessInfo(info);
   std::vector<uint8_t> payload(PROCESS_INFO_FIXED_SIZE + info.name.size());
   std::size_t offset{0};
   ConvertEndian::writeU32BE(payload, offset, info.pid);
@@ -282,7 +158,7 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfo(
   return payload;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
+std::vector<std::uint8_t> serializeProcessInfoList(
     const std::vector<ProcessInfo>& infos) {
   std::size_t totalSize = sizeof(std::uint16_t);  // processCount
 
@@ -299,7 +175,7 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
 
   for (const ProcessInfo& info : infos) {
     std::vector<uint8_t> infoPayload =
-        ProtocolSerializer::serializeProcessInfo(info);
+        serializeProcessInfo(info);
     std::copy(infoPayload.begin(), infoPayload.end(),
               finalList.begin() + offset);
     offset += infoPayload.size();
@@ -308,14 +184,14 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeProcessInfoList(
   return finalList;
 }
 
-std::vector<std::uint8_t> ProtocolSerializer::serializeFrame(
+std::vector<std::uint8_t> serializeFrame(
     const Frame& frame) {
   if (frame.payload.size() > MAX_VALUE_INT16) {
     throw InvalidSize("payload", std::to_string(frame.payload.size()));
   }
 
   const std::vector<std::uint8_t> headerBytes =
-      ProtocolSerializer::serializeHeader(frame.header);
+      serializeHeader(frame.header);
 
   std::vector<uint8_t> frameBytes;
   frameBytes.reserve(headerBytes.size() + frame.payload.size());
@@ -323,4 +199,4 @@ std::vector<std::uint8_t> ProtocolSerializer::serializeFrame(
   frameBytes.insert(frameBytes.end(), frame.payload.begin(),
                     frame.payload.end());
   return frameBytes;
-}
+}}

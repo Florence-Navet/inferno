@@ -35,7 +35,7 @@ TEST(ProtocolParser, should_produce_header_when_input_is_valid) {
 
   // Act
   const LptfHeader result = ProtocolParser::parseHeader(input);
-  const std::string_view resultId(result.identifier, 4);
+  const std::string_view resultId(result.identifier.data(), 4);
 
   // Assert
   EXPECT_EQ(LPTF_IDENTIFIER_STR, resultId);

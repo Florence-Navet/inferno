@@ -144,7 +144,7 @@ TEST(TcpServerIntegration,
 
   // Send RESPONSE using the shared helper
   const Frame responseFrame = FrameBuilder::makeFrame(
-      MessageType::RESPONSE, FrameBuilder::makeResponsePayload(7, "pong"));
+      MessageType::RESPONSE, FrameBuilder::makeRawResponsePayload(7, Common::bytesFromString("pong")));
   ASSERT_NO_THROW(serverSession.sendFrame(responseFrame));
 
   agentThread.join();

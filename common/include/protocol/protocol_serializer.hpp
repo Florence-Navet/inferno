@@ -9,35 +9,27 @@
 
 #include "protocol/lptf_protocol.hpp"
 
-class ProtocolSerializer {
- public:
-  ProtocolSerializer() = delete;
-  ProtocolSerializer(const ProtocolSerializer&) = delete;
-  ProtocolSerializer& operator=(const ProtocolSerializer&) = delete;
+namespace ProtocolSerializer {
 
-  static std::vector<std::uint8_t> serializeHeader(const LptfHeader& header);
-  static std::vector<std::uint8_t> serializeOsInfoPayload(
-      const OsInfoPayload& payload);
-  static std::vector<std::uint8_t> serializeCommandPayload(
-      const CommandPayload& payload);
-  static std::vector<std::uint8_t> serializeResponsePayload(
-      const ResponsePayload& payload);
-  static std::vector<std::uint8_t> serializeDataPayload(
-      const DataPayload& payload);
-  static std::vector<std::uint8_t> serializeErrorPayload(
-      const ErrorPayload& payload);
+std::vector<std::uint8_t> serializeHeader(const LptfHeader& header);
+std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload);
+std::vector<std::uint8_t> serializeCommandPayload(
+    const CommandPayload& payload);
+std::vector<std::uint8_t> serializeResponsePayload(
+    const ResponsePayload& payload);
+std::vector<std::uint8_t> serializeDataPayload(const DataPayload& payload);
+std::vector<std::uint8_t> serializeErrorPayload(const ErrorPayload& payload);
 
-  static std::vector<std::uint8_t> serializeProcessInfo(
-      const ProcessInfo& info);
+std::vector<std::uint8_t> serializeProcessInfo(const ProcessInfo& info);
 
-  static std::vector<std::uint8_t> serializeProcessInfoList(
-      const std::vector<ProcessInfo>& infos);
+std::vector<std::uint8_t> serializeProcessInfoList(
+    const std::vector<ProcessInfo>& infos);
 
-  static std::vector<std::uint8_t> serializeFrame(const Frame& frame);
+std::vector<std::uint8_t> serializeFrame(const Frame& frame);
 
-  static inline std::vector<std::uint8_t> toBytes(const std::string& s) {
-    return std::vector<std::uint8_t>(s.begin(), s.end());
-  }
-};
+inline std::vector<std::uint8_t> toBytes(const std::string& s) {
+  return std::vector<std::uint8_t>(s.begin(), s.end());
+}
+};  // namespace ProtocolSerializer
 
 #endif

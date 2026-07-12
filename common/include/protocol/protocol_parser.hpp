@@ -10,27 +10,20 @@
 // #include "exception/lptf_exception.hpp"
 #include "protocol/lptf_protocol.hpp"
 
-class ProtocolParser {
- public:
-  ProtocolParser() = delete;
-  ProtocolParser(const ProtocolParser&) = delete;
-  ProtocolParser& operator=(const ProtocolParser&) = delete;
+namespace ProtocolParser {
 
-  static LptfHeader parseHeader(const std::vector<std::uint8_t>& input);
-  static OsInfoPayload parseOsInfoPayload(
-      const std::vector<std::uint8_t>& input);
-  static CommandPayload parseCommandPayload(
-      const std::vector<std::uint8_t>& input);
-  static ResponsePayload parseResponsePayload(
-      const std::vector<std::uint8_t>& input);
-  static DataPayload parseDataPayload(const std::vector<std::uint8_t>& input);
-  static ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input);
-  static ProcessInfo parseProcessInfo(const std::vector<std::uint8_t>& input);
-  static std::vector<ProcessInfo> parseProcessInfoList(
-      const std::vector<std::uint8_t>& input);
-  static inline std::string toString(const std::vector<std::uint8_t>& v) {
-    return std::string(v.begin(), v.end());
-  }
-};
+LptfHeader parseHeader(const std::vector<std::uint8_t>& input);
+OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input);
+CommandPayload parseCommandPayload(const std::vector<std::uint8_t>& input);
+ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input);
+DataPayload parseDataPayload(const std::vector<std::uint8_t>& input);
+ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input);
+ProcessInfo parseProcessInfo(const std::vector<std::uint8_t>& input);
+std::vector<ProcessInfo> parseProcessInfoList(
+    const std::vector<std::uint8_t>& input);
+inline std::string toString(const std::vector<std::uint8_t>& v) {
+  return std::string(v.begin(), v.end());
+}
+};  // namespace ProtocolParser
 
 #endif

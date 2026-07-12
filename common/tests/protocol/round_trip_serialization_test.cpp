@@ -19,10 +19,7 @@ TEST(ProtocolRoundTrip,
   const ProcessInfo result = ProtocolParser::parseProcessInfo(bytes);
 
   // Assert
-  EXPECT_EQ(result.pid, info.pid);
-  EXPECT_EQ(result.cpu_percent, info.cpu_percent);
-  EXPECT_EQ(result.mem_bytes, info.mem_bytes);
-  EXPECT_EQ(result.name, info.name);
+  EXPECT_EQ(result, info);
 }
 
 TEST(ProtocolRoundTrip,
@@ -37,8 +34,5 @@ TEST(ProtocolRoundTrip,
       ProtocolParser::parseProcessInfoList(bytes);
 
   // Assert
-  EXPECT_EQ(result.size(), infos.size());
-  EXPECT_EQ(result[0].pid, infos[0].pid);
-  EXPECT_EQ(result[1].pid, infos[1].pid);
-  EXPECT_EQ(result[3].pid, infos[3].pid);
+  EXPECT_EQ(result, infos);
 }

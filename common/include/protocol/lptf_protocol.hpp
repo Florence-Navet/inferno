@@ -1,6 +1,6 @@
 #ifndef LPTF_PROTOCOL_HPP
 #define LPTF_PROTOCOL_HPP
-// #include <array>
+#include <array>
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -13,8 +13,8 @@ constexpr std::uint8_t LPTF_VERSION = 1;
 constexpr std::uint8_t LPTF_HEADER_SIZE =
     sizeof(std::uint8_t) * 6 +
     sizeof(std::uint16_t);  // identifier + version + type + size
-constexpr char LPTF_IDENTIFIER[4] = {'L', 'P', 'T', 'F'};
-constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER, 4);
+constexpr std::array<char, 4> LPTF_IDENTIFIER = {'L', 'P', 'T', 'F'};
+constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER.data(), 4);
 
 constexpr std::size_t REGISTER_FIXED_BYTES =
     4 * sizeof(std::uint16_t) +
@@ -122,11 +122,11 @@ enum class ResponseStatus : std::uint8_t {
 };
 
 struct LptfHeader {
-  char identifier[4];
-  // std::array<char, 4> identifier;
-  std::uint8_t version = 0;
+  // char identifier[4];
+  std::array<char, 4> identifier = LPTF_IDENTIFIER;
+  std::uint8_t version = LPTF_VERSION;
   MessageType type = MessageType::END;
-  std::uint16_t size = 0;
+  std::uint16_t size = LPTF_HEADER_SIZE;
 
   bool operator==(const LptfHeader& other) const {
     return std::equal(std::begin(identifier), std::end(identifier),

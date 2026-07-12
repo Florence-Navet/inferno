@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "builders/frame_builder.hpp"
+#include "fixtures/common.hpp"
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -225,7 +226,8 @@ TEST(AgentSessionBuffer,
   const std::vector<std::uint8_t> payload1 =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> payload2 =
-      FrameBuilder::makeResponsePayload(0, "result");
+      FrameBuilder::makeRawResponsePayload(0,
+                                           Common::bytesFromString("result"));
 
   agentSession.appendToBuffer(
       FrameBuilder::makeRawFrame(MessageType::REGISTER, payload1));

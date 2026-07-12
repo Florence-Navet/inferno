@@ -22,7 +22,8 @@ inline std::vector<ProcessInfo> createProcessInfoList(
   std::vector<ProcessInfo> infos;
   std::uint32_t pid = 1234;
   for (std::uint32_t i{0}; i < howMayProcess; ++i) {
-    infos.insert(infos.end(), ProcessBuilder::createProcessInfo(pid += i));
+    std::uint32_t currentPid = pid;
+    infos.insert(infos.end(), ProcessBuilder::createProcessInfo(currentPid += i));
   }
   return infos;
 }

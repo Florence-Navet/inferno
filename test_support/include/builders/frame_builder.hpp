@@ -74,8 +74,13 @@ inline OsInfoPayload makeOsInfoPayload(
     const std::string& os_version = Protocol::TEST_OS_VERSION_STR,
     const std::string& current_user = Protocol::TEST_CURRENT_USER_STR,
     const std::string& ip = Protocol::TEST_IP_STR) {
-  const OsInfoPayload info = {os_type,    arch,         hostname,
-                              os_version, current_user, ip};
+  OsInfoPayload info;
+  info.os_type = os_type;
+  info.arch = arch;
+  info.hostname = hostname;
+  info.os_version = os_version;
+  info.current_user = current_user;
+  info.ip = ip;
   return info;
 }
 
@@ -90,9 +95,10 @@ inline std::vector<std::uint8_t> makeRawOsInfoPayload(
   return ProtocolSerializer::serializeOsInfoPayload(info);
 }
 
-inline std::vector<std::uint8_t> makeResponsePayload(
-    std::uint16_t id, const std::string& data, std::uint8_t totalChunks = 1,
-    std::uint8_t chunkIndex = 0) {
+inline ResponsePayload makeResponsePayload(std::uint16_t id = 0,
+                                           const std::string& data = "",
+                                           std::uint8_t totalChunks = 1,
+                                           std::uint8_t chunkIndex = 0) {
   ResponsePayload p;
   p.id = id;
   p.status = ResponseStatus::OK;
@@ -101,27 +107,28 @@ inline std::vector<std::uint8_t> makeResponsePayload(
   //   p.data = data;
   p.data.assign(data.begin(), data.end());
 
-  return ProtocolSerializer::serializeResponsePayload(p);
+  // return ProtocolSerializer::serializeResponsePayload(p);
+  return p;
 }
 
 inline std::vector<std::uint8_t> makeRawResponsePayload(
-    std::uint16_t id, std::uint8_t rawStatus, std::uint8_t totalChunks,
-    std::uint8_t chunkIndex, std::uint16_t declaredLen,
+    std::uint16_t id = 0,
     const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(RESPONSE_FIXED_BYTES + dataBytes.size());
   std::size_t offset{0};
   ConvertEndian::writeU16BE(out, offset, id);
-  out[offset] = rawStatus;
+  out[offset] = static_cast<std::uint8_t>(ResponseStatus::OK);
   offset++;
-  out[offset] = totalChunks;
+  out[offset] = 1;
   offset++;
-  out[offset] = chunkIndex;
+  out[offset] = 0;
   offset++;
-  ConvertEndian::writeU16BE(out, offset, declaredLen);
+  ConvertEndian::writeU16BE(out, offset, dataBytes.size());
   std::copy(dataBytes.begin(), dataBytes.end(),
             out.begin() + RESPONSE_FIXED_BYTES);
   return out;
 }
+
 
 inline std::vector<std::uint8_t> makeRawCommandPayload(
     std::uint16_t id, std::uint8_t rawType, std::uint16_t declaredLen,
@@ -137,8 +144,8 @@ inline std::vector<std::uint8_t> makeRawCommandPayload(
   return out;
 }
 
-inline CommandPayload makeCommandPayload(std::uint16_t id,
-                                         const CommandType& type,
+inline CommandPayload makeCommandPayload(std::uint16_t id = 0,
+                                         const CommandType& type = CommandType::OS_INFO,
                                          const std::string& dataBytes = "") {
   CommandPayload command;
   command.id = id;

@@ -4,7 +4,6 @@
 #include <iostream>
 #include <string>
 
-#include "agent_session.hpp"
 #include "socket/i_socket.hpp"
 #include "socket/socket_factory.hpp"
 class EnvHelper {

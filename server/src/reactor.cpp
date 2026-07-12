@@ -40,13 +40,13 @@ void Reactor::onNewConnection() {
     what << "Agent connected: " << incoming->remoteAddress() << ':'
          << incoming->remotePort();
     logger_.info(what.str());
-    agents_.emplace(fd, AgentSession(std::move(incoming)));
+    agents_.emplace(fd, AgentConnection(std::move(incoming)));
     // agents_.try_emplace(fd, std::move(incoming)); // no longer need moveable constructor for logger
   }
 }
 
 void Reactor::onAgentReady(int fileDescriptor) {
-  AgentSession& session = agents_.at(fileDescriptor);
+  AgentConnection& session = agents_.at(fileDescriptor);
   const SocketResult result = session.receiveIntoBuffer();
 
   if (!result.ok() || result.error == SocketStatus::CONNECTION_RESET ||

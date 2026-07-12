@@ -32,6 +32,7 @@ add_library(server_lib STATIC
     src/tcp_server.cpp
     src/server_dispatcher.cpp
     src/reactor.cpp
+    src/agent_connection.cpp
     src/poller/epoller.cpp
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp

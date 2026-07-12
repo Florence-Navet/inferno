@@ -6,6 +6,7 @@
 
 #include "socket/i_socket.hpp"
 #include "socket/socket_factory.hpp"
+#include "stubs/test_frame_transport.hpp"
 
 // TestTcpServer — a minimal listen/accept wrapper for integration tests.
 //

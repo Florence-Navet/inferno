@@ -6,6 +6,7 @@
 #include "fixtures/common.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "stubs/spy_socket.hpp"
+#include "agent_connection.hpp"
 
 // ServerDispatcher — 3 tests covering the only stable invariants.
 // SpySocket accumulates all sent bytes; we parse them back with
@@ -34,7 +35,8 @@
 
 TEST(ServerDispatcher, should_register_session_on_register) {
   SpySocket spy;
-  AgentSession session = makeSession(spy);
+  // AgentSession session = makeSession(spy);
+  AgentConnection session = AgentConnection(spy.makeUnique());
   ServerDispatcher dispatcher;
 
   dispatcher.handleFrame(
@@ -48,7 +50,8 @@ TEST(ServerDispatcher, should_register_session_on_register) {
 
 TEST(ServerDispatcher, should_send_error_when_unknown_message_type_received) {
   SpySocket spy;
-  AgentSession session = makeSession(spy);
+  // AgentSession session = makeSession(spy);
+  AgentConnection session = AgentConnection(spy.makeUnique());
   ServerDispatcher dispatcher;
 
   // COMMAND is server→agent — receiving it is a protocol violation
@@ -62,7 +65,8 @@ TEST(ServerDispatcher, should_send_error_when_unknown_message_type_received) {
 TEST(ServerDispatcher,
      should_increment_command_id_across_successive_register_frames) {
   SpySocket spy;
-  AgentSession session = makeSession(spy);
+  // AgentSession session = makeSession(spy);
+  AgentConnection session = AgentConnection(spy.makeUnique());
   ServerDispatcher dispatcher;
 
   std::vector<std::uint16_t> ids;

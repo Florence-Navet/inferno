@@ -12,7 +12,7 @@ void Dispatcher::onError(const std::vector<std::uint8_t>& payload) {
   //   running = false;
 }
 
-void Dispatcher::sendError(AgentSession& agent, ErrorType code,
+void Dispatcher::sendError(FrameTransport& agent, ErrorType code,
                            const std::string& msg) {
   ErrorPayload error;
   error.code = code;

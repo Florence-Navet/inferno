@@ -11,7 +11,8 @@
 AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)
     : Dispatcher("agent"), monitor_(monitor) {}
 
-void AgentDispatcher::handleFrame(AgentSession& session, const Frame& frame) {
+void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
+  AgentSession& session = static_cast<AgentSession&>(agent);
   switch (frame.header.type) {
     case MessageType::COMMAND:
       return onCommand(session, frame.payload);

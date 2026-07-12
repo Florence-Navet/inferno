@@ -18,7 +18,7 @@
 class AgentDispatcherTest : public ::testing::Test {
  public:
   AgentDispatcherTest()
-      : session(makeSession(spy)),
+      : session(AgentSession(spy.makeUnique())),
         dispatcher(monitor),
         controller(MetricsControllerTestFactory::make(scrapperPtr)) {}
 

@@ -9,13 +9,6 @@
 
 #include "protocol/lptf_protocol.hpp"
 
-// #include "agent_session.hpp"
-// #include "exception/lptf_exception.hpp"
-// #include "exception/socket_exception.hpp"
-// #include "protocol/protocol_serializer.hpp"
-// #include "socket/i_socket.hpp"
-// #include "socket/socket_factory.hpp"
-// #include "tcp_server.hpp"
 
 namespace ProtocolHelper {
 

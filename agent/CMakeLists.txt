@@ -32,6 +32,7 @@ endif()
 # ── Agent library (all logic, no main) ───────────────────────────────────────
 add_library(agent_lib STATIC
     src/agent_dispatcher.cpp
+    src/agent_session.cpp
     src/agent_loop.cpp
     src/metrics/linux_metrics_scrapper.cpp
     src/metrics/metrics_controller.cpp

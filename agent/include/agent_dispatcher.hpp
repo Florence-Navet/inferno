@@ -26,7 +26,7 @@ class AgentDispatcher : public Dispatcher {
   ~AgentDispatcher() = default;
   AgentDispatcher& operator=(const AgentDispatcher&) = delete;
 
-  void handleFrame(AgentSession& agent, const Frame& frame) override;
+  void handleFrame(FrameTransport& agent, const Frame& frame) override;
 
   // StatusRegister getRegistered_() const { return registered_; };
   void sendRegister(AgentSession& session);

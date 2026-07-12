@@ -19,8 +19,6 @@
 
 namespace ProtocolHelper {
 
-// static SocketResult receiveIntoBuffer(AgentSession& session);
-
 void copyString(std::vector<std::uint8_t>& out, std::size_t offset,
                 const std::string& value);
 

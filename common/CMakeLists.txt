@@ -9,7 +9,7 @@ find_package(OpenSSL REQUIRED)
 # No Dockerfile, no executable — this is purely a library.
 add_library(common_lib STATIC
     src/convert_endian.cpp
-    src/agent_session.cpp
+    src/frame_transport.cpp
     src/env_helper.cpp
     src/logger.cpp
     src/dispatcher/dispatcher.cpp
@@ -68,7 +68,7 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoCommon")
         
         add_executable(common_tests
         tests/convert_endian_test.cpp
-        tests/agent_session_test.cpp
+        tests/frame_transport_test.cpp
         ${PARSER_SERIALIZER_TESTS}
         ${PARSER_TESTS}
         ${SERIALIZER_TESTS}

@@ -12,7 +12,7 @@
 class MetricsControllerTest : public ::testing::Test {
  public:
   MetricsControllerTest()
-      : session(makeSession(spy)),
+      : session(AgentSession(spy.makeUnique())),
         controller(MetricsControllerTestFactory::make(scrapperPtr)) {}
 
  protected:

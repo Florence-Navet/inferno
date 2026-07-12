@@ -5,7 +5,8 @@
 
 #include <unordered_map>
 
-#include "agent_session.hpp"
+// #include "agent_session.hpp"
+#include "agent_connection.hpp" 
 #include "dispatcher/i_dispatcher.hpp"
 #include "logger.hpp"
 #include "poller/i_poller.hpp"
@@ -30,7 +31,7 @@ class Reactor {
   Logger logger_{"reactor"};
 
   bool running_ = false;
-  std::unordered_map<int, AgentSession> agents_;
+  std::unordered_map<int, AgentConnection> agents_;
 
   // internal helpers — each maps to one "something happened" situation
   void onNewConnection();

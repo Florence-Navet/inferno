@@ -8,12 +8,13 @@
 #include <optional>
 #include <thread>
 
-#include "agent_session.hpp"
+// #include "agent_session.hpp"
 #include "builders/frame_builder.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "socket/socket_factory.hpp"
+#include "stubs/test_frame_transport.hpp"
 
 // ── Unit tests (no network) ───────────────────────────────────
 
@@ -100,7 +101,8 @@ TEST(TcpServerIntegration,
 
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket && agentSocket->connect(Common::SERVER_HOST, port)) {
-      AgentSession agentSession(std::move(agentSocket));
+      // AgentSession agentSession(std::move(agentSocket));
+       TestFrameTransport agentConnection(std::move(agentSocket));
 
       // Send REGISTER using the shared helper
       // const auto registerFrame =
@@ -109,10 +111,10 @@ TEST(TcpServerIntegration,
       try {
         Frame frame = FrameBuilder::makeFrame(
             MessageType::REGISTER, FrameBuilder::makeRawOsInfoPayload());
-        agentSession.sendFrame(frame);
+        agentConnection.sendFrame(frame);
         // send succeeded, continue with the rest
-        agentSession.receiveIntoBuffer();
-        std::optional<Frame> received = agentSession.tryExtractFrame();
+        agentConnection.receiveIntoBuffer();
+        std::optional<Frame> received = agentConnection.tryExtractFrame();
         if (received && received->header.type == MessageType::RESPONSE) {
           response = ProtocolParser::parseResponsePayload(received->payload);
         }
@@ -134,7 +136,8 @@ TEST(TcpServerIntegration,
   serverReady.set_value();
   auto serverSocket = server.acceptAgent();
   ASSERT_NE(serverSocket, nullptr);
-  AgentSession serverSession(std::move(serverSocket));
+  // AgentSession serverSession(std::move(serverSocket));
+  TestFrameTransport serverSession(std::move(serverSocket));
 
   // Read REGISTER
   serverSession.receiveIntoBuffer();

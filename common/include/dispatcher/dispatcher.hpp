@@ -4,7 +4,8 @@
 #include <iostream>
 #include <string>
 
-#include "agent_session.hpp"
+// #include "agent_session.hpp"
+#include "frame_transport.hpp"
 #include "dispatcher/i_dispatcher.hpp"
 #include "exception/lptf_exception.hpp"
 #include "exception/socket_exception.hpp"
@@ -21,13 +22,13 @@ class Dispatcher : public IDispatcher {
   virtual ~Dispatcher() = default;
 
   // Must be overriden by children
-  // virtual void handleFrame(AgentSession& agent, const Frame& frame) = 0;
+  // virtual void handleFrame(FrameTransport& agent, const Frame& frame) = 0;
 
   // ── Incoming message handlers ───────────────────────
   void onError(const std::vector<std::uint8_t>& payload);
 
   // ── Outgoing message builders ───────────────────────
-  void sendError(AgentSession& agent, ErrorType code, const std::string& msg);
+  void sendError(FrameTransport& agent, ErrorType code, const std::string& msg) override;
 
  protected:
   Logger logger_;

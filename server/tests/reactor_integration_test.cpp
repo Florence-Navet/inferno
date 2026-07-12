@@ -4,7 +4,8 @@
 #include <optional>
 #include <thread>
 
-#include "agent_session.hpp"
+// #include "agent_session.hpp"
+#include "agent_connection.hpp"
 #include "builders/frame_builder.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
@@ -86,7 +87,7 @@ TEST(ReactorIntegration, should_send_error_when_first_message_is_not_register) {
   const auto commandFrame = FrameBuilder::makeRawFrame(MessageType::COMMAND);
   ASSERT_TRUE(socket->send(commandFrame).ok());
 
-  AgentSession session(std::move(socket));
+  AgentConnection session(std::move(socket));
   session.receiveIntoBuffer();
   std::optional<Frame> frame = session.tryExtractFrame();
   ASSERT_TRUE(frame.has_value());

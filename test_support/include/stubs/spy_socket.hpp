@@ -96,8 +96,8 @@ class SpySocket : public ISocket {
 };
 
 // One-liner session factory — no pair, no reference_wrapper
-inline AgentSession makeSession(SpySocket& spy) {
-  return AgentSession(spy.makeUnique());
-}
+// inline AgentSession makeSession(SpySocket& spy) {
+//   return AgentSession(spy.makeUnique());
+// }
 
 #endif

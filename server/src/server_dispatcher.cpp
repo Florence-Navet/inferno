@@ -13,13 +13,14 @@
 // ServerDispatcher::ServerDispatcher() {}
 ServerDispatcher::ServerDispatcher() : Dispatcher("server") {}
 
-void ServerDispatcher::handleFrame(AgentSession& agent, const Frame& frame) {
+void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
+   AgentConnection& connection = static_cast<AgentConnection&>(agent);
   switch (frame.header.type) {
     case MessageType::REGISTER:
-      onRegister(agent, frame.payload);
+      onRegister(connection, frame.payload);
       break;
     case MessageType::RESPONSE:
-      onResponse(agent, frame.payload);
+      onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
       onData(frame.payload);
@@ -39,7 +40,7 @@ void ServerDispatcher::handleFrame(AgentSession& agent, const Frame& frame) {
 
 // The first message from the agent must always be REGISTER.
 // Once we know who it is, we kick off the command sequence.
-void ServerDispatcher::onRegister(AgentSession& agent,
+void ServerDispatcher::onRegister(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   agent.setAgentInfo(agentInfo);
@@ -56,7 +57,7 @@ void ServerDispatcher::onRegister(AgentSession& agent,
 
 // A RESPONSE carries the same id as the COMMAND it answers,
 // plus chunk metadata for large payloads split across messages.
-void ServerDispatcher::onResponse(AgentSession& agent,
+void ServerDispatcher::onResponse(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
   const ResponsePayload response =
       ProtocolParser::parseResponsePayload(payload);
@@ -113,7 +114,7 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
 
 // ── Outgoing senders ─────────────────────────────────────────
 
-void ServerDispatcher::sendCommand(AgentSession& agent, CommandType type,
+void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
                                    const std::string& data) {
   CommandPayload command;
   command.id = nextId();
@@ -135,7 +136,7 @@ void ServerDispatcher::sendCommand(AgentSession& agent, CommandType type,
   //           << "  type=" << static_cast<int>(command.type) << "\n";
 }
 
-void ServerDispatcher::sendDisconnect(AgentSession& agent) {
+void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   const std::vector<uint8_t> payload{};
   Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
                  payload};

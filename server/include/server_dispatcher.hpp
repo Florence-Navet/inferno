@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "agent_session.hpp"
+// #include "agent_session.hpp"
+#include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
 
@@ -16,19 +17,19 @@ class ServerDispatcher : public Dispatcher {
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
 
-  void handleFrame(AgentSession& agent, const Frame& frame) override;
-  void sendCommand(AgentSession& agent, CommandType type,
+  void handleFrame(FrameTransport& agent, const Frame& frame) override;
+  void sendCommand(AgentConnection& agent, CommandType type,
                    const std::string& data = "");
 
  private:
   // ── Incoming message handlers ───────────────────────
-  void onRegister(AgentSession& agent,
+  void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
-  void onResponse(AgentSession& agent,
+  void onResponse(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);
 
-  void sendDisconnect(AgentSession& agent);
+  void sendDisconnect(AgentConnection& agent);
 
   std::uint16_t nextId();
 

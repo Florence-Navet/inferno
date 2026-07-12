@@ -1,16 +1,20 @@
-#include "agent_session.hpp"
-
+// #include "agent_session.hpp"
+#include "frame_transport.hpp"
 #include <gtest/gtest.h>
 
 #include "builders/frame_builder.hpp"
 #include "fixtures/common.hpp"
+#include "stubs/spy_socket.hpp"
+#include "stubs/test_frame_transport.hpp"
+
+
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
 
-// // Feed raw bytes into a AgentSession's buffer.
-// static void feed(AgentSession& agentSession,
+// // Feed raw bytes into a FrameTransport's buffer.
+// static void feed(FrameTransport& agentSession,
 //                  const std::vector<std::uint8_t>& bytes) {
 //   // agentSession.buffer.insert(agentSession.buffer.end(), bytes.begin(),
 //   //                            bytes.end());
@@ -21,14 +25,14 @@
 // Empty / incomplete buffer
 // ─────────────────────────────────────────────────────────────
 
-TEST(AgentSessionBuffer, should_return_nullopt_when_buffer_is_empty) {
-  AgentSession agentSession;
+TEST(FrameTransportBuffer, should_return_nullopt_when_buffer_is_empty) {
+  TestFrameTransport agentSession;
   EXPECT_FALSE(agentSession.tryExtractFrame().has_value());
 }
 
-TEST(AgentSessionFrameExtraction,
+TEST(FrameTransportFrameExtraction,
      should_return_nullopt_and_leave_buffer_intact_when_header_is_incomplete) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // 7 bytes - missing the low byte of the size field
   const std::vector<std::uint8_t> partial(
       {'L', 'P', 'T', 'F', LPTF_VERSION,
@@ -41,9 +45,9 @@ TEST(AgentSessionFrameExtraction,
   EXPECT_EQ(agentSession.bufferSize(), partial.size());
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_return_nullopt_when_header_is_complete_but_payload_is_partial) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // Header declares a 4-byte payload; only 2 bytes of it arrive.
   const std::vector<std::uint8_t> frame = FrameBuilder::makeRawFrame(
       MessageType::REGISTER, {0x01, 0x02, 0x03, 0x04});
@@ -57,9 +61,9 @@ TEST(AgentSessionBuffer,
 // Complete frame in one shot
 // ─────────────────────────────────────────────────────────────
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_extract_frame_when_complete_frame_arrives_at_once) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload =
       FrameBuilder::makeRawOsInfoPayload();
   // feed(agentSession, makeRawFrame(MessageType::REGISTER, payload));
@@ -72,9 +76,9 @@ TEST(AgentSessionBuffer,
   EXPECT_EQ(frame->payload, payload);
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_extract_frame_with_zero_payload_when_disconnect_arrives) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // feed(agentSession, makeRawFrame(MessageType::DISCONNECT));
   agentSession.appendToBuffer(
       FrameBuilder::makeRawFrame(MessageType::DISCONNECT));
@@ -90,9 +94,9 @@ TEST(AgentSessionBuffer,
 // Buffer consumption — no data loss, no data duplication
 // ─────────────────────────────────────────────────────────────
 
-TEST(AgentSessionFrameExtraction,
+TEST(FrameTransportFrameExtraction,
      should_return_payload_bytes_identical_to_what_was_sent) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // Bytes distincts pour détecter toute corruption ou décalage
   const std::vector<std::uint8_t> payload = {0x00, 0x01, 0x7F, 0x80,
                                              0xFF, 0xAB, 0xCD, 0xEF};
@@ -104,9 +108,9 @@ TEST(AgentSessionFrameExtraction,
   EXPECT_EQ(frame->payload, payload);
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_consume_header_and_payload_bytes_after_extraction) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> raw =
@@ -120,9 +124,9 @@ TEST(AgentSessionBuffer,
       << "but " << agentSession.bufferSize() << " bytes remain";
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_leave_trailing_bytes_intact_after_extracting_first_frame) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // Two frames concatenated — second is partial (only its header)
   const std::vector<std::uint8_t> frame1 =
       FrameBuilder::makeRawFrame(MessageType::DISCONNECT);
@@ -149,9 +153,9 @@ TEST(AgentSessionBuffer,
 // every byte delivered in a different recv call — should not extract until the
 // last byte completes the frame
 TEST(
-    AgentSessionReassembly,
+    FrameTransportReassembly,
     should_return_nullopt_for_every_byte_until_the_last_one_completes_the_frame) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame =
@@ -170,9 +174,9 @@ TEST(
 }
 
 TEST(
-    AgentSessionBuffer,
+    FrameTransportBuffer,
     should_extract_frame_when_header_and_payload_arrive_in_separate_recv_calls) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame =
@@ -197,9 +201,9 @@ TEST(
 
 // TCP can send multiple frames' worth of data in a single recv call — should
 // extract both frames without losing or corrupting data
-TEST(AgentSessionConsecutiveFrames,
+TEST(FrameTransportConsecutiveFrames,
      should_extract_first_frame_and_leave_second_frame_header_in_state) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload2 =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> rawFrame2 =
@@ -220,9 +224,9 @@ TEST(AgentSessionConsecutiveFrames,
   EXPECT_FALSE(agentSession.tryExtractFrame().has_value());
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_extract_two_consecutive_frames_without_data_loss) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload1 =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> payload2 =
@@ -248,9 +252,9 @@ TEST(AgentSessionBuffer,
   EXPECT_EQ(agentSession.bufferSize(), 0u);
 }
 
-TEST(AgentSessionBuffer,
+TEST(FrameTransportBuffer,
      should_extract_second_frame_only_after_it_becomes_complete) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const std::vector<std::uint8_t> payload2 =
       FrameBuilder::makeRawOsInfoPayload();
   const std::vector<std::uint8_t> raw2 =
@@ -276,9 +280,9 @@ TEST(AgentSessionBuffer,
 // Header fields are decoded correctly
 // ─────────────────────────────────────────────────────────────
 
-TEST(AgentSessionHeaderDecoding,
+TEST(FrameTransportHeaderDecoding,
      should_decode_header_version_and_size_correctly) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   const auto payload = std::vector<std::uint8_t>(42, 0xAB);
   agentSession.appendToBuffer(
       FrameBuilder::makeRawFrame(MessageType::COMMAND, payload));
@@ -290,9 +294,9 @@ TEST(AgentSessionHeaderDecoding,
   EXPECT_EQ(frame->header.type, MessageType::COMMAND);
 }
 
-TEST(AgentSessionHeaderDecoding,
+TEST(FrameTransportHeaderDecoding,
      should_decode_big_endian_16bit_size_field_correctly) {
-  AgentSession agentSession;
+  TestFrameTransport agentSession;
   // size = 0x01FF = 511 bytes
   const auto payload = std::vector<std::uint8_t>(511, 0x00);
   agentSession.appendToBuffer(

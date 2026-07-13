@@ -8,7 +8,7 @@
 #include "dispatcher/i_dispatcher.hpp"
 #include "exception/lptf_exception.hpp"
 #include "exception/socket_exception.hpp"
-#include "logger.hpp"
+
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_serializer.hpp"
@@ -17,7 +17,7 @@
 
 class Dispatcher : public IDispatcher {
  public:
-  Dispatcher(const std::string& who) : logger_(who) {}
+  Dispatcher() {}
   virtual ~Dispatcher() = default;
 
   // Must be overriden by children
@@ -29,8 +29,8 @@ class Dispatcher : public IDispatcher {
   // ── Outgoing message builders ───────────────────────
   void sendError(FrameTransport& agent, ErrorType code, const std::string& msg) override;
 
- protected:
-  Logger logger_;
+//  protected:
+//   Logger logger_;
 };
 
 #endif

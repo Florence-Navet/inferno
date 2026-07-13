@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "logger.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "protocol/protocol_parser.hpp"
 #include "socket/i_socket.hpp"
@@ -43,8 +42,6 @@ class AgentSession : public FrameTransport {
 
  private:
   RegisterState registered_{RegisterState::REJECTED};
-
-  // ===== Buffer related private methods =====
   bool encryption_;
 };
 

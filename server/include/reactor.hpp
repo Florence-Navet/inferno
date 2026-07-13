@@ -28,7 +28,7 @@ class Reactor {
   IDispatcher& dispatcher_;
   TcpServer& server_;
   IPoller& poller_;
-  Logger logger_{"reactor"};
+//   Logger logger_{"reactor"};
 
   bool running_ = false;
   std::unordered_map<int, AgentConnection> agents_;

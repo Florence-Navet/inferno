@@ -3,6 +3,7 @@
 #include <sstream>
 
 #include "exception/socket_exception.hpp"
+#include "logger.hpp"
 #include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
@@ -21,24 +22,14 @@ void AgentSession::resetSession() {
   }
 }
 
-// ===== socket related methods =====
-// bool AgentSession::isValid() const { return socket_ && socket_->isValid(); }
-
-// void AgentSession::close() {
-//   if (socket_) {
-//     socket_->close();
-//   }
-// }
-
 bool AgentSession::connect(const std::string& host, std::uint16_t port) {
   return socket_ && socket_->connect(host, port);
 }
 
-
-
 // ===== Register payload related methods =====
 const OsInfoPayload& AgentSession::getAgentInfo() const {
-    // TODO : if agentInfo = empty or 0 filled values, need to retreive actual value
+  // TODO : if agentInfo = empty or 0 filled values, need to retreive actual
+  // value
   return agentInfo_;
 }
 

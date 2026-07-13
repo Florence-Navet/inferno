@@ -7,8 +7,8 @@
 #include <sstream>
 
 // #include "protocol/protocol_parser.hpp"
-#include "socket/tls_socket_factory.hpp"
 #include "socket/socket_factory.hpp"
+#include "socket/tls_socket_factory.hpp"
 // #include "protocol/lptf_protocol.hpp"
 
 TcpServer::TcpServer(const std::uint16_t port, const int backlog)
@@ -22,12 +22,13 @@ bool TcpServer::start() {
   if (serverSocket_ && serverSocket_->isValid()) {
     std::ostringstream what;
     what << "[start] Socket is already valid on port " << port_;
-    logger_.error(what.str());
+    Logger::error("tcp server", what.str());
     // std::cout << "[start] Socket is already valid on port " << port_ << '\n';
     return false;
   }
 
-  logger_.info("TLS = " + std::string(encryption_ ? "true" : "false"));
+  Logger::info("tcp server",
+               "TLS = " + std::string(encryption_ ? "true" : "false"));
   if (encryption_) {
     serverSocket_ =
         TLSSocketFactory::createServer("certs/server.crt", "certs/server.key");
@@ -40,18 +41,18 @@ bool TcpServer::start() {
     what << "[start] Failed to create server socket on port " << port_;
     // std::cerr << "[start] Failed to create server socket on port " << port_
     // << '\n';
-    logger_.error(what.str());
+    Logger::error("tcp server", what.str());
     return false;
   }
   if (!serverSocket_->bind(port_)) {
     std::ostringstream what;
     what << "[start] Failed to bind server socket on port " << port_;
-    logger_.error(what.str());
+    Logger::error("tcp server", what.str());
     // std::cerr << "[start] Failed to bind server socket on port " << port_ <<
     // '\n';
     return false;
   }
-  logger_.info("[start] Server try to listen");
+  Logger::info("tcp server", "[start] Server try to listen");
   // std::cout << "[start] Server try to listen\n";
   return serverSocket_->listen(backlog_);
 }

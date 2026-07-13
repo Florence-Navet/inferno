@@ -2,11 +2,13 @@
 
 #include <sstream>
 
+#include "logger.hpp"
+
 void Dispatcher::onError(const std::vector<std::uint8_t>& payload) {
   const ErrorPayload error = ProtocolParser::parseErrorPayload(payload);
   std::ostringstream what;
   what << "code=" << static_cast<int>(error.code) << "  msg=" << error.message;
-  logger_.error(what.str());
+  Logger::error("dispatcher", what.str());
   // std::cerr << "[← ERROR] code=" << static_cast<int>(error.code)
   //           << "  msg=" << error.message << "\n";
   //   running = false;

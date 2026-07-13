@@ -11,7 +11,7 @@
 #include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
 // ServerDispatcher::ServerDispatcher() {}
-ServerDispatcher::ServerDispatcher() : Dispatcher("server") {}
+ServerDispatcher::ServerDispatcher() : Dispatcher() {}
 
 void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
    AgentConnection& connection = static_cast<AgentConnection&>(agent);
@@ -52,7 +52,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
        << "\narch : " << static_cast<int>(agentInfo.arch)
        << "\nversion : " << agentInfo.os_version
        << "\nip : " << agentInfo.ip;
-  logger_.info(what.str());
+  Logger::info("server dispatcher", what.str());
 }
 
 // A RESPONSE carries the same id as the COMMAND it answers,
@@ -69,7 +69,7 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
        << "  \nstatus=" << static_cast<int>(response.status) << "\n"
        << ProtocolParser::toString(response.data);
 
-  logger_.info(what.str());
+  Logger::info("server dispatcher", what.str());
   
   // Only act once all chunks of this response have arrived.
   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
@@ -107,7 +107,7 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
            << " TX=" << iface.tx_bytes_per_sec << '\n';
     }
   }
-  logger_.info(what.str());
+  Logger::info("server dispatcher", what.str());
   // std::cout << "[← DATA] subtype=" << static_cast<int>(data.subtype) << "\n"
   //           << data.data << "\n";
 }
@@ -131,7 +131,7 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
   std::ostringstream what;
   what << "[COMMAND] id=" << command.id
        << "  type=" << static_cast<int>(command.type);
-  logger_.info(what.str());
+  Logger::info("server dispatcher", what.str());
   // std::cout << "[→ COMMAND] id=" << command.id
   //           << "  type=" << static_cast<int>(command.type) << "\n";
 }
@@ -143,7 +143,7 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   // sendRaw(agent, MessageType::DISCONNECT);
   // sendFrame(agent, frame);
   agent.sendFrame(frame);
-  logger_.info("[DISCONNECT]");
+  Logger::info("server dispatcher", "[DISCONNECT]");
   // std::cout << "[→ DISCONNECT]\n";
   //   running = false;
 }

@@ -1,7 +1,9 @@
 #include "frame_transport.hpp"
+
 #include <sstream>
 
 #include "exception/socket_exception.hpp"
+#include "logger.hpp"
 #include "protocol/protocol_helper.hpp"
 #include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
@@ -25,7 +27,6 @@ std::optional<Frame> FrameTransport::tryExtractFrame() {
   return std::nullopt;
 }
 
-
 // ===== socket related methods =====
 bool FrameTransport::isValid() const { return socket_ && socket_->isValid(); }
 
@@ -41,7 +42,6 @@ SocketResult FrameTransport::send(const std::vector<std::uint8_t>& bytes) {
   return socket_->send(bytes);
 }
 
-
 // ===== Buffer related methods =====
 void FrameTransport::consume(std::size_t n) {
   buffer_.erase(buffer_.begin(),
@@ -49,7 +49,7 @@ void FrameTransport::consume(std::size_t n) {
 }
 
 std::vector<std::uint8_t> FrameTransport::slice(std::size_t offset,
-                                              std::size_t len) const {
+                                                std::size_t len) const {
   return {buffer_.begin() + static_cast<std::ptrdiff_t>(offset),
           buffer_.begin() + static_cast<std::ptrdiff_t>(offset + len)};
 }
@@ -78,7 +78,7 @@ void FrameTransport::sendFrame(const Frame& frame) {
       ProtocolSerializer::serializeFrame(frame);
   what << " sending " << ProtocolHelper::messageTypeToString(frame.header.type)
        << " header+payload bytes=" << (LPTF_HEADER_SIZE + frame.payload.size());
-  logger_.info(what.str());
+  Logger::info("frame transport", what.str());
 
   // Send frame
   const SocketResult result = send(frameBytes);
@@ -92,7 +92,7 @@ void FrameTransport::sendFrame(const Frame& frame) {
          << " expected=" << frameBytes.size()
          << " status=" << static_cast<int>(result.error);
 
-    logger_.error(what.str());
+    Logger::error("frame transport", what.str());
     throw SendFailure(ProtocolHelper::messageTypeToString(frame.header.type));
   }
 
@@ -100,5 +100,5 @@ void FrameTransport::sendFrame(const Frame& frame) {
   what.clear();
   what << "end ok type="
        << ProtocolHelper::messageTypeToString(frame.header.type);
-  logger_.info(what.str());
+  Logger::info("frame transport", what.str());
 }

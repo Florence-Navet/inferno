@@ -8,21 +8,21 @@ find_package(OpenSSL REQUIRED)
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
 # When built in isolation (inside the agent container), this pulls it directly.
-if(NOT TARGET common_lib)
-    set(_common_lib "${CMAKE_CURRENT_SOURCE_DIR}/../common/build/libcommon_lib.a")
-    if(EXISTS "${_common_lib}")
-        add_library(common_lib STATIC IMPORTED GLOBAL)
-        set_target_properties(common_lib PROPERTIES
-            IMPORTED_LOCATION "${_common_lib}"
+if(NOT TARGET transport_lib)
+    set(_transport_lib "${CMAKE_CURRENT_SOURCE_DIR}/../transport/build/libtransport_lib.a")
+    if(EXISTS "${_transport_lib}")
+        add_library(transport_lib STATIC IMPORTED GLOBAL)
+        set_target_properties(transport_lib PROPERTIES
+            IMPORTED_LOCATION "${_transport_lib}"
             INTERFACE_LINK_LIBRARIES "OpenSSL::SSL;OpenSSL::Crypto"
         )
-        target_include_directories(common_lib INTERFACE
-            "${CMAKE_CURRENT_SOURCE_DIR}/../common/include"
+        target_include_directories(transport_lib INTERFACE
+            "${CMAKE_CURRENT_SOURCE_DIR}/../transport/include"
         )
     else()
         add_subdirectory(
-            ${CMAKE_CURRENT_SOURCE_DIR}/../common
-            ${CMAKE_BINARY_DIR}/common
+            ${CMAKE_CURRENT_SOURCE_DIR}/../transport
+            ${CMAKE_BINARY_DIR}/transport
         )
     endif()
 endif()
@@ -43,7 +43,7 @@ target_include_directories(server_lib PUBLIC
 )
 
 target_link_libraries(server_lib PUBLIC
-    common_lib
+    transport_lib
     
 )
 
@@ -83,7 +83,7 @@ add_executable(server_tests
 
 target_include_directories(server_tests PRIVATE
 ${CMAKE_CURRENT_SOURCE_DIR}/tests
-${CMAKE_CURRENT_SOURCE_DIR}/../common/tests
+${CMAKE_CURRENT_SOURCE_DIR}/../transport/tests
 )
 
 target_link_libraries(server_tests PRIVATE

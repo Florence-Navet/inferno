@@ -11,7 +11,7 @@
 #include "builders/frame_builder.hpp"
 #include "builders/metrics_controller_test_factory.hpp"
 #include "builders/os_info_builder.hpp"
-#include "protocol/protocol_parser.hpp"
+#include "codec/protocol_parser.hpp"
 #include "stubs/fake_system_monitor.hpp"
 #include "stubs/spy_socket.hpp"
 

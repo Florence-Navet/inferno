@@ -10,9 +10,9 @@
 
 // #include "agent_session.hpp"
 #include "builders/frame_builder.hpp"
+#include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
-#include "protocol/protocol_parser.hpp"
 #include "socket/socket_factory.hpp"
 #include "stubs/test_frame_transport.hpp"
 
@@ -102,7 +102,7 @@ TEST(TcpServerIntegration,
     std::unique_ptr<ISocket> agentSocket = SocketFactory::createTCP();
     if (agentSocket && agentSocket->connect(Common::SERVER_HOST, port)) {
       // AgentSession agentSession(std::move(agentSocket));
-       TestFrameTransport agentConnection(std::move(agentSocket));
+      TestFrameTransport agentConnection(std::move(agentSocket));
 
       // Send REGISTER using the shared helper
       // const auto registerFrame =
@@ -147,7 +147,8 @@ TEST(TcpServerIntegration,
 
   // Send RESPONSE using the shared helper
   const Frame responseFrame = FrameBuilder::makeFrame(
-      MessageType::RESPONSE, FrameBuilder::makeRawResponsePayload(7, Common::bytesFromString("pong")));
+      MessageType::RESPONSE,
+      FrameBuilder::makeRawResponsePayload(7, Common::bytesFromString("pong")));
   ASSERT_NO_THROW(serverSession.sendFrame(responseFrame));
 
   agentThread.join();

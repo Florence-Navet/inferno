@@ -5,11 +5,11 @@
 #include <string>
 #include <vector>
 
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "fixtures/protocol.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_serializer.hpp"
 
 namespace FrameBuilder {
 inline Frame makeFrame(MessageType type,
@@ -51,7 +51,7 @@ inline std::vector<std::uint8_t> makeRawFailingOsInfoPayload(
         Protocol::TEST_CURRENT_USER,
     const std::uint16_t declaredIpLen = Protocol::TEST_IP_LEN,
     const std::vector<std::uint8_t>& ipBytes = Protocol::TEST_IP) {
-  std::vector<std::uint8_t> out(REGISTER_FIXED_BYTES);
+  std::vector<std::uint8_t> out(OS_INFO_FIXED_BYTES);
 
   out[0] = rawOs;
   out[1] = rawArch;
@@ -112,8 +112,7 @@ inline ResponsePayload makeResponsePayload(std::uint16_t id = 0,
 }
 
 inline std::vector<std::uint8_t> makeRawResponsePayload(
-    std::uint16_t id = 0,
-    const std::vector<std::uint8_t>& dataBytes = {}) {
+    std::uint16_t id = 0, const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(RESPONSE_FIXED_BYTES + dataBytes.size());
   std::size_t offset{0};
   ConvertEndian::writeU16BE(out, offset, id);
@@ -129,7 +128,6 @@ inline std::vector<std::uint8_t> makeRawResponsePayload(
   return out;
 }
 
-
 inline std::vector<std::uint8_t> makeRawCommandPayload(
     std::uint16_t id, std::uint8_t rawType, std::uint16_t declaredLen,
     const std::vector<std::uint8_t>& dataBytes = {}) {
@@ -144,9 +142,9 @@ inline std::vector<std::uint8_t> makeRawCommandPayload(
   return out;
 }
 
-inline CommandPayload makeCommandPayload(std::uint16_t id = 0,
-                                         const CommandType& type = CommandType::OS_INFO,
-                                         const std::string& dataBytes = "") {
+inline CommandPayload makeCommandPayload(
+    std::uint16_t id = 0, const CommandType& type = CommandType::OS_INFO,
+    const std::string& dataBytes = "") {
   CommandPayload command;
   command.id = id;
   command.type = type;

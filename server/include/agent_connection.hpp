@@ -4,10 +4,10 @@
 #include <memory>
 #include <stdexcept>
 
+#include "codec/protocol_parser.hpp"
 #include "frame_transport.hpp"
 #include "logger.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_parser.hpp"
 #include "socket/i_socket.hpp"
 
 class AgentConnection : public FrameTransport {

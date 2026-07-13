@@ -5,8 +5,8 @@
 
 #include "builders/metrics_builder.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/metrics_parser.hpp"
-#include "protocol/metrics_serializer.hpp"
+#include "codec/metrics_parser.hpp"
+#include "codec/metrics_serializer.hpp"
 
 // ── CpuSample ──────────────────────────────────────────────────────────────
 

@@ -2,10 +2,10 @@
 
 #include <sstream>
 
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_parser.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "logger.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_parser.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
 
 AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)

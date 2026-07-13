@@ -6,8 +6,8 @@
 #include "builders/frame_builder.hpp"
 #include "fixtures/protocol.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_parser.hpp"
-#include "protocol/protocol_serializer.hpp"
+#include "codec/protocol_parser.hpp"
+#include "codec/protocol_serializer.hpp"
 
 TEST(ProtocolRoundTrip,
      should_preserve_os_info_payload_through_serialize_then_parse) {

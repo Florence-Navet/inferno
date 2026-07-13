@@ -2,10 +2,10 @@
 
 #include <sstream>
 
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "exception/socket_exception.hpp"
 #include "logger.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
 

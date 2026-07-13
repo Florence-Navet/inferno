@@ -1,12 +1,12 @@
-#include "protocol/protocol_parser.hpp"
+#include "codec/protocol_parser.hpp"
 
 #include <gtest/gtest.h>
 
 #include "protocol/lptf_protocol.hpp"
-// #include "convert_endian.hpp"
+// #include "codec/convert_endian.hpp"
+#include "builders/frame_builder.hpp"
 #include "exception/lptf_exception.hpp"
 #include "fixtures/common.hpp"
-#include "builders/frame_builder.hpp"
 
 // TEST(SharedSanity, AlwaysPasses) { EXPECT_EQ(1 + 1, 2); }
 

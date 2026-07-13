@@ -1,9 +1,9 @@
 #include "metrics/metrics_controller.hpp"
 
+#include "codec/metrics_serializer.hpp"
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "metrics/metrics_scrapper_factory.hpp"
-#include "protocol/metrics_serializer.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_serializer.hpp"
 
 // normal construction — creates its own scrapper
 MetricsController::MetricsController(int intervalMs)
@@ -41,9 +41,7 @@ void MetricsController::stop() { active_ = false; }
 
 bool MetricsController::isActive() const { return active_; }
 
-bool MetricsController::isDue() const {
-    return msUntilNextSample() == 0;
-}
+bool MetricsController::isDue() const { return msUntilNextSample() == 0; }
 
 int MetricsController::msUntilNextSample() const {
   const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(

@@ -33,13 +33,13 @@ void Reactor::onNewConnection() {
     if (!poller_.add(fd, WatchFlags::READ | WatchFlags::ERROR)) {
       std::ostringstream what;
       what << "Failed to watch agent fd " << fd;
-      logger_.error(what.str());
+      Logger::error("reactor", what.str());
       return;
     }
     std::ostringstream what;
     what << "Agent connected: " << incoming->remoteAddress() << ':'
          << incoming->remotePort();
-    logger_.info(what.str());
+    Logger::info("reactor", what.str());
     agents_.emplace(fd, AgentConnection(std::move(incoming)));
     // agents_.try_emplace(fd, std::move(incoming)); // no longer need moveable constructor for logger
   }
@@ -53,7 +53,7 @@ void Reactor::onAgentReady(int fileDescriptor) {
       result.bytesTransferred <= 0) {
         std::ostringstream what;
         what << "Agent " << fileDescriptor << " disconnected\n";
-        logger_.info(what.str());
+        Logger::info("reactor", what.str());
     // std::cout << "[server] Agent " << fileDescriptor << " disconnected\n";
     onAgentDisconnected(fileDescriptor);
     return;

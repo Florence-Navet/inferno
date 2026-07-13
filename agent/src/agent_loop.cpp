@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 
+#include "logger.hpp"
 #include "metrics/metrics_scrapper_factory.hpp"
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
@@ -20,7 +21,8 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
       session_(encryption) {
   metricsController_ = std::make_shared<MetricsController>(METRICS_INTERVAL_MS);
   dispatcher_.setMetricsController(metricsController_);
-  logger_.info("TLS = " + std::string(encryption ? "true" : "false"));
+  Logger::info("agent loop",
+               "TLS = " + std::string(encryption ? "true" : "false"));
 }
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
@@ -87,7 +89,7 @@ void AgentLoop::run() {
     if (!connected_) {
       tryReconnect();
     } else if (pollResult < 0) {
-      logger_.error("poll error");
+      Logger::error("agent loop", "poll error");
       onError();
     } else if (pollResult == 0) {
       onTimeout();
@@ -126,18 +128,18 @@ void AgentLoop::tryReconnect() {
       connected_ = true;
       std::ostringstream msg;
       msg << "connected to " << host_ << ":" << port_;
-      logger_.info(msg.str());
+      Logger::info("agent loop", msg.str());
     } else {
       // REGISTER serialization/send failed — socket is useless, close it.
       // No poller.remove() needed since we never called poller.add().
       // session_.socket->close();
       session_.close();
-      logger_.warn("REGISTER send failed, will retry");
+      Logger::warn("agent loop", "REGISTER send failed, will retry");
     }
   } else {
     std::ostringstream msg;
     msg << "connect failed to " << host_ << ":" << port_;
-    logger_.warn(msg.str());
+    Logger::warn("agent loop", msg.str());
   }
 }
 
@@ -148,7 +150,7 @@ void AgentLoop::tryReconnect() {
 // Future: build and send a HEALTHCHECK frame here so the server knows we
 // are still alive. For now, just log.
 void AgentLoop::onTimeout() {
-  logger_.info("heartbeat timeout — HEALTHCHECK placeholder");
+  Logger::info("agent loop", "heartbeat timeout — HEALTHCHECK placeholder");
 }
 
 // ─── onReadable
@@ -171,7 +173,7 @@ void AgentLoop::onReadable() {
     std::ostringstream msg;
     msg << "recv returned bytes=" << result.bytesTransferred
         << ", disconnecting";
-    logger_.warn(msg.str());
+    Logger::warn("agent loop", msg.str());
     onDisconnect();
   } else {
     // std::optional<Frame> frame = session_.tryExtractFrame();
@@ -193,7 +195,7 @@ void AgentLoop::onReadable() {
 // poll() reported POLLERR or POLLNVAL. Not a clean close — something broke
 // at the socket level. Treat identically to disconnection.
 void AgentLoop::onError() {
-  logger_.error("socket error reported by poll");
+  Logger::error("agent loop", "socket error reported by poll");
   onDisconnect();
 }
 
@@ -212,5 +214,5 @@ void AgentLoop::onDisconnect() {
   poller_.remove(session_.getFd());
   session_.close();
   connected_ = false;
-  logger_.info("disconnected — will retry in retryMs");
+  Logger::info("agent loop", "disconnected — will retry in retryMs");
 }

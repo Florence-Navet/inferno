@@ -3,27 +3,15 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 
 enum class Level : std::uint8_t { INFO, WARN, ERROR };
 
-class Logger {
- private:
-  std::string who_;
-  void log(const Level level, const std::string& what) const;
-
- public:
-  explicit Logger(const std::string who) : who_(who) {}
-  ~Logger() = default;
-  Logger() = delete;
-  Logger(const Logger&) = delete;
-  Logger& operator=(const Logger&) = delete;
-  // Move constructor so emplace into a map works
-  Logger(Logger&&) = default;
-  Logger& operator=(Logger&&) = default;
-
-  void info(const std::string& what) const;
-  void warn(const std::string& what) const;
-  void error(const std::string& what) const;
+namespace Logger {
+  void log(const Level level, std::string_view who, std::string_view what);
+  void info(std::string_view who, std::string_view what) ;
+  void warn(std::string_view who, std::string_view what) ;
+  void error(std::string_view who, std::string_view what) ;
 };
 
 #endif

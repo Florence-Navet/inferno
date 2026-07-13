@@ -7,7 +7,6 @@
 
 #include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
-#include "logger.hpp"
 #include "metrics/metrics_controller.hpp"
 #include "poller/i_poller.hpp"
 
@@ -65,7 +64,7 @@ class AgentLoop {
   // agentInfo_ (hostname, arch, os) is never cleared.
   AgentSession session_;
 
-  Logger logger_{"agent_loop"};
+  // Logger logger_{"agent_loop"};
 };
 
 #endif  // AGENT_LOOP_HPP

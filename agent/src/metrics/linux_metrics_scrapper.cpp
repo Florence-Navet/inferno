@@ -28,7 +28,8 @@ void LinuxMetricsScrapper::skipUnusedValues(std::istringstream& lineStream,
   }
 }
 
-LinuxMetricsScrapper::LinuxMetricsScrapper(std::string procRoot) : procRoot_(procRoot), firstSample_{true} {}
+LinuxMetricsScrapper::LinuxMetricsScrapper(std::string procRoot)
+    : procRoot_(procRoot), firstSample_{true} {}
 
 MemSample LinuxMetricsScrapper::readMem() {
   std::ifstream file = openFile("meminfo");
@@ -246,7 +247,7 @@ std::vector<DiskSample> LinuxMetricsScrapper::readDisks(const float& elapsed) {
 }
 
 MetricsSample LinuxMetricsScrapper::sample() {
-  Logger logger("LinuxMetricsScrapper");
+  // Logger logger("LinuxMetricsScrapper");
   std::ostringstream what;
   MetricsSample sample;
   auto now = std::chrono::steady_clock::now();
@@ -261,28 +262,28 @@ MetricsSample LinuxMetricsScrapper::sample() {
     sample.cpu = readCpu();
   } catch (const std::exception& e) {
     what << "readCpu() failed: " << e.what() << std::endl;
-    logger.error(what.str());
+    Logger::error("LinuxMetricsScrapper", what.str());
   }
 
   try {
     sample.mem = readMem();
   } catch (const std::exception& e) {
     what << "readMem() failed: " << e.what() << std::endl;
-    logger.error(what.str());
+    Logger::error("LinuxMetricsScrapper", what.str());
   }
 
   try {
     sample.disks = readDisks(elapsed);
   } catch (const std::exception& e) {
     what << "readDisks() failed: " << e.what() << std::endl;
-    logger.error(what.str());
+    Logger::error("LinuxMetricsScrapper", what.str());
   }
 
   try {
     sample.interfaces = readNet(elapsed);
   } catch (const std::exception& e) {
     what << "readNet() failed: " << e.what() << std::endl;
-    logger.error(what.str());
+     Logger::error("LinuxMetricsScrapper",what.str());
   }
 
   lastSampleTime_ = now;

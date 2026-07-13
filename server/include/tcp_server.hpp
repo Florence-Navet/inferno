@@ -32,7 +32,7 @@ class TcpServer {
   int backlog_;
   std::unique_ptr<ISocket> serverSocket_;
   std::vector<std::uint8_t> receiveBuffer_;
-  Logger logger_{"server"};
+  // Logger logger_{"server"};
 };
 
 #endif

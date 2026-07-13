@@ -9,7 +9,7 @@
 #include "socket/i_socket.hpp"
 
 AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)
-    : Dispatcher("agent"), monitor_(monitor) {}
+    : Dispatcher(), monitor_(monitor) {}
 
 void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
   AgentSession& session = static_cast<AgentSession&>(agent);
@@ -29,16 +29,16 @@ void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
 
 void AgentDispatcher::startMetrics(AgentSession& session,
                                    const CommandPayload& command) {
-  logger_.info("received COMMAND START_METRICS id=" +
-               std::to_string(command.id));
+  Logger::info("agent dispatcher", "received COMMAND START_METRICS id=" +
+                                       std::to_string(command.id));
   metricsController_->start(session);
   return send(session, command.id, ResponseStatus::OK, {});
 }
 
 void AgentDispatcher::stopMetrics(AgentSession& session,
                                   const CommandPayload& command) {
-  logger_.info("received COMMAND STOP_METRICS id=" +
-               std::to_string(command.id));
+  Logger::info("agent dispatcher", "received COMMAND STOP_METRICS id=" +
+                                       std::to_string(command.id));
   metricsController_->stop();
   return send(session, command.id, ResponseStatus::OK, {});
 }
@@ -47,7 +47,7 @@ void AgentDispatcher::osInfo(AgentSession& session,
                              const CommandPayload& command) {
   std::ostringstream what;
   what << "received COMMAND OS_INFO id=" << command.id;
-  logger_.info(what.str());
+  Logger::info("agent dispatcher", what.str());
 
   OsInfoPayload payload = monitor_.getOsInfo();
 
@@ -61,7 +61,7 @@ void AgentDispatcher::processesList(AgentSession& session,
                                     const CommandPayload& command) {
   std::ostringstream what;
   what << "received COMMAND RUNNING_PROCESSES id=" << command.id;
-  logger_.info(what.str());
+  Logger::info("agent dispatcher", what.str());
 
   const std::vector<ProcessInfo> processes = monitor_.getProcessList();
   const std::vector<std::uint8_t> processBytes =
@@ -77,20 +77,16 @@ void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
         ProtocolParser::parseErrorPayload(payload);
     what << "server ERROR code=" << static_cast<int>(errorPayload.code)
          << " message=" << errorPayload.message;
-    logger_.error(what.str());
+    Logger::error("agent dispatcher", what.str());
   } catch (...) {
-    logger_.error("received malformed ERROR payload");
+    Logger::error("agent dispatcher", "received malformed ERROR payload");
   }
 }
 void AgentDispatcher::onDisconnect(AgentSession& session) {
-  logger_.info("received DISCONNECT");
-  // std::cout << "[agent] received DISCONNECT\n";
-  // if (session.isValid()) {
-  // session.socket->close();
+  Logger::info("agent dispatcher", "received DISCONNECT");
   session.close();  // check for valid socket already inside close method
                     // session.socket.reset();
-  // }
-  // session.setRegistered(false);
+
 }
 
 void AgentDispatcher::onCommand(AgentSession& session,
@@ -115,7 +111,7 @@ void AgentDispatcher::onCommand(AgentSession& session,
   } catch (const std::exception& ex) {
     std::ostringstream what;
     what << "invalid COMMAND payload: " << ex.what();
-    logger_.error(what.str());
+    Logger::error("agent dispatcher", what.str());
     return sendError(session, ErrorType::INVALID_FORMAT,
                      "Invalid COMMAND payload");
   }
@@ -130,7 +126,7 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
   what << "at the end of sendRegister";
-  logger_.info(what.str());
+  Logger::info("agent dispatcher", what.str());
   send(session, command.id, ResponseStatus::OK,
        ProtocolSerializer::serializeOsInfoPayload(payload),
        MessageType::REGISTER);

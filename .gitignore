@@ -58,6 +58,7 @@ build/
 agent/build/
 server/build/
 shared/build/
+transport/build/
 
 # Environment
 .env

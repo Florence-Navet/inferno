@@ -86,7 +86,6 @@ void AgentDispatcher::onDisconnect(AgentSession& session) {
   Logger::info("agent dispatcher", "received DISCONNECT");
   session.close();  // check for valid socket already inside close method
                     // session.socket.reset();
-
 }
 
 void AgentDispatcher::onCommand(AgentSession& session,
@@ -122,13 +121,19 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   CommandPayload command;
   command.id = 0;
   command.type = CommandType::OS_INFO;
-  OsInfoPayload payload = monitor_.getOsInfo();
-  session.setAgentInfo(payload);
+  // OsInfoPayload payload
+  if (
+      // session.getRegistered_() == RegisterState::PENDING &&
+      session.getAgentInfo() == OsInfoPayload{}) {
+    session.setAgentInfo(monitor_.getOsInfo());
+    // payload = monitor_.getOsInfo();
+  }
+  // session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
   what << "at the end of sendRegister";
   Logger::info("agent dispatcher", what.str());
   send(session, command.id, ResponseStatus::OK,
-       ProtocolSerializer::serializeOsInfoPayload(payload),
+       ProtocolSerializer::serializeOsInfoPayload(session.getAgentInfo()),
        MessageType::REGISTER);
 }
 

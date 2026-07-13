@@ -7,8 +7,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "codec/protocol_parser.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_parser.hpp"
 #include "socket/i_socket.hpp"
 
 class FrameTransport {
@@ -52,7 +52,7 @@ class FrameTransport {
   std::vector<std::uint8_t> slice(std::size_t offset, std::size_t len) const;
 
   OsInfoPayload agentInfo_;
-//   Logger logger_{"agent"};
+  //   Logger logger_{"agent"};
 };
 
 #endif

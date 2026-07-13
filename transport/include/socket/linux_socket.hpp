@@ -13,7 +13,7 @@
 #include <cerrno>
 #include <cstring>  // strerror
 
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
 #include "socket/i_socket.hpp"
 
 class LinuxSocket : public ISocket {
@@ -41,8 +41,7 @@ class LinuxSocket : public ISocket {
   SocketStatus translateStatus(int err) const override;
 
  private:
-  int socketFileDescriptor_ =
-      -1;  
+  int socketFileDescriptor_ = -1;
 
   // Translates errno → your SocketError
 };

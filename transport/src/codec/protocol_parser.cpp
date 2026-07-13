@@ -1,13 +1,11 @@
-#include "protocol/protocol_parser.hpp"
+#include "codec/protocol_parser.hpp"
 
 #include <cstring>
 #include <string>
 
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
+#include "codec/protocol_helper.hpp"
 #include "exception/lptf_exception.hpp"
-#include "protocol/protocol_helper.hpp"
-
-
 
 namespace ProtocolParser {
 LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
@@ -41,7 +39,7 @@ LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
 }
 
 OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
-  if (input.size() < REGISTER_FIXED_BYTES) {
+  if (input.size() < OS_INFO_FIXED_BYTES) {
     throw InvalidSize("register payload", std::to_string(input.size()));
   }
 
@@ -51,14 +49,14 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t ipLen{ConvertEndian::readU16BE(input, offset)};
 
-  const std::size_t maxFieldLen{MAX_VALUE_INT16 - REGISTER_FIXED_BYTES};
+  const std::size_t maxFieldLen{MAX_VALUE_INT16 - OS_INFO_FIXED_BYTES};
 
   ProtocolHelper::validateNotNullLength(hostnameLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(osVersionLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(currentUserLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(ipLen, maxFieldLen);
 
-  const std::size_t expectedSize{REGISTER_FIXED_BYTES + hostnameLen +
+  const std::size_t expectedSize{OS_INFO_FIXED_BYTES + hostnameLen +
                                  osVersionLen + currentUserLen + ipLen};
   ProtocolHelper::validateExpectedLength(input, expectedSize);
   // validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
@@ -68,21 +66,21 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   payload.os_type = ProtocolHelper::EnumConversion::toOsType(input[0]);
   payload.arch = ProtocolHelper::EnumConversion::toArchType(input[1]);
   payload.hostname.assign(
-      reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES),
+      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES),
       hostnameLen);
 
   payload.os_version.assign(
-      reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES +
+      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
                                     hostnameLen),
       osVersionLen);
 
   payload.current_user.assign(
-      reinterpret_cast<const char*>(input.data() + REGISTER_FIXED_BYTES +
+      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
                                     hostnameLen + osVersionLen),
       currentUserLen);
 
   payload.ip.assign(reinterpret_cast<const char*>(
-                        input.data() + REGISTER_FIXED_BYTES + hostnameLen +
+                        input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
                         osVersionLen + currentUserLen),
                     ipLen);
   return payload;
@@ -118,7 +116,8 @@ CommandPayload parseCommandPayload(const std::vector<std::uint8_t>& input) {
 
   std::size_t typeOffset{2};
 
-  const CommandType type = ProtocolHelper::EnumConversion::toCommandType(input[typeOffset]);
+  const CommandType type =
+      ProtocolHelper::EnumConversion::toCommandType(input[typeOffset]);
   typeOffset++;
   const std::uint16_t dataLen = ConvertEndian::readU16BE(input, typeOffset);
 
@@ -144,7 +143,8 @@ ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input) {
     throw InvalidSize("response payload", std::to_string(input.size()));
   }
   std::size_t offset{3};
-  ProtocolHelper::validateChunkFields(input[offset], input[offset + 1]);  // 3 & 4
+  ProtocolHelper::validateChunkFields(input[offset],
+                                      input[offset + 1]);  // 3 & 4
   offset += 2;
   const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};  // 5
 
@@ -154,7 +154,8 @@ ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input) {
   ResponsePayload payload;
   std::size_t payloadOffset{0};
   payload.id = ConvertEndian::readU16BE(input, payloadOffset);
-  payload.status = ProtocolHelper::EnumConversion::toResponseStatus(input[payloadOffset]);
+  payload.status =
+      ProtocolHelper::EnumConversion::toResponseStatus(input[payloadOffset]);
   payloadOffset++;
   payload.total_chunks = input[payloadOffset];
   payloadOffset++;
@@ -181,7 +182,8 @@ ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input) {
   //   throw InvalidSize("error payload", std::to_string(input.size()));
   // }
 
-  ProtocolHelper::validateStringLength(messageLen, input, maxLength, expectedSize);
+  ProtocolHelper::validateStringLength(messageLen, input, maxLength,
+                                       expectedSize);
 
   ErrorPayload payload;
   payload.code = ProtocolHelper::EnumConversion::toErrorType(input[0]);

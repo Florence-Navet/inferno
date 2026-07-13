@@ -2,11 +2,11 @@
 
 #include <gtest/gtest.h>
 
-#include "builders/frame_builder.hpp"
-#include "fixtures/common.hpp"
-#include "protocol/protocol_parser.hpp"
-#include "stubs/spy_socket.hpp"
 #include "agent_connection.hpp"
+#include "builders/frame_builder.hpp"
+#include "codec/protocol_parser.hpp"
+#include "fixtures/common.hpp"
+#include "stubs/spy_socket.hpp"
 
 // ServerDispatcher — 3 tests covering the only stable invariants.
 // SpySocket accumulates all sent bytes; we parse them back with

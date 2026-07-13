@@ -1,15 +1,14 @@
-#include "protocol/protocol_serializer.hpp"
+#include "codec/protocol_serializer.hpp"
 
 #include <cstddef>
 #include <string>
 
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
+#include "codec/protocol_helper.hpp"
 #include "exception/lptf_exception.hpp"
-#include "protocol/protocol_helper.hpp"
 
-namespace ProtocolSerializer
-{std::vector<std::uint8_t> serializeHeader(
-    const LptfHeader& header) {
+namespace ProtocolSerializer {
+std::vector<std::uint8_t> serializeHeader(const LptfHeader& header) {
   ProtocolHelper::validateHeader(header);
 
   std::vector<std::uint8_t> headerInByte(LPTF_HEADER_SIZE);
@@ -17,8 +16,8 @@ namespace ProtocolSerializer
   // for (std::size_t i = 0; i < sizeof(header.identifier); ++i) {
   //   headerInByte[i] = header.identifier[i];
   // }
-  std::copy(header.identifier.begin(), header.identifier.end(), 
-          headerInByte.begin());
+  std::copy(header.identifier.begin(), header.identifier.end(),
+            headerInByte.begin());
 
   headerInByte[4] = header.version;
   headerInByte[5] = static_cast<std::uint8_t>(header.type);
@@ -29,11 +28,10 @@ namespace ProtocolSerializer
   return headerInByte;
 }
 
-std::vector<std::uint8_t> serializeOsInfoPayload(
-    const OsInfoPayload& payload) {
+std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
   ProtocolHelper::validateOsInfoPayload(payload);
 
-  const std::size_t finalSize{REGISTER_FIXED_BYTES + payload.hostname.size() +
+  const std::size_t finalSize{OS_INFO_FIXED_BYTES + payload.hostname.size() +
                               payload.os_version.size() +
                               payload.current_user.size() + payload.ip.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
@@ -56,20 +54,23 @@ std::vector<std::uint8_t> serializeOsInfoPayload(
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.ip.size()));
 
-  ProtocolHelper::copyString(payloadInByte, REGISTER_FIXED_BYTES, payload.hostname);
-
-  ProtocolHelper::copyString(payloadInByte, REGISTER_FIXED_BYTES + payload.hostname.size(),
-             payload.os_version);
+  ProtocolHelper::copyString(payloadInByte, OS_INFO_FIXED_BYTES,
+                             payload.hostname);
 
   ProtocolHelper::copyString(payloadInByte,
-             REGISTER_FIXED_BYTES + payload.hostname.size() +
-                 payload.os_version.size(),
-             payload.current_user);
+                             OS_INFO_FIXED_BYTES + payload.hostname.size(),
+                             payload.os_version);
+
+  ProtocolHelper::copyString(
+      payloadInByte,
+      OS_INFO_FIXED_BYTES + payload.hostname.size() + payload.os_version.size(),
+      payload.current_user);
 
   ProtocolHelper::copyString(payloadInByte,
-             REGISTER_FIXED_BYTES + payload.hostname.size() +
-                 payload.os_version.size() + payload.current_user.size(),
-             payload.ip);
+                             OS_INFO_FIXED_BYTES + payload.hostname.size() +
+                                 payload.os_version.size() +
+                                 payload.current_user.size(),
+                             payload.ip);
 
   return payloadInByte;
 }
@@ -110,8 +111,7 @@ std::vector<std::uint8_t> serializeResponsePayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> serializeDataPayload(
-    const DataPayload& payload) {
+std::vector<std::uint8_t> serializeDataPayload(const DataPayload& payload) {
   ProtocolHelper::validateDataPayload(payload);
 
   const std::size_t finalSize{DATA_FIXED_BYTES + payload.data.size()};
@@ -128,8 +128,7 @@ std::vector<std::uint8_t> serializeDataPayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> serializeErrorPayload(
-    const ErrorPayload& payload) {
+std::vector<std::uint8_t> serializeErrorPayload(const ErrorPayload& payload) {
   ProtocolHelper::validateErrorPayload(payload);
 
   const std::size_t message_length{payload.message.size()};
@@ -144,8 +143,7 @@ std::vector<std::uint8_t> serializeErrorPayload(
   return payloadInByte;
 }
 
-std::vector<std::uint8_t> serializeProcessInfo(
-    const ProcessInfo& info) {
+std::vector<std::uint8_t> serializeProcessInfo(const ProcessInfo& info) {
   ProtocolHelper::validateProcessInfo(info);
   std::vector<uint8_t> payload(PROCESS_INFO_FIXED_SIZE + info.name.size());
   std::size_t offset{0};
@@ -174,8 +172,7 @@ std::vector<std::uint8_t> serializeProcessInfoList(
   ConvertEndian::writeU16BE(finalList, offset, processCount);
 
   for (const ProcessInfo& info : infos) {
-    std::vector<uint8_t> infoPayload =
-        serializeProcessInfo(info);
+    std::vector<uint8_t> infoPayload = serializeProcessInfo(info);
     std::copy(infoPayload.begin(), infoPayload.end(),
               finalList.begin() + offset);
     offset += infoPayload.size();
@@ -184,14 +181,12 @@ std::vector<std::uint8_t> serializeProcessInfoList(
   return finalList;
 }
 
-std::vector<std::uint8_t> serializeFrame(
-    const Frame& frame) {
+std::vector<std::uint8_t> serializeFrame(const Frame& frame) {
   if (frame.payload.size() > MAX_VALUE_INT16) {
     throw InvalidSize("payload", std::to_string(frame.payload.size()));
   }
 
-  const std::vector<std::uint8_t> headerBytes =
-      serializeHeader(frame.header);
+  const std::vector<std::uint8_t> headerBytes = serializeHeader(frame.header);
 
   std::vector<uint8_t> frameBytes;
   frameBytes.reserve(headerBytes.size() + frame.payload.size());
@@ -199,4 +194,5 @@ std::vector<std::uint8_t> serializeFrame(
   frameBytes.insert(frameBytes.end(), frame.payload.begin(),
                     frame.payload.end());
   return frameBytes;
-}}
+}
+}  // namespace ProtocolSerializer

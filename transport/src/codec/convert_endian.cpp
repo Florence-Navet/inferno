@@ -1,4 +1,4 @@
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
 
 #include <cstring>
 
@@ -10,8 +10,9 @@
 #include <endian.h>
 #endif
 
-void ConvertEndian::writeU16BE(std::vector<std::uint8_t>& buffer,
-                               std::size_t& offset, std::uint16_t value) {
+namespace ConvertEndian {
+void writeU16BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                std::uint16_t value) {
   //  00000001 00101100 = 300 in big endian
 
   const std::uint8_t low = static_cast<std::uint8_t>(value & 0xFF);
@@ -30,7 +31,7 @@ void ConvertEndian::writeU16BE(std::vector<std::uint8_t>& buffer,
   offset += sizeof(std::uint16_t);
 }
 
-// std::uint16_t ConvertEndian::readU16BE(const std::vector<std::uint8_t>&
+// std::uint16_t readU16BE(const std::vector<std::uint8_t>&
 // buffer,
 //                                        std::size_t offset) {
 
@@ -38,8 +39,8 @@ void ConvertEndian::writeU16BE(std::vector<std::uint8_t>& buffer,
 //   1]);
 // };
 
-std::uint16_t ConvertEndian::readU16BE(const std::vector<std::uint8_t>& buffer,
-                                       std::size_t& offset) {  // offset by ref
+std::uint16_t readU16BE(const std::vector<std::uint8_t>& buffer,
+                        std::size_t& offset) {  // offset by ref
   // high byte = offset, low byte = offset + 1
   std::uint16_t value =
       static_cast<std::uint16_t>(buffer[offset] << 8 | buffer[offset + 1]);
@@ -47,41 +48,39 @@ std::uint16_t ConvertEndian::readU16BE(const std::vector<std::uint8_t>& buffer,
   return value;
 }
 
-std::uint32_t ConvertEndian::readU32BE(const std::vector<std::uint8_t>& buffer,
-                                       std::size_t& offset) {
+std::uint32_t readU32BE(const std::vector<std::uint8_t>& buffer,
+                        std::size_t& offset) {
   uint32_t raw_value;
   std::memcpy(&raw_value, buffer.data() + offset, sizeof(raw_value));
   offset += sizeof(uint32_t);
   return ntohl(raw_value);
 }
 
-std::uint64_t ConvertEndian::readU64BE(const std::vector<std::uint8_t>& buffer,
-                                       std::size_t& offset) {
+std::uint64_t readU64BE(const std::vector<std::uint8_t>& buffer,
+                        std::size_t& offset) {
   uint64_t raw_mem;
   std::memcpy(&raw_mem, buffer.data() + offset, sizeof(raw_mem));
   offset += sizeof(uint64_t);
   return be64toh(raw_mem);
 }
 
-float ConvertEndian::readFloat(const std::vector<std::uint8_t>& buffer,
-                               std::size_t& offset) {
+float readFloat(const std::vector<std::uint8_t>& buffer, std::size_t& offset) {
   float value;
-  std::uint32_t raw_float = ConvertEndian::readU32BE(buffer, offset);
+  std::uint32_t raw_float = readU32BE(buffer, offset);
   std::memcpy(&value, &raw_float, sizeof(value));
   return value;
 }
 
-std::string ConvertEndian::getString(const std::vector<std::uint8_t>& buffer,
-                                     std::size_t& offset,
-                                     std::uint16_t length) {
+std::string getString(const std::vector<std::uint8_t>& buffer,
+                      std::size_t& offset, std::uint16_t length) {
   std::string finalString = std::string(
       reinterpret_cast<const char*>(buffer.data() + offset), length);
   offset += length;
   return finalString;
 }
 
-void ConvertEndian::writeU32BE(std::vector<std::uint8_t>& buffer,
-                               std::size_t& offset, std::uint32_t value) {
+void writeU32BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                std::uint32_t value) {
   buffer[offset] = static_cast<std::uint8_t>((value >> 24) & 0xFF);
   buffer[offset + 1] = static_cast<std::uint8_t>((value >> 16) & 0xFF);
   buffer[offset + 2] = static_cast<std::uint8_t>((value >> 8) & 0xFF);
@@ -89,8 +88,8 @@ void ConvertEndian::writeU32BE(std::vector<std::uint8_t>& buffer,
   offset += sizeof(std::uint32_t);
 }
 
-void ConvertEndian::writeU64BE(std::vector<std::uint8_t>& buffer,
-                               std::size_t& offset, std::uint64_t value) {
+void writeU64BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                std::uint64_t value) {
   buffer[offset] = static_cast<std::uint8_t>((value >> 56) & 0xFF);
   buffer[offset + 1] = static_cast<std::uint8_t>((value >> 48) & 0xFF);
   buffer[offset + 2] = static_cast<std::uint8_t>((value >> 40) & 0xFF);
@@ -102,9 +101,10 @@ void ConvertEndian::writeU64BE(std::vector<std::uint8_t>& buffer,
   offset += sizeof(std::uint64_t);
 }
 
-void ConvertEndian::writeFloat(std::vector<std::uint8_t>& buffer,
-                               std::size_t& offset, float value) {
+void writeFloat(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                float value) {
   std::uint32_t raw;
   std::memcpy(&raw, &value, sizeof(raw));
-  ConvertEndian::writeU32BE(buffer, offset, raw);
+  writeU32BE(buffer, offset, raw);
 }
+}  // namespace ConvertEndian

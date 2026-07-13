@@ -1,11 +1,10 @@
-#include "protocol/metrics_serializer.hpp"
+#include "codec/metrics_serializer.hpp"
 
 #include <cstddef>
 #include <string>
 
-#include "convert_endian.hpp"
+#include "codec/convert_endian.hpp"
 #include "exception/lptf_exception.hpp"
-
 
 std::vector<std::uint8_t> MetricsSerializer::serializeMemSample(
     const MemSample& sample) {

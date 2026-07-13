@@ -4,14 +4,13 @@
 #include <iostream>
 #include <string>
 
-#include "frame_transport.hpp"
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "dispatcher/i_dispatcher.hpp"
 #include "exception/lptf_exception.hpp"
 #include "exception/socket_exception.hpp"
-
+#include "frame_transport.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
 #include "socket/socket_factory.hpp"
 
@@ -27,10 +26,11 @@ class Dispatcher : public IDispatcher {
   void onError(const std::vector<std::uint8_t>& payload);
 
   // ── Outgoing message builders ───────────────────────
-  void sendError(FrameTransport& agent, ErrorType code, const std::string& msg) override;
+  void sendError(FrameTransport& agent, ErrorType code,
+                 const std::string& msg) override;
 
-//  protected:
-//   Logger logger_;
+  //  protected:
+  //   Logger logger_;
 };
 
 #endif

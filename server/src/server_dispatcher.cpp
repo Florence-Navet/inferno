@@ -4,17 +4,17 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "codec/metrics_parser.hpp"
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_parser.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "logger.hpp"
-#include "protocol/metrics_parser.hpp"
-#include "protocol/protocol_helper.hpp"
-#include "protocol/protocol_parser.hpp"
-#include "protocol/protocol_serializer.hpp"
 #include "socket/i_socket.hpp"
 // ServerDispatcher::ServerDispatcher() {}
 ServerDispatcher::ServerDispatcher() : Dispatcher() {}
 
 void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
-   AgentConnection& connection = static_cast<AgentConnection&>(agent);
+  AgentConnection& connection = static_cast<AgentConnection&>(agent);
   switch (frame.header.type) {
     case MessageType::REGISTER:
       onRegister(connection, frame.payload);
@@ -50,8 +50,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
        << "\nuser : " << agentInfo.current_user
        << "\nos : " << static_cast<int>(agentInfo.os_type)
        << "\narch : " << static_cast<int>(agentInfo.arch)
-       << "\nversion : " << agentInfo.os_version
-       << "\nip : " << agentInfo.ip;
+       << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
   Logger::info("server dispatcher", what.str());
 }
 
@@ -70,7 +69,7 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
        << ProtocolParser::toString(response.data);
 
   Logger::info("server dispatcher", what.str());
-  
+
   // Only act once all chunks of this response have arrived.
   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
   // if (lastChunk) sendDisconnect(agent);

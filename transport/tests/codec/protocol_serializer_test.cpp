@@ -1,4 +1,4 @@
-#include "protocol/protocol_serializer.hpp"
+#include "codec/protocol_serializer.hpp"
 
 #include <gtest/gtest.h>
 

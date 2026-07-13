@@ -8,20 +8,20 @@ find_package(OpenSSL REQUIRED)
 # STATIC = compiled once into a .a archive, then linked into agent and server.
 # No Dockerfile, no executable — this is purely a library.
 add_library(transport_lib STATIC
-    src/convert_endian.cpp
     src/frame_transport.cpp
     src/env_helper.cpp
     src/logger.cpp
     src/dispatcher/dispatcher.cpp
-    src/protocol/protocol_parser.cpp
-    src/protocol/protocol_serializer.cpp
-    src/protocol/metrics_serializer.cpp
-    src/protocol/metrics_parser.cpp
+    src/codec/convert_endian.cpp
+    src/codec/protocol_parser.cpp
+    src/codec/protocol_serializer.cpp
+    src/codec/metrics_serializer.cpp
+    src/codec/metrics_parser.cpp
+    src/codec/protocol_helper.cpp
     src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp
     src/socket/tls_socket_factory.cpp
-    src/protocol/protocol_helper.cpp
     src/poller/poller.cpp
 )
 
@@ -48,17 +48,17 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoTransport")
     )
 
     set(PARSER_TESTS
-        tests/protocol/parser/protocol_parser_test.cpp
+        tests/codec/protocol_parser_test.cpp
     )
 
     set(SERIALIZER_TESTS
-        tests/protocol/serializer/protocol_serializer_test.cpp
+        tests/codec/protocol_serializer_test.cpp
     )
 
     set(PARSER_SERIALIZER_TESTS
-        tests/protocol/protocol_roundtrip_test.cpp
-        tests/protocol/round_trip_metrics_test.cpp
-        tests/protocol/round_trip_serialization_test.cpp
+        tests/codec/protocol_roundtrip_test.cpp
+        tests/codec/round_trip_metrics_test.cpp
+        tests/codec/round_trip_serialization_test.cpp
     )
 
     set(SOCKET_TESTS

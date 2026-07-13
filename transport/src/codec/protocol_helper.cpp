@@ -1,4 +1,4 @@
-#include "protocol/protocol_helper.hpp"
+#include "codec/protocol_helper.hpp"
 
 #include "exception/lptf_exception.hpp"
 

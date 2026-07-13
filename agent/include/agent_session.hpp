@@ -7,10 +7,10 @@
 #include <stdexcept>
 #include <vector>
 
-#include "protocol/lptf_protocol.hpp"
-#include "protocol/protocol_parser.hpp"
-#include "socket/i_socket.hpp"
+#include "codec/protocol_parser.hpp"
 #include "frame_transport.hpp"
+#include "protocol/lptf_protocol.hpp"
+#include "socket/i_socket.hpp"
 
 enum class RegisterState : std::uint8_t { PENDING, SENT, OK, REJECTED };
 

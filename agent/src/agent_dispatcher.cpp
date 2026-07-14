@@ -158,7 +158,8 @@ void AgentDispatcher::send(AgentSession& session, std::uint16_t id,
     }
     default: {
       Logger::info("agent dispatcher",
-                   ProtocolHelper::messageTypeToString(type));
+                   std::string("unexpected message type : ") +
+                       ProtocolHelper::messageTypeToString(type));
     }
   }
 }

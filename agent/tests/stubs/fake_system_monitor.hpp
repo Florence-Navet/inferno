@@ -8,10 +8,11 @@
 
 class FakeSystemMonitor : public ISystemMonitor {
  public:
+  std::uint32_t processCount = 3;
   OsInfoPayload getOsInfo() override { return OsInfoBuilder::create(); }
 
   std::vector<ProcessInfo> getProcessList() override {
-    return ProcessBuilder::createProcessInfoList();
+    return ProcessBuilder::createProcessInfoList(processCount);
     // ProcessInfo process1 =
     //     ProcessBuilder::createProcessInfo(1001, 12.5f, 123456, "proc-a");
     // ProcessInfo process2 =

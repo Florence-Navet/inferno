@@ -12,12 +12,6 @@
 #include "protocol/lptf_protocol.hpp"
 #include "system_monitor/i_system_monitor.hpp"
 
-// enum class StatusRegister : std::uint8_t {
-//   SENT,
-//   OK,
-//   REJECTED
-// };
-
 class AgentDispatcher : public Dispatcher {
  public:
   explicit AgentDispatcher(ISystemMonitor& monitor);
@@ -28,19 +22,16 @@ class AgentDispatcher : public Dispatcher {
 
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
 
-  // StatusRegister getRegistered_() const { return registered_; };
   void sendRegister(AgentSession& session);
-  // in AgentDispatcher
   void setMetricsController(std::shared_ptr<MetricsController> controller);
 
  private:
   ISystemMonitor& monitor_;  // injected -used to read OS info for REGISTER
   std::shared_ptr<MetricsController> metricsController_{nullptr};
 
-  // StatusRegister registered_{StatusRegister::REJECTED};
-  void send(AgentSession& session, std::uint16_t id,
-                    ResponseStatus status,
-                    const std::vector<std::uint8_t>& data, MessageType type = MessageType::RESPONSE);
+  void send(AgentSession& session, std::uint16_t id, ResponseStatus status,
+            const std::vector<std::uint8_t>& data,
+            MessageType type = MessageType::RESPONSE);
   void onCommand(AgentSession& session,
                  const std::vector<std::uint8_t>& payload);
   void onDisconnect(AgentSession& session);
@@ -51,6 +42,13 @@ class AgentDispatcher : public Dispatcher {
   void stopMetrics(AgentSession& session, const CommandPayload& command);
   void osInfo(AgentSession& session, const CommandPayload& command);
   void processesList(AgentSession& session, const CommandPayload& command);
+  void sendResponseChunked(AgentSession& session, std::uint16_t id,
+                           ResponseStatus status,
+                           const std::vector<std::uint8_t>& data);
+  std::vector<std::uint8_t> createResponseChunk(
+      std::uint16_t id, ResponseStatus status, std::size_t chunkIndex,
+      std::size_t totalChunks, std::size_t start, std::size_t end,
+      const std::vector<std::uint8_t>& data);
 };
 
 #endif

@@ -9,13 +9,12 @@
 
 #include "protocol/lptf_protocol.hpp"
 
-
 namespace ProtocolHelper {
 
 void copyString(std::vector<std::uint8_t>& out, std::size_t offset,
                 const std::string& value);
 
-const char* messageTypeToString(const MessageType type);
+const char* messageTypeToString(MessageType type) noexcept;
 
 LptfHeader createHeader(MessageType type,
                         const std::vector<std::uint8_t>& payload);

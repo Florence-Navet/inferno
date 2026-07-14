@@ -3,7 +3,7 @@
 #include "exception/lptf_exception.hpp"
 
 namespace ProtocolHelper {
-const char* messageTypeToString(const MessageType type) {
+const char* messageTypeToString(MessageType type) noexcept {
   switch (type) {
     case MessageType::REGISTER:
       return "REGISTER";

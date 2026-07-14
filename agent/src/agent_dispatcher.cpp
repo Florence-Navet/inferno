@@ -146,23 +146,63 @@ void AgentDispatcher::send(AgentSession& session, std::uint16_t id,
                            ResponseStatus status,
                            const std::vector<std::uint8_t>& data,
                            MessageType type) {
-  std::vector<uint8_t> responsePayload;
-  if (type == MessageType::RESPONSE) {
-    ResponsePayload payload;
-    payload.id = id;
-    payload.status = status;
-    payload.total_chunks = 1;
-    payload.chunk_index = 0;
-    payload.data = data;
+  switch (type) {
+    case MessageType::RESPONSE: {
+      sendResponseChunked(session, id, status, data);
+      return;
+    }
+    case MessageType::REGISTER: {
+      Frame frame = {ProtocolHelper::createHeader(type, data), data};
+      session.sendFrame(frame);
+      return;
+    }
+    default: {
+      Logger::info("agent dispatcher",
+                   ProtocolHelper::messageTypeToString(type));
+    }
+  }
+}
 
-    responsePayload = ProtocolSerializer::serializeResponsePayload(payload);
+void AgentDispatcher::sendResponseChunked(
+    AgentSession& session, std::uint16_t id, ResponseStatus status,
+    const std::vector<std::uint8_t>& data) {
+  const std::size_t maxChunkSize =
+      KMAX_U16_VALUE - RESPONSE_FIXED_BYTES - LPTF_HEADER_SIZE;
+
+  // Calculate how many chunks needed
+  std::size_t totalChunks = (data.size() + maxChunkSize - 1) / maxChunkSize;
+  if (totalChunks == 0) totalChunks = 1;  // At least 1 chunk
+  if (totalChunks > std::numeric_limits<std::uint8_t>::max()) {
+    throw InvalidFieldValue(
+        "total_chunks", std::to_string(static_cast<std::uint8_t>(totalChunks)));
   }
 
-  if (type == MessageType::REGISTER) {
-    responsePayload = data;
-  }
+  // Send each chunk
+  for (std::size_t chunkIdx = 0; chunkIdx < totalChunks; ++chunkIdx) {
+    std::size_t start = chunkIdx * maxChunkSize;
+    std::size_t end = std::min(start + maxChunkSize, data.size());
 
-  Frame frame = {ProtocolHelper::createHeader(type, responsePayload),
-                 responsePayload};
-  session.sendFrame(frame);
+    std::vector<uint8_t> responsePayload = createResponseChunk(
+        id, status, chunkIdx, totalChunks, start, end, data);
+
+    Frame frame = {
+        ProtocolHelper::createHeader(MessageType::RESPONSE, responsePayload),
+        responsePayload};
+
+    session.sendFrame(frame);
+  }
+}
+
+std::vector<std::uint8_t> AgentDispatcher::createResponseChunk(
+    std::uint16_t id, ResponseStatus status, std::size_t chunkIndex,
+    std::size_t totalChunks, std::size_t start, std::size_t end,
+    const std::vector<std::uint8_t>& data) {
+  ResponsePayload response;
+  response.id = id;
+  response.status = status;
+  response.total_chunks = static_cast<std::uint8_t>(totalChunks);
+  response.chunk_index = static_cast<std::uint8_t>(chunkIndex);
+  response.data = {data.begin() + start, data.begin() + end};
+
+  return ProtocolSerializer::serializeResponsePayload(response);
 }

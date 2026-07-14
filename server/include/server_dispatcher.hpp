@@ -2,9 +2,9 @@
 #define SERVER_DISPATCHER_HPP
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
-
 // #include "agent_session.hpp"
 #include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
@@ -33,7 +33,17 @@ class ServerDispatcher : public Dispatcher {
 
   std::uint16_t nextId();
 
- private:
+  struct IncompleteResponse {
+    ResponsePayload baseResponse;
+    std::vector<std::uint8_t> data;  // indexed by chunk_index
+    // std::uint8_t chunksReceived = 0;
+  };
+  std::map<std::uint16_t, IncompleteResponse>
+      pendingResponses_;  // keyed by response id
+
+  void processCompleteResponse(const ResponsePayload& response);
+  void createResponseEntry(const ResponsePayload& response);
+  void tryCompleteResponse(const ResponsePayload& response);
   std::uint16_t nextCmdId_ = 0;
 };
 

@@ -84,7 +84,7 @@ void validateHeader(const LptfHeader& header) {
     throw UnsupportedVersion(std::to_string(header.version),
                              "Version provided is not a number");
   }
-  if (header.type >= MessageType::END) {
+  if (header.type >= MessageType::UNKNOWN) {
     throw InvalidType(std::to_string(static_cast<std::uint8_t>(header.type)));
   }
 }
@@ -97,11 +97,11 @@ void copyString(std::vector<std::uint8_t>& out, std::size_t offset,
 }
 
 void validateOsInfoPayload(const OsInfoPayload& payload) {
-  if (payload.os_type >= OSType::END) {
+  if (payload.os_type >= OSType::UNKNOWN) {
     throw InvalidFieldValue(
         "os_type", std::to_string(static_cast<std::uint8_t>(payload.os_type)));
   }
-  if (payload.arch >= ArchType::END) {
+  if (payload.arch >= ArchType::UNKNOWN) {
     throw InvalidFieldValue(
         "arch", std::to_string(static_cast<std::uint8_t>(payload.arch)));
   }
@@ -136,7 +136,7 @@ void validateOsInfoPayload(const OsInfoPayload& payload) {
 }
 
 void validateCommandPayload(const CommandPayload& payload) {
-  if (payload.type >= CommandType::END) {
+  if (payload.type >= CommandType::UNKNOWN) {
     throw InvalidFieldValue(
         "command_type",
         std::to_string(static_cast<std::uint8_t>(payload.type)));
@@ -159,7 +159,7 @@ void validateCommandPayload(const CommandPayload& payload) {
 void validateResponsePayload(const ResponsePayload& payload) {
   ensureFitsU16(payload.data.size(), "response data length");
 
-  if (payload.status >= ResponseStatus::END) {
+  if (payload.status >= ResponseStatus::UNKNOWN) {
     throw InvalidFieldValue(
         "response_status",
         std::to_string(static_cast<std::uint8_t>(payload.status)));
@@ -175,7 +175,7 @@ void validateResponsePayload(const ResponsePayload& payload) {
 }
 
 void validateDataPayload(const DataPayload& payload) {
-  if (payload.subtype >= DataType::END) {
+  if (payload.subtype >= DataType::UNKNOWN) {
     throw InvalidFieldValue(
         "data_type",
         std::to_string(static_cast<std::uint8_t>(payload.subtype)));
@@ -184,7 +184,7 @@ void validateDataPayload(const DataPayload& payload) {
 }
 
 void validateErrorPayload(const ErrorPayload& payload) {
-  if (payload.code >= ErrorType::END) {
+  if (payload.code >= ErrorType::UNKNOWN) {
     throw InvalidFieldValue(
         "error_code", std::to_string(static_cast<std::uint8_t>(payload.code)));
   }
@@ -208,21 +208,21 @@ void validateProcessInfo(const ProcessInfo& payload) {
 
 namespace EnumConversion {
 OSType toOsType(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(OSType::END)) {
+  if (value >= static_cast<std::uint8_t>(OSType::UNKNOWN)) {
     throw InvalidFieldValue("os_type", std::to_string(value));
   }
   return static_cast<OSType>(value);
 }
 
 ArchType toArchType(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(ArchType::END)) {
+  if (value >= static_cast<std::uint8_t>(ArchType::UNKNOWN)) {
     throw InvalidFieldValue("arch", std::to_string(value));
   }
   return static_cast<ArchType>(value);
 }
 
 DataType toDataType(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(DataType::END)) {
+  if (value >= static_cast<std::uint8_t>(DataType::UNKNOWN)) {
     throw InvalidFieldValue("data_type",
                             std::to_string(static_cast<unsigned int>(value)));
   }
@@ -230,7 +230,7 @@ DataType toDataType(const std::uint8_t value) {
 }
 
 CommandType toCommandType(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(CommandType::END)) {
+  if (value >= static_cast<std::uint8_t>(CommandType::UNKNOWN)) {
     throw InvalidFieldValue("command_type",
                             std::to_string(static_cast<unsigned int>(value)));
   }
@@ -238,7 +238,7 @@ CommandType toCommandType(const std::uint8_t value) {
 }
 
 ResponseStatus toResponseStatus(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(ResponseStatus::END)) {
+  if (value >= static_cast<std::uint8_t>(ResponseStatus::UNKNOWN)) {
     throw InvalidFieldValue("response_status",
                             std::to_string(static_cast<unsigned int>(value)));
   }
@@ -246,7 +246,7 @@ ResponseStatus toResponseStatus(const std::uint8_t value) {
 }
 
 ErrorType toErrorType(const std::uint8_t value) {
-  if (value >= static_cast<std::uint8_t>(ErrorType::END)) {
+  if (value >= static_cast<std::uint8_t>(ErrorType::UNKNOWN)) {
     throw InvalidFieldValue("error_code",
                             std::to_string(static_cast<unsigned int>(value)));
   }

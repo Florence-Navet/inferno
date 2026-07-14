@@ -1,9 +1,9 @@
 #ifndef PROTOCOL_HEADER_HPP
 #define PROTOCOL_HEADER_HPP
 #include <array>
-#include <vector>
 #include <cstdint>
 #include <string_view>
+#include <vector>
 
 constexpr std::uint8_t LPTF_VERSION = 1;
 
@@ -21,14 +21,14 @@ enum class MessageType : std::uint8_t {
   RESPONSE = 3,
   DISCONNECT = 4,
   ERROR = 5,
-  END,  // must always be the last !!
+  UNKNOWN  // must always be the last !!
 };
 
 struct LptfHeader {
   // char identifier[4];
   std::array<char, 4> identifier = LPTF_IDENTIFIER;
   std::uint8_t version = LPTF_VERSION;
-  MessageType type = MessageType::END;
+  MessageType type = MessageType::UNKNOWN;
   std::uint16_t size = LPTF_HEADER_SIZE;
 
   bool operator==(const LptfHeader& other) const {

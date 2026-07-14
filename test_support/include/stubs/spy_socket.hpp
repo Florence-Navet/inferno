@@ -31,7 +31,7 @@ class SpySocket : public ISocket {
 
   // Convenience: parse the MessageType from byte 5 of the first frame
   MessageType messageType() const {
-    if (sent.size() < LPTF_HEADER_SIZE) return MessageType::END;
+    if (sent.size() < LPTF_HEADER_SIZE) return MessageType::UNKNOWN;
     return static_cast<MessageType>(sent[5]);
   }
 

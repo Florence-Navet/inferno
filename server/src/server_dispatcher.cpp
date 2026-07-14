@@ -58,22 +58,24 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
 // plus chunk metadata for large payloads split across messages.
 void ServerDispatcher::onResponse(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
-  const ResponsePayload response =
-      ProtocolParser::parseResponsePayload(payload);
   std::ostringstream what;
-
-  what << "[RESPONSE] \nid=" << response.id
-       << "  \nchunk=" << static_cast<int>(response.chunk_index) + 1 << "/"
-       << static_cast<int>(response.total_chunks)
-       << "  \nstatus=" << static_cast<int>(response.status) << "\n"
-       << ProtocolParser::toString(response.data);
-
+  what << "Response from agent :" << agent.getAgentInfo().ip << "\n";
   Logger::info("server dispatcher", what.str());
 
-  // Only act once all chunks of this response have arrived.
-  const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
-  // if (lastChunk) sendDisconnect(agent);
-  // → To send more commands, push them here instead of disconnecting.
+  const ResponsePayload response =
+      ProtocolParser::parseResponsePayload(payload);
+
+  if (response.total_chunks == 1) {
+    processCompleteResponse(response);
+    return;
+  }
+
+  createResponseEntry(response);
+
+  IncompleteResponse& incomplete = pendingResponses_[response.id];
+  incomplete.data.insert(incomplete.data.end(), response.data.begin(),
+                         response.data.end());
+  tryCompleteResponse(response);
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND
@@ -107,8 +109,6 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
     }
   }
   Logger::info("server dispatcher", what.str());
-  // std::cout << "[← DATA] subtype=" << static_cast<int>(data.subtype) << "\n"
-  //           << data.data << "\n";
 }
 
 // ── Outgoing senders ─────────────────────────────────────────
@@ -124,27 +124,59 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
 
   Frame frame = {ProtocolHelper::createHeader(MessageType::COMMAND, payload),
                  payload};
-  // sendFrame(agent, frame);
   agent.sendFrame(frame);
-  // sendRaw(agent, MessageType::COMMAND, payload);
   std::ostringstream what;
   what << "[COMMAND] id=" << command.id
        << "  type=" << static_cast<int>(command.type);
   Logger::info("server dispatcher", what.str());
-  // std::cout << "[→ COMMAND] id=" << command.id
-  //           << "  type=" << static_cast<int>(command.type) << "\n";
 }
 
 void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   const std::vector<uint8_t> payload{};
   Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
                  payload};
-  // sendRaw(agent, MessageType::DISCONNECT);
-  // sendFrame(agent, frame);
+
   agent.sendFrame(frame);
   Logger::info("server dispatcher", "[DISCONNECT]");
-  // std::cout << "[→ DISCONNECT]\n";
-  //   running = false;
 }
 
 std::uint16_t ServerDispatcher::nextId() { return nextCmdId_++; }
+
+void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
+  if (pendingResponses_.find(response.id) == pendingResponses_.end()) {
+    IncompleteResponse incomplete;
+    incomplete.baseResponse = response;
+    pendingResponses_[response.id] = incomplete;
+  }
+}
+
+void ServerDispatcher::processCompleteResponse(
+    const ResponsePayload& response) {
+  std::ostringstream what;
+  what << "[RESPONSE] id=" << response.id
+       << " status=" << static_cast<int>(response.status) << "\n"
+       << ProtocolParser::toString(response.data);
+  Logger::info("server dispatcher", what.str());
+
+  if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
+    pendingResponses_.erase(response.id);
+  }
+}
+
+void ServerDispatcher::tryCompleteResponse(const ResponsePayload& response) {
+  const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
+  if (lastChunk) {
+    IncompleteResponse& incomplete = pendingResponses_[response.id];
+
+    // if (incomplete.chunksReceived != response.total_chunks) {
+    //   throw std::runtime_error("Missing chunks for response id " +
+    //                            std::to_string(response.id));
+    // }
+
+    // Reassemble all chunks
+    ResponsePayload complete = incomplete.baseResponse;
+    complete.data = incomplete.data;
+
+    processCompleteResponse(complete);
+  }
+}

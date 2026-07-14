@@ -2,8 +2,11 @@
 #define PROTOCOL_SYSTEM_INFO_HPP
 #include <cstdint>
 #include <string>
+#include <limits>
 
-constexpr std::size_t KMAX_U16_VALUE = 65535u;
+// constexpr std::size_t KMAX_U16_VALUE = 65535u;
+constexpr std::size_t KMAX_U16_VALUE =
+    std::numeric_limits<std::uint16_t>::max(); //  = 65535u;
 constexpr std::uint16_t MAX_VALUE_INT16 =
     static_cast<std::uint16_t>(KMAX_U16_VALUE);
 

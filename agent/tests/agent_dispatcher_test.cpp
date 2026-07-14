@@ -150,3 +150,35 @@ TEST_F(AgentDispatcherTest,
   //------- Assert
   EXPECT_FALSE(controller->isActive());
 }
+
+
+TEST_F(AgentDispatcherTest, should_send_multiple_frames_when_response_exceeds_chunk_size) {
+  //------- Arrange
+  monitor.processCount = 2340; // enough to exceed one chunk
+
+  const std::vector<std::uint8_t> payload = FrameBuilder::makeRawCommandPayload(
+      1, static_cast<std::uint8_t>(CommandType::RUNNING_PROCESSES), {});
+
+  //------- Act
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  //------- Assert
+  SpySocket parserSpy;
+  AgentSession parser(parserSpy.makeUnique());
+  parser.appendToBuffer(spy.sent);
+
+  std::vector<Frame> frames;
+  std::optional<Frame> frame;
+  while ((frame = parser.tryExtractFrame()).has_value()) {
+    frames.push_back(*frame);
+  }
+
+  ASSERT_GE(frames.size(), 2u);
+  for (std::size_t i = 0; i < frames.size(); ++i) {
+    const ResponsePayload chunk =
+        ProtocolParser::parseResponsePayload(frames[i].payload);
+    EXPECT_EQ(chunk.chunk_index, static_cast<std::uint8_t>(i));
+    EXPECT_EQ(chunk.total_chunks, static_cast<std::uint8_t>(frames.size()));
+  }
+}

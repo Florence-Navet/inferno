@@ -9,12 +9,11 @@ constexpr std::size_t DATA_FIXED_BYTES =
 enum class DataType : std::uint8_t {
   METRICS_SAMPLE = 0,
   HEALTH_CHECK = 1,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
 
-
 struct DataPayload {
-  DataType subtype = DataType::END;
+  DataType subtype = DataType::UNKNOWN;
   std::vector<std::uint8_t> data = {};
 
   bool operator==(const DataPayload& other) const {

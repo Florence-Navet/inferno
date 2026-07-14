@@ -12,11 +12,11 @@ enum class ErrorType : std::uint8_t {
   UNKNOWN_COMMAND = 2,
   EXECUTION_FAILED = 3,
   SIZE_EXCEEDED = 4,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
 
 struct ErrorPayload {
-  ErrorType code = ErrorType::END;
+  ErrorType code = ErrorType::UNKNOWN;
   std::string message = "";
 
   bool operator==(const ErrorPayload& other) const {

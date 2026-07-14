@@ -12,13 +12,12 @@ enum class CommandType : std::uint8_t {
   SHELL = 2,
   START_METRICS = 3,
   STOP_METRICS = 4,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
-
 
 struct CommandPayload {
   std::uint16_t id = 0;
-  CommandType type = CommandType::END;
+  CommandType type = CommandType::UNKNOWN;
   std::string data = "";
 
   bool operator==(const CommandPayload& other) const {

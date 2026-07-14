@@ -11,12 +11,12 @@ constexpr std::size_t RESPONSE_FIXED_BYTES =
 enum class ResponseStatus : std::uint8_t {
   OK = 0,
   ERROR = 1,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
 
 struct ResponsePayload {
   std::uint16_t id = 0;
-  ResponseStatus status = ResponseStatus::END;
+  ResponseStatus status = ResponseStatus::UNKNOWN;
   std::uint8_t total_chunks = 0;
   std::uint8_t chunk_index = 0;
   std::vector<std::uint8_t> data = {};

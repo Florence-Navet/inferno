@@ -22,19 +22,19 @@ enum class OSType : std::uint8_t {
   WINDOWS = 0,
   LINUX = 1,
   MAC = 2,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
 
 enum class ArchType : std::uint8_t {
   X86 = 0,
   X64 = 1,
   ARM = 2,
-  END,  // must be the last one
+  UNKNOWN  // must be the last one
 };
 
 struct OsInfoPayload {
-  OSType os_type = OSType::END;
-  ArchType arch = ArchType::END;
+  OSType os_type = OSType::UNKNOWN;
+  ArchType arch = ArchType::UNKNOWN;
   std::string hostname = "";
   std::string os_version = "";    // new — "Ubuntu 22.04", "Windows 11"
   std::string current_user = "";  // new — getenv("USER") / GetUserName()

@@ -8,6 +8,7 @@
 #include "codec/protocol_serializer.hpp"
 #include "fixtures/protocol.hpp"
 #include "protocol/lptf_protocol.hpp"
+#include "builders/os_info_builder.hpp"
 
 TEST(ProtocolRoundTrip,
      should_preserve_os_info_payload_through_serialize_then_parse) {
@@ -107,4 +108,16 @@ TEST(ProtocolRoundRrip,
       ProtocolSerializer::serializeDashboardResponse(response);
   const DashboardResponse result = ProtocolParser::parseDashboardResponse(bytes);
   EXPECT_EQ(result, response);
+}
+
+TEST(ProtocolRoundRrip,
+     should_preserve_register_payload_through_serialize_then_parse) {
+  RegisterPayload payload;
+  payload.id = "whateverId";
+  payload.system = OsInfoBuilder::create();
+
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeRegisterPayload(payload);
+  const RegisterPayload result = ProtocolParser::parseRegisterPayload(bytes);
+  EXPECT_EQ(result, payload);
 }

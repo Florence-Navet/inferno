@@ -30,6 +30,8 @@ std::vector<std::uint8_t> serializeDashboardCommand(
 std::vector<std::uint8_t> serializeDashboardData(const DashboardData& data);
 std::vector<std::uint8_t> serializeDashboardResponse(
     const DashboardResponse& response);
+std::vector<std::uint8_t> serializeRegisterPayload(
+    const RegisterPayload& payload);
 
 std::vector<std::uint8_t> serializeFrame(const Frame& frame);
 

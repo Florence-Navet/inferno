@@ -41,7 +41,7 @@ LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
 
 OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   if (input.size() < OS_INFO_FIXED_BYTES) {
-    throw InvalidSize("register payload", std::to_string(input.size()));
+    throw InvalidSize("os info payload", std::to_string(input.size()));
   }
 
   std::size_t offset{2};
@@ -298,4 +298,23 @@ DashboardResponse ProtocolParser::parseDashboardResponse(
 }
   response.response = parseResponsePayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return response;
+}
+
+RegisterPayload ProtocolParser::parseRegisterPayload(
+    const std::vector<std::uint8_t>& input) {
+    RegisterPayload payload;
+  size_t offset = 0;
+
+  std::uint16_t idLen = ConvertEndian::readU16BE(input, offset);
+
+  if (offset + idLen > input.size()) {
+    throw InvalidSize("id", std::to_string(idLen));
+  }
+
+  payload.id = ConvertEndian::getString(input, offset, idLen);
+  if (offset >= input.size()) {
+    throw InvalidSize("register payload id", "0");
+}
+  payload.system = parseOsInfoPayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+  return payload;
 }

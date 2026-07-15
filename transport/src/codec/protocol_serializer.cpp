@@ -5,8 +5,8 @@
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
-#include "exception/lptf_exception.hpp"
 #include "codec/protocol_serializer.hpp"
+#include "exception/lptf_exception.hpp"
 
 namespace ProtocolSerializer {
 std::vector<std::uint8_t> serializeHeader(const LptfHeader& header) {
@@ -237,6 +237,25 @@ std::vector<std::uint8_t> serializeDashboardResponse(
             payload.begin() + offset);
 
   return payload;
+}
+
+std::vector<std::uint8_t> serializeRegisterPayload(
+    const RegisterPayload& payload) {
+  std::uint16_t idLen = payload.id.size();
+  std::vector<uint8_t> registerPayload = serializeOsInfoPayload(payload.system);
+
+  std::size_t totalSize{sizeof(std::uint16_t) + idLen + registerPayload.size()};
+  std::vector<std::uint8_t> finalPayload(totalSize);
+  std::size_t offset{0};
+
+  ConvertEndian::writeU16BE(finalPayload, offset, idLen);
+  std::copy(payload.id.begin(), payload.id.end(),
+            finalPayload.begin() + offset);
+  offset += idLen;
+  std::copy(registerPayload.begin(), registerPayload.end(),
+            finalPayload.begin() + offset);
+
+  return finalPayload;
 }
 
 std::vector<std::uint8_t> serializeFrame(const Frame& frame) {

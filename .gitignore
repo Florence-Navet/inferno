@@ -67,3 +67,5 @@ transport/build/
 notes*.md
 notes*/
 build.log
+
+.vscode/

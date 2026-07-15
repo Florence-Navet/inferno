@@ -283,10 +283,22 @@ struct DashboardResponse {
   std::string target;        // which agent sent this response
   ResponsePayload response;
 };
+
+struct RegisterPayload {
+    std::string id;
+    OsInfoPayload system
+}
 ```
 On the network : 
 ```c++
 uint16_t target_len;  // optional command string length (SHELL only)
 char target[target_len];
-Commandpayload / DashboardData / DashboardResponse
+std::vector<std::uint8_t> Commandpayload / DashboardData / DashboardResponse serialized
 ```
+
+```c++
+uint16_t id_len;  // optional command string length (SHELL only)
+char id[id_len];
+std::vector<std::uint8_t> OsInfoPayload serialized
+```
+

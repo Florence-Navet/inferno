@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <cctype>   // std::isdigit
+#include <cstdio>  // popen(), pclose()
 #include <cstdlib>  // getenv()
 #include <fstream>  // std::ifstream
 #include <sstream>
@@ -165,10 +166,21 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
   return info;
 }
 
-std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
-  // Implement shell command execution logic here
-  (void)cmd;  // not used yed
-  return std::string{};
+std::string LinuxSystemMonitor::executeShell(const std::string& command) {
+  // popen() runs the command through /bin/sh 
+  FILE* pipe = popen(command.c_str(), "r");
+  if (pipe == nullptr) {
+    return std::string{};  // popen failed - nothing to read
+  }
+  char buffer[256];
+  std::string output;
+
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    output += buffer; // Append the output to the result string
+  }
+
+pclose(pipe); // Close the pipe and get the exit status
+  return output;
 }
 
 std::string LinuxSystemMonitor::readHostName() {
@@ -229,9 +241,7 @@ std::string LinuxSystemMonitor::readOsVersion() {
 
   if (!file.is_open()) {
     return std::string{};
-#include <arpa/inet.h>   // inet_ntop()
-#include <ifaddrs.h>     // getifaddrs()
-#include <sys/socket.h>  // address family constants
+  // address family constants
   }
 
   // TODO : read the file line by line and find PRETTY_NAME

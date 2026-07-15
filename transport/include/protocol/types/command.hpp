@@ -25,4 +25,13 @@ struct CommandPayload {
   }
 };
 
+struct DashboardCommand {
+  std::string target;
+  CommandPayload command;
+
+  bool operator==(const DashboardCommand& other) const {
+    return target == other.target && command == other.command;
+  }
+};
+
 #endif

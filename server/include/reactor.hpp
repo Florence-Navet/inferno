@@ -11,6 +11,7 @@
 #include "logger.hpp"
 #include "poller/i_poller.hpp"
 #include "tcp_server.hpp"
+#include "dashboard_connection.hpp"
 
 class Reactor {
  public:
@@ -32,6 +33,7 @@ class Reactor {
 
   bool running_ = false;
   std::unordered_map<int, AgentConnection> agents_;
+  std::unique_ptr<DashboardConnection> dasbhoard_;
 
   // internal helpers — each maps to one "something happened" situation
   void onNewConnection();

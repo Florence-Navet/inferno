@@ -40,6 +40,10 @@ struct LptfHeader {
   }
 };
 
+struct DashboardDisconnect {
+  std::string target;   // "agent-1" to disconnect that agent
+};
+
 // Generic struct for recv()
 struct Frame {
   LptfHeader header;

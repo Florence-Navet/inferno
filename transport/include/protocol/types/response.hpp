@@ -28,4 +28,13 @@ struct ResponsePayload {
   }
 };
 
+struct DashboardResponse {
+  std::string target;        // which agent sent this response
+  ResponsePayload response;
+
+  bool operator==(const DashboardResponse& other) const {
+    return target == other.target && response == other.response;
+  }
+};
+
 #endif

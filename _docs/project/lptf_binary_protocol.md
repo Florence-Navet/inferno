@@ -263,3 +263,30 @@ Important: bytes from different messages never interleave, but a single message 
 - All strings are UTF-8
 - COMMAND id ensures correct mapping of RESPONSES, even with multiple simultaneous commands
 - Chunking ensures no single message exceeds the max payload size
+
+
+## Communication between dashboard and server
+dashboard will wrap the previous structure with the target identifier (hostname or ip) so server can route dashboard queries to the rightful agent
+
+```c++
+struct DashboardCommand {
+  std::string target;
+  CommandPayload command;
+};
+
+struct DashboardData {
+  std::string target;
+  DataPayload data;
+};
+
+struct DashboardResponse {
+  std::string target;        // which agent sent this response
+  ResponsePayload response;
+};
+```
+On the network : 
+```c++
+uint16_t target_len;  // optional command string length (SHELL only)
+char target[target_len];
+Commandpayload / DashboardData / DashboardResponse
+```

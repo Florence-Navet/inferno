@@ -168,7 +168,7 @@ inline std::vector<std::uint8_t> makeRawCommandPayload(
   return out;
 }
 
-inline std::vector<std::uint8_t> makeDataPayload(
+inline std::vector<std::uint8_t> makeRawDataPayload(
     std::uint8_t rawSubtype, std::uint16_t declaredLen,
     const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(DATA_FIXED_BYTES + dataBytes.size());
@@ -177,6 +177,15 @@ inline std::vector<std::uint8_t> makeDataPayload(
   ConvertEndian::writeU16BE(out, offset, declaredLen);
   std::copy(dataBytes.begin(), dataBytes.end(), out.begin() + DATA_FIXED_BYTES);
   return out;
+}
+
+inline DataPayload makeDataPayload(
+    DataType subtype = DataType::METRICS_SAMPLE,
+    const std::vector<std::uint8_t>& dataBytes = {}) {
+  DataPayload data;
+  data.subtype = subtype;
+  data.data = dataBytes;
+  return data;
 }
 
 inline std::vector<std::uint8_t> makeErrorPayload(

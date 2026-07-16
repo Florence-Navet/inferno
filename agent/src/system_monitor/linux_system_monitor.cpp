@@ -167,7 +167,9 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
 }
 
 std::string LinuxSystemMonitor::executeShell(const std::string& command) {
-  // popen() runs the command through /bin/sh 
+  // Runs the command through /bin/sh - shell metacharacters are interpreted.
+// No filtering here on purpose: access control belongs to the server, which
+// is the only TLS-authenticated peer allowed to send commands.
   FILE* pipe = popen(command.c_str(), "r");
   if (pipe == nullptr) {
     return std::string{};  // popen failed - nothing to read

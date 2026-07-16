@@ -35,4 +35,18 @@ TEST(LinuxSystemMonitor, should_trim_command_before_execution) {
   EXPECT_EQ(monitor.executeShell("  echo hello  "), "hello\n");
 }
 
+// sudo commands are rejected without being executed
+TEST(LinuxSystemMonitor, should_reject_sudo_command) {
+  LinuxSystemMonitor monitor;
+
+  EXPECT_EQ(monitor.executeShell("sudo ls /"), "Command rejected");
+}
+
+// Leading whitespace must not hide a sudo command
+TEST(LinuxSystemMonitor, should_reject_sudo_command_with_leading_whitespace) {
+  LinuxSystemMonitor monitor;
+
+  EXPECT_EQ(monitor.executeShell("   sudo ls /"), "Command rejected");
+}
+
 #endif

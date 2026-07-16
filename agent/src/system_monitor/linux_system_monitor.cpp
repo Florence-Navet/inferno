@@ -111,7 +111,14 @@ std::string trim(const std::string& text) {
   return text.substr(first, last - first + 1);
 }
 
-}  // namespace
+// Commands starting with sudo are rejected to protect the agent's OS
+bool startsWithSudo(const std::string& command) {
+  return command.rfind("sudo", 0) == 0;  // true if sudo at the start
+}
+
+}// namespace
+
+
 
 OsInfoPayload LinuxSystemMonitor::getOsInfo() {
   OsInfoPayload info;
@@ -180,9 +187,15 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
 
 std::string LinuxSystemMonitor::executeShell(const std::string& command) {
   const std::string trimmed = trim(command);
+
+  if (startsWithSudo(trimmed)) {
+    return "Command rejected";
+  }
   // Runs the command through /bin/sh - shell metacharacters are interpreted.
-// No filtering here on purpose: access control belongs to the server, which
-// is the only TLS-authenticated peer allowed to send commands.
+// only sudo is rejected, so "ls ls; sudo rm -rf /" still runs the sudo part"
+ // This is a guard rail, not a security boundary: access control belongs to
+  // the server, which is the only TLS-authenticated peer allowed to send
+  // commands.
   FILE* pipe = popen(trimmed.c_str(), "r");
   if (pipe == nullptr) {
     return std::string{};  // popen failed - nothing to read

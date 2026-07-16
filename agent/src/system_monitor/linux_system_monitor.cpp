@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <cctype>   // std::isdigit
+#include <cstdio>  // popen(), pclose()
 #include <cstdlib>  // getenv()
 #include <fstream>  // std::ifstream
 #include <sstream>
@@ -98,7 +99,26 @@ float calculateCpuPercentage(unsigned long long totalProcessTicks,
          static_cast<float>(systemUptimeSeconds) * 100.0f;
 }
 
-}  // namespace
+// Removes leadling and trailing whitspace from a command string
+std::string trim(const std::string& text) {
+  const std::size_t first = text.find_first_not_of(" \t\n\r");
+
+  if (first == std::string::npos) {
+    return std::string{};  // empyt or whitespace-only command
+  }
+
+  const std::size_t last = text.find_last_not_of(" \t\n\r");
+  return text.substr(first, last - first + 1);
+}
+
+// Commands starting with sudo are rejected to protect the agent's OS
+bool startsWithSudo(const std::string& command) {
+  return command.rfind("sudo", 0) == 0;  // true if sudo at the start
+}
+
+}// namespace
+
+
 
 OsInfoPayload LinuxSystemMonitor::getOsInfo() {
   OsInfoPayload info;
@@ -165,10 +185,30 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
   return info;
 }
 
-std::string LinuxSystemMonitor::executeShell(const std::string& cmd) {
-  // Implement shell command execution logic here
-  (void)cmd;  // not used yed
-  return std::string{};
+std::string LinuxSystemMonitor::executeShell(const std::string& command) {
+  const std::string trimmed = trim(command);
+
+  if (startsWithSudo(trimmed)) {
+    return "Command rejected";
+  }
+  // Runs the command through /bin/sh - shell metacharacters are interpreted.
+// only sudo is rejected, so "ls ls; sudo rm -rf /" still runs the sudo part"
+ // This is a guard rail, not a security boundary: access control belongs to
+  // the server, which is the only TLS-authenticated peer allowed to send
+  // commands.
+  FILE* pipe = popen(trimmed.c_str(), "r");
+  if (pipe == nullptr) {
+    return std::string{};  // popen failed - nothing to read
+  }
+  char buffer[256];
+  std::string output;
+
+  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    output += buffer; // Append the output to the result string
+  }
+
+pclose(pipe); // Close the pipe and get the exit status
+  return output;
 }
 
 std::string LinuxSystemMonitor::readHostName() {
@@ -229,9 +269,7 @@ std::string LinuxSystemMonitor::readOsVersion() {
 
   if (!file.is_open()) {
     return std::string{};
-#include <arpa/inet.h>   // inet_ntop()
-#include <ifaddrs.h>     // getifaddrs()
-#include <sys/socket.h>  // address family constants
+  // address family constants
   }
 
   // TODO : read the file line by line and find PRETTY_NAME

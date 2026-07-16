@@ -70,6 +70,19 @@ void AgentDispatcher::processesList(AgentSession& session,
   return send(session, command.id, ResponseStatus::OK, processBytes);
 }
 
+void AgentDispatcher::shellCommand(AgentSession& session,
+                                      const CommandPayload& command) {
+
+    std::ostringstream what;
+    what << "received COMMAND SHELL id=" << command.id;
+    Logger::info("agent dispatcher", what.str());
+
+    const std::string output = monitor_.executeShell(command.data);
+
+    return send(session, command.id, ResponseStatus::OK, {output.begin(), output.end()});
+  }
+
+
 void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
   std::ostringstream what;
   try {
@@ -98,6 +111,8 @@ void AgentDispatcher::onCommand(AgentSession& session,
         return osInfo(session, cmd);
       case CommandType::RUNNING_PROCESSES:
         return processesList(session, cmd);
+      case CommandType::SHELL:
+        return shellCommand(session, cmd);
       case CommandType::START_METRICS:
         return startMetrics(session, cmd);
       case CommandType::STOP_METRICS:

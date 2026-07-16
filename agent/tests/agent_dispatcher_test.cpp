@@ -182,3 +182,32 @@ TEST_F(AgentDispatcherTest, should_send_multiple_frames_when_response_exceeds_ch
     EXPECT_EQ(chunk.total_chunks, static_cast<std::uint8_t>(frames.size()));
   }
 }
+
+
+TEST_F(AgentDispatcherTest, should_execute_shell_command_when_requested) {
+  //------- Arrange
+  const std::string command = "echo hello";
+  monitor.cannedShellOutput = "hello\n";
+
+  const std::vector<std::uint8_t> payload = FrameBuilder::makeRawCommandPayload(
+      1, static_cast<std::uint8_t>(CommandType::SHELL),
+      {command.begin(), command.end()});
+
+  const ResponsePayload expected =
+      FrameBuilder::makeResponsePayload(1, "hello\n");
+
+  //------- Act
+  dispatcher.handleFrame(
+      session, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  //------- Assert
+  ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
+  EXPECT_EQ(spy.messageType(), MessageType::RESPONSE);
+
+  const ResponsePayload response =
+      ProtocolParser::parseResponsePayload(spy.payload());
+
+  EXPECT_EQ(response, expected);
+  EXPECT_EQ(monitor.lastShellCommand, command);
+}
+

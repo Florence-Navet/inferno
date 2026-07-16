@@ -9,6 +9,8 @@
 class FakeSystemMonitor : public ISystemMonitor {
  public:
   std::uint32_t processCount = 3;
+  std::string cannedShellOutput = "";
+  std::string lastShellCommand = "";
   OsInfoPayload getOsInfo() override { return OsInfoBuilder::create(); }
 
   std::vector<ProcessInfo> getProcessList() override {
@@ -21,9 +23,9 @@ class FakeSystemMonitor : public ISystemMonitor {
   }
 
   std::string executeShell(const std::string& cmd) override {
-    // Implement shell command execution logic here
-    (void)cmd;  // not used yet
-    return std::string{};
+     lastShellCommand = cmd;
+   
+    return cannedShellOutput;
   }
 };
 

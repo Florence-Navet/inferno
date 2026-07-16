@@ -13,7 +13,7 @@ constexpr std::uint8_t LPTF_HEADER_SIZE =
 
 constexpr std::array<char, 4> LPTF_IDENTIFIER = {'L', 'P', 'T', 'F'};
 constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER.data(), 4);
-
+constexpr std::string_view DASHBORD_IDENTIFIER = "DASH";
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
   DATA = 1,
@@ -41,7 +41,7 @@ struct LptfHeader {
 };
 
 struct DashboardDisconnect {
-  std::string target;   // "agent-1" to disconnect that agent
+  std::string target;  // "agent-1" to disconnect that agent
 };
 
 // Generic struct for recv()

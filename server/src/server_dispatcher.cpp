@@ -44,6 +44,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   agent.setAgentInfo(agentInfo);
+  agent.setId(agentInfo.hostname);
 
   std::ostringstream what;
   what << "[REGISTER] \nhostname : " << agentInfo.hostname
@@ -131,6 +132,11 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
   Logger::info("server dispatcher", what.str());
 }
 
+void ServerDispatcher::setDashboard(
+    std::shared_ptr<DashboardConnection> dashboard) {
+  dashboard_ = dashboard;
+}
+
 void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   const std::vector<uint8_t> payload{};
   Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
@@ -140,7 +146,7 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   Logger::info("server dispatcher", "[DISCONNECT]");
 }
 
-std::uint16_t ServerDispatcher::nextId() { return nextCmdId_++; }
+std::uint32_t ServerDispatcher::nextId() { return nextCmdId_++; }
 
 void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
   if (pendingResponses_.find(response.id) == pendingResponses_.end()) {

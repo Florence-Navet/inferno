@@ -83,7 +83,8 @@ std::vector<std::uint8_t> serializeCommandPayload(
   const std::size_t finalSize{COMMAND_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  // ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  ConvertEndian::writeU32BE(payloadInByte, offset, payload.id);
   payloadInByte[offset] = static_cast<std::uint8_t>(payload.type);
   offset++;
   ConvertEndian::writeU16BE(payloadInByte, offset,
@@ -99,11 +100,14 @@ std::vector<std::uint8_t> serializeResponsePayload(
   const std::size_t finalSize{RESPONSE_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
-  payloadInByte[2] = static_cast<std::uint8_t>(payload.status);
-  payloadInByte[3] = payload.total_chunks;
-  payloadInByte[4] = payload.chunk_index;
-  offset = 5;
+  // ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  ConvertEndian::writeU32BE(payloadInByte, offset, payload.id);
+  payloadInByte[offset] = static_cast<std::uint8_t>(payload.status);
+  offset++;
+  payloadInByte[offset] = payload.total_chunks;
+  offset++;
+  payloadInByte[offset] = payload.chunk_index;
+  offset++;
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
   // copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);

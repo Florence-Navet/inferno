@@ -95,7 +95,7 @@ inline std::vector<std::uint8_t> makeRawOsInfoPayload(
   return ProtocolSerializer::serializeOsInfoPayload(info);
 }
 
-inline ResponsePayload makeResponsePayload(std::uint16_t id = 0,
+inline ResponsePayload makeResponsePayload(std::uint32_t id = 0,
                                            const std::string& data = "",
                                            std::uint8_t totalChunks = 1,
                                            std::uint8_t chunkIndex = 0) {
@@ -112,10 +112,10 @@ inline ResponsePayload makeResponsePayload(std::uint16_t id = 0,
 }
 
 inline std::vector<std::uint8_t> makeRawResponsePayload(
-    std::uint16_t id = 0, const std::vector<std::uint8_t>& dataBytes = {}) {
+    std::uint32_t id = 0, const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(RESPONSE_FIXED_BYTES + dataBytes.size());
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(out, offset, id);
+  ConvertEndian::writeU32BE(out, offset, id);
   out[offset] = static_cast<std::uint8_t>(ResponseStatus::OK);
   offset++;
   out[offset] = 1;
@@ -129,11 +129,11 @@ inline std::vector<std::uint8_t> makeRawResponsePayload(
 }
 
 inline std::vector<std::uint8_t> makeRawCommandPayload(
-    std::uint16_t id, std::uint8_t rawType, std::uint16_t declaredLen,
+    std::uint32_t id, std::uint8_t rawType, std::uint16_t declaredLen,
     const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(COMMAND_FIXED_BYTES + dataBytes.size());
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(out, offset, id);           // offset advances to 2
+  ConvertEndian::writeU32BE(out, offset, id);           // offset advances to 2
   out[offset] = rawType;                                // offset = 2
   offset++;                                             // offset = 3
   ConvertEndian::writeU16BE(out, offset, declaredLen);  // offset advances to 5
@@ -143,7 +143,7 @@ inline std::vector<std::uint8_t> makeRawCommandPayload(
 }
 
 inline CommandPayload makeCommandPayload(
-    std::uint16_t id = 0, const CommandType& type = CommandType::OS_INFO,
+    std::uint32_t id = 0, const CommandType& type = CommandType::OS_INFO,
     const std::string& dataBytes = "") {
   CommandPayload command;
   command.id = id;
@@ -153,11 +153,11 @@ inline CommandPayload makeCommandPayload(
 }
 
 inline std::vector<std::uint8_t> makeRawCommandPayload(
-    std::uint16_t id, std::uint8_t rawType,
+    std::uint32_t id, std::uint8_t rawType,
     const std::vector<std::uint8_t>& dataBytes = {}) {
   std::vector<std::uint8_t> out(COMMAND_FIXED_BYTES + dataBytes.size());
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(out, offset, id);  // offset advances to 2
+  ConvertEndian::writeU32BE(out, offset, id);  // offset advances to 2
   out[offset] = rawType;                       // offset = 2
   offset++;                                    // offset = 3
   const std::uint16_t declaredLen =

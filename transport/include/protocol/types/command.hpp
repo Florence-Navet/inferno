@@ -4,7 +4,8 @@
 #include <string>
 
 constexpr std::size_t COMMAND_FIXED_BYTES =
-    sizeof(std::uint16_t) * 2 + sizeof(std::uint8_t);  // id + type + data_len
+    sizeof(std::uint32_t) + sizeof(std::uint16_t) +
+    sizeof(std::uint8_t);  // id + type + data_len
 
 enum class CommandType : std::uint8_t {
   OS_INFO = 0,
@@ -16,7 +17,7 @@ enum class CommandType : std::uint8_t {
 };
 
 struct CommandPayload {
-  std::uint16_t id = 0;
+  std::uint32_t id = 0;
   CommandType type = CommandType::UNKNOWN;
   std::string data = "";
 

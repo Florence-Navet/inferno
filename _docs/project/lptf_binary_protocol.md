@@ -83,7 +83,7 @@ Server sends COMMAND to request action:
 
 ```c++
 struct CommandPayload {
-    uint16_t id;        // unique id for this command
+    uint32_t id;        // unique id for this command
     uint8_t type;       // OS_INFO, RUNNING_PROCESSES, SHELL
     uint16_t data_len;  // optional command string length (SHELL only)
     char data[data_len];
@@ -106,7 +106,7 @@ Agent sends RESPONSE after executing a command. Supports chunking:
 
 ```c++
 struct ResponsePayload {
-    uint16_t id;          // command id this response belongs to
+    uint32_t id;          // command id this response belongs to
     uint8_t status;       // 0=OK, 1=ERROR
     uint8_t total_chunks; // total number of chunks
     uint8_t chunk_index;  // 0-based index of this chunk

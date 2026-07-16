@@ -42,6 +42,7 @@ class AgentDispatcher : public Dispatcher {
   void stopMetrics(AgentSession& session, const CommandPayload& command);
   void osInfo(AgentSession& session, const CommandPayload& command);
   void processesList(AgentSession& session, const CommandPayload& command);
+  void shellCommand(AgentSession& session, const CommandPayload& command);
   void sendResponseChunked(AgentSession& session, std::uint16_t id,
                            ResponseStatus status,
                            const std::vector<std::uint8_t>& data);

@@ -99,6 +99,18 @@ float calculateCpuPercentage(unsigned long long totalProcessTicks,
          static_cast<float>(systemUptimeSeconds) * 100.0f;
 }
 
+// Removes leadling and trailing whitspace from a command string
+std::string trim(const std::string& text) {
+  const std::size_t first = text.find_first_not_of(" \t\n\r");
+
+  if (first == std::string::npos) {
+    return std::string{};  // empyt or whitespace-only command
+  }
+
+  const std::size_t last = text.find_last_not_of(" \t\n\r");
+  return text.substr(first, last - first + 1);
+}
+
 }  // namespace
 
 OsInfoPayload LinuxSystemMonitor::getOsInfo() {
@@ -167,10 +179,11 @@ ProcessInfo LinuxSystemMonitor::getProcessInfo(
 }
 
 std::string LinuxSystemMonitor::executeShell(const std::string& command) {
+  const std::string trimmed = trim(command);
   // Runs the command through /bin/sh - shell metacharacters are interpreted.
 // No filtering here on purpose: access control belongs to the server, which
 // is the only TLS-authenticated peer allowed to send commands.
-  FILE* pipe = popen(command.c_str(), "r");
+  FILE* pipe = popen(trimmed.c_str(), "r");
   if (pipe == nullptr) {
     return std::string{};  // popen failed - nothing to read
   }

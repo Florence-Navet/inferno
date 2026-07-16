@@ -28,4 +28,11 @@ TEST(LinuxSystemMonitor, should_return_empty_output_when_command_fails) {
   EXPECT_EQ(monitor.executeShell("inferno_does_not_exist"), "");
 }
 
+//Comands are trimmed before execution
+TEST(LinuxSystemMonitor, should_trim_command_before_execution) {
+  LinuxSystemMonitor monitor;
+
+  EXPECT_EQ(monitor.executeShell("  echo hello  "), "hello\n");
+}
+
 #endif

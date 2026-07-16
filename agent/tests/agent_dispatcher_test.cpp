@@ -210,3 +210,4 @@ TEST_F(AgentDispatcherTest, should_execute_shell_command_when_requested) {
   EXPECT_EQ(response, expected);
   EXPECT_EQ(monitor.lastShellCommand, command);
 }
+

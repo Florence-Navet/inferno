@@ -27,7 +27,7 @@ add_library(transport_lib STATIC
 
 target_link_libraries(transport_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
-# PUBLIC = these include dirs are inherited by any target that links common_lib.
+# PUBLIC = these include dirs are inherited by any target that links transport_lib.
 # This is what lets agent and server write #include "ISocket.hpp" without paths.
 target_include_directories(transport_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -96,6 +96,6 @@ if(CMAKE_PROJECT_NAME STREQUAL "InfernoTransport")
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/..
     )
     # include(GoogleTest)
-    # gtest_discover_tests(common_tests DISCOVERY_MODE PRE_TEST)
+    # gtest_discover_tests(transport_tests DISCOVERY_MODE PRE_TEST)
 
 endif()

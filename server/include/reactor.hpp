@@ -6,12 +6,12 @@
 #include <unordered_map>
 
 // #include "agent_session.hpp"
-#include "agent_connection.hpp" 
+#include "agent_connection.hpp"
+#include "dashboard_connection.hpp"
 #include "dispatcher/i_dispatcher.hpp"
 #include "logger.hpp"
 #include "poller/i_poller.hpp"
 #include "tcp_server.hpp"
-#include "dashboard_connection.hpp"
 
 class Reactor {
  public:
@@ -29,16 +29,27 @@ class Reactor {
   IDispatcher& dispatcher_;
   TcpServer& server_;
   IPoller& poller_;
-//   Logger logger_{"reactor"};
+  //   Logger logger_{"reactor"};
 
   bool running_ = false;
   std::unordered_map<int, AgentConnection> agents_;
-  std::unique_ptr<DashboardConnection> dasbhoard_;
-
+  std::shared_ptr<DashboardConnection> dashboard_;
+  std::unordered_map<std::string, int>
+      agentsByTarget_;  // agent id currently hostname, filedescriptor
+  std::unordered_map<int, std::string>
+      targetByFd_;  // agent id currently hostname, filedescriptor
   // internal helpers — each maps to one "something happened" situation
   void onNewConnection();
   void onAgentReady(int fileDescriptor);
   void onAgentDisconnected(int fileDescriptor);
+
+  void createNewAgent(int fd, const std::unique_ptr<ISocket>& incoming,
+                      const std::vector<std::uint8_t>& peek);
+  void Reactor::createNewDashboard(int fd,
+                                   const std::unique_ptr<ISocket>& incoming,
+                                   const std::vector<std::uint8_t>& peek);
+  void onDashboardReady();
+  void onDashboardDisconnected();
 };
 
 #endif

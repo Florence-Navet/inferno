@@ -9,6 +9,7 @@
 #include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
+#include "dashboard_connection.hpp"
 
 class ServerDispatcher : public Dispatcher {
  public:
@@ -20,8 +21,10 @@ class ServerDispatcher : public Dispatcher {
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
   void sendCommand(AgentConnection& agent, CommandType type,
                    const std::string& data = "");
+  void setDashboard(std::shared_ptr<DashboardConnection> dashboard) ;
 
  private:
+  std::shared_ptr<DashboardConnection> dashboard_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
@@ -31,7 +34,7 @@ class ServerDispatcher : public Dispatcher {
 
   void sendDisconnect(AgentConnection& agent);
 
-  std::uint16_t nextId();
+  std::uint32_t nextId();
 
   struct IncompleteResponse {
     ResponsePayload baseResponse;
@@ -44,7 +47,7 @@ class ServerDispatcher : public Dispatcher {
   void processCompleteResponse(const ResponsePayload& response);
   void createResponseEntry(const ResponsePayload& response);
   void tryCompleteResponse(const ResponsePayload& response);
-  std::uint16_t nextCmdId_ = 0;
+  std::uint32_t nextCmdId_ = 0;
 };
 
 #endif

@@ -5,8 +5,8 @@
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
-#include "exception/lptf_exception.hpp"
 #include "codec/protocol_parser.hpp"
+#include "exception/lptf_exception.hpp"
 
 namespace ProtocolParser {
 LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
@@ -109,21 +109,21 @@ CommandPayload parseCommandPayload(const std::vector<std::uint8_t>& input) {
   if (input.size() < COMMAND_FIXED_BYTES) {
     throw InvalidSize("command payload", std::to_string(input.size()));
   }
-
-  std::size_t typeOffset{2};
+  // std::size_t typeOffset{4};
+  std::size_t typeOffset{0};
+  CommandPayload payload;
+  payload.id = ConvertEndian::readU32BE(input, typeOffset);
 
   const CommandType type =
       ProtocolHelper::EnumConversion::toCommandType(input[typeOffset]);
+  payload.type = type;
   typeOffset++;
-  const std::uint16_t dataLen = ConvertEndian::readU16BE(input, typeOffset);
 
+  const std::uint16_t dataLen = ConvertEndian::readU16BE(input, typeOffset);
   const std::size_t expectedSize{COMMAND_FIXED_BYTES + dataLen};
   ProtocolHelper::validateExpectedLength(input, expectedSize);
 
-  CommandPayload payload;
-  std::size_t payloadOffset{0};
-  payload.id = ConvertEndian::readU16BE(input, payloadOffset);
-  payload.type = type;
+  // std::size_t payloadOffset{0};
 
   if (payload.type == CommandType::SHELL && dataLen != 0) {
     payload.data.assign(
@@ -138,24 +138,27 @@ ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input) {
   if (input.size() < RESPONSE_FIXED_BYTES) {
     throw InvalidSize("response payload", std::to_string(input.size()));
   }
-  std::size_t offset{3};
-  ProtocolHelper::validateChunkFields(input[offset],
-                                      input[offset + 1]);  // 3 & 4
-  offset += 2;
+  // std::size_t offset{3};
+  std::size_t offset{0};
+  ResponsePayload payload;
+  // std::size_t payloadOffset{0};
+  payload.id = ConvertEndian::readU32BE(input, offset);
+
+  payload.status =
+      ProtocolHelper::EnumConversion::toResponseStatus(input[offset]);
+  offset++;
+  payload.total_chunks = input[offset];
+  offset++;
+  payload.chunk_index = input[offset];
+  offset++;
+  ProtocolHelper::validateChunkFields(payload.total_chunks,
+                                      payload.chunk_index);  // 4 & 5
+
+  // offset += 2;
   const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};  // 5
 
   const std::size_t expectedSize{RESPONSE_FIXED_BYTES + dataLen};
   ProtocolHelper::validateExpectedLength(input, expectedSize);
-
-  ResponsePayload payload;
-  std::size_t payloadOffset{0};
-  payload.id = ConvertEndian::readU16BE(input, payloadOffset);
-  payload.status =
-      ProtocolHelper::EnumConversion::toResponseStatus(input[payloadOffset]);
-  payloadOffset++;
-  payload.total_chunks = input[payloadOffset];
-  payloadOffset++;
-  payload.chunk_index = input[payloadOffset];
   // payload.data.assign(
   //     reinterpret_cast<const char*>(input.data() + RESPONSE_FIXED_BYTES),
   //     dataLen);
@@ -256,8 +259,9 @@ DashboardCommand ProtocolParser::parseDashboardCommand(
   command.target = ConvertEndian::getString(input, offset, targetLen);
   if (offset >= input.size()) {
     throw InvalidSize("dashboard command payload", "0");
-}
-  command.command = parseCommandPayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+  }
+  command.command = parseCommandPayload(
+      std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return command;
 }
 
@@ -275,14 +279,14 @@ DashboardData ProtocolParser::parseDashboardData(
   data.target = ConvertEndian::getString(input, offset, targetLen);
   if (offset >= input.size()) {
     throw InvalidSize("dashboard command payload", "0");
-}
-  data.data = parseDataPayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+  }
+  data.data = parseDataPayload(
+      std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return data;
 }
 
 DashboardResponse ProtocolParser::parseDashboardResponse(
     const std::vector<std::uint8_t>& input) {
-        
   DashboardResponse response;
   size_t offset = 0;
 
@@ -295,14 +299,15 @@ DashboardResponse ProtocolParser::parseDashboardResponse(
   response.target = ConvertEndian::getString(input, offset, targetLen);
   if (offset >= input.size()) {
     throw InvalidSize("dashboard command payload", "0");
-}
-  response.response = parseResponsePayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+  }
+  response.response = parseResponsePayload(
+      std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return response;
 }
 
 RegisterPayload ProtocolParser::parseRegisterPayload(
     const std::vector<std::uint8_t>& input) {
-    RegisterPayload payload;
+  RegisterPayload payload;
   size_t offset = 0;
 
   std::uint16_t idLen = ConvertEndian::readU16BE(input, offset);
@@ -314,7 +319,8 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
   payload.id = ConvertEndian::getString(input, offset, idLen);
   if (offset >= input.size()) {
     throw InvalidSize("register payload id", "0");
-}
-  payload.system = parseOsInfoPayload( std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+  }
+  payload.system = parseOsInfoPayload(
+      std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return payload;
 }

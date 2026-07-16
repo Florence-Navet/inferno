@@ -26,12 +26,16 @@
          <item>
           <widget class="QPushButton" name="pushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string>Run</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit"/>
+          <widget class="QLineEdit" name="lineEdit">
+           <property name="placeholderText">
+            <string>custom shel command ...</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

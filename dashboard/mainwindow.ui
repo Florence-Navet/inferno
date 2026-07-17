@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">QWidget#centralwidget {
+    background-color: #C9EDDC;
+}
+QListWidget, QListView {
+    background-color: #ffffff;
+    border: 1px solid #89B6A5;
+    border-radius: 6px;
+    padding: 4px;
+    color: #4C3B4D;
+    font-size: 13px;
+}
+QListWidget::item {
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+QListWidget::item:selected {
+    background-color: #C9EDDC;
+    color: #4C3B4D;
+}
+QLineEdit {
+    background-color: #ffffff;
+    border: 1px solid #82968C;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: #4C3B4D;
+    font-size: 13px;
+}
+QLineEdit:focus {
+    border: 1px solid #4C3B4D;
+}
+QPushButton {
+    background-color: #4C3B4D;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-weight: bold;
+    font-size: 13px;
+}
+QPushButton:hover {
+    background-color: #6A706E;
+}
+QPushButton:pressed {
+    background-color: #82968C;
+}
+QTextEdit {
+    background-color: #4C3B4D;
+    color: #C9EDDC;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: "Consolas", monospace;
+    font-size: 12px;
+}QLabel#brandLabel {
+color: #4C3B4D;
+font-size: 20px;
+font-weight: bold;
+}
+QLabel#subtitleLabel {
+color: #82968C;
+font-size: 12px;
+}
+QLabel#agentsLabel {
+color: #6A706E;
+font-size: 11px;
+font-weight: bold;
+padding-top: 12px;
+}
+QLabel#offlineLabel {
+color: #82968C;
+font-size: 11px;
+}QLabel#agentNameLabel {
+color: #4C3B4D;
+font-size: 18px;
+font-weight: bold;
+padding-right: 8px;
+}
+QLabel#osBadge, QLabel#ipBadge, QLabel#statusBadge {
+color: #4C3B4D;
+font-size: 12px;
+padding: 0px 6px;
+}QLabel#agentItemName {
+color: #4C3B4D;
+font-size: 13px;
+}
+QLabel#agentItemDetails {
+color: #82968C;
+font-size: 11px;
+}
+QLabel#agentStatusDot {
+color: #89B6A5;
+font-size: 14px;
+}
+QLabel#agentStatusDot[online="false"] {
+color: #6A706E;
+}</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+    <widget class="QWidget" name="sidebar" native="true">
+          <layout class="QVBoxLayout" name="sidebarLayout">
+           <item>
+            <widget class="QLabel" name="brandLabel">
+             <property name="text">
+              <string>INFERNO</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="subtitleLabel">
+             <property name="text">
+              <string>admin</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="agentsLabel">
+             <property name="text">
+              <string>AGENTS (5)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="agentList"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="offlineLabel">
+             <property name="text">
+              <string>1 agent offline</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+    </item>
+    <item>
+     <widget class="QWidget" name="mainPanel" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+              <layout class="QHBoxLayout" name="headerRow">
+               <item>
+                <widget class="QLabel" name="agentNameLabel">
+                 <property name="text">
+                  <string>agent2-srv</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="osBadge">
+                 <property name="text">
+                  <string>Linux · x64</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="ipBadge">
+                 <property name="text">
+                  <string>192.168.1.42</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="statusBadge">
+                 <property name="text">
+                  <string>● streaming</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="headerSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="osInfoButton">
+                 <property name="text">
+                  <string>OS info</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="processListButton">
+                 <property name="text">
+                  <string>Process list</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="disconnectButton">
+                 <property name="text">
+                  <string>Disconnect</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+       <item>
+        <layout class="QHBoxLayout" name="executeRow">
+         <item>
+          <widget class="QLineEdit" name="commandEdit">
+           <property name="placeholderText">
+            <string>custom shell command...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="runButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="outputView">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>25</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>RightToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
+

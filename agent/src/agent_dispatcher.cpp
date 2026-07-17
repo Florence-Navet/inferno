@@ -23,7 +23,7 @@ void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
     }
     default:
       return sendError(session, ErrorType::UNKNOWN_TYPE,
-                       "Unexpected message type for agent");
+                       "Unexpected received message type for agent");
   }
 }
 
@@ -145,11 +145,16 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   }
   // session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
-  what << "at the end of sendRegister";
+  
   Logger::info("agent dispatcher", what.str());
   send(session, command.id, ResponseStatus::OK,
        ProtocolSerializer::serializeOsInfoPayload(session.getAgentInfo()),
        MessageType::REGISTER);
+  // HERE !
+  // send(session, command.id, ResponseStatus::OK,
+  //      ProtocolSerializer::serializeOsInfoPayload(session.getAgentInfo()),
+  //      MessageType::DASHBOARD_REGISTER);
+
 }
 
 void AgentDispatcher::setMetricsController(
@@ -171,6 +176,14 @@ void AgentDispatcher::send(AgentSession& session, std::uint16_t id,
       session.sendFrame(frame);
       return;
     }
+    // DEBUG ONLY
+    // case MessageType::DASHBOARD_REGISTER: {
+    //   Frame frame = {
+    //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, data),
+    //       data};
+    //   session.sendFrame(frame);
+    //   return;
+    // }
     default: {
       Logger::info("agent dispatcher",
                    std::string("unexpected message type : ") +

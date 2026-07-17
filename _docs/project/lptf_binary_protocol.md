@@ -42,14 +42,15 @@ Payload immediately follows the header.
 
 ### 3.1 Message Types
 
-| Value | Name       | Description                  |
-| ----- | ---------- | ---------------------------- |
-| 0     | REGISTER   | Agent → Server registration |
-| 1     | DATA       | Unsolicited agent data      |
-| 2     | COMMAND    | Server → Agent instruction  |
-| 3     | RESPONSE   | Agent → Server result       |
-| 4     | DISCONNECT | Close connection             |
-| 5     | ERROR      | Error reporting              |
+| Value | Name               | Description                      |
+| ----- | ------------------ | -------------------------------- |
+| 0     | REGISTER           | Agent → Server registration      |
+| 1     | DASHBOARD_REGISTER | dashboard -> Server registration |
+| 2     | DATA               | Unsolicited agent data           |
+| 3     | COMMAND            | Server → Agent instruction       |
+| 4     | RESPONSE           | Agent → Server result            |
+| 5     | DISCONNECT         | Close connection                 |
+| 6     | ERROR              | Error reporting                  |
 
 ## 4. Payload Structures
 
@@ -83,7 +84,7 @@ Server sends COMMAND to request action:
 
 ```c++
 struct CommandPayload {
-    uint16_t id;        // unique id for this command
+    uint32_t id;        // unique id for this command
     uint8_t type;       // OS_INFO, RUNNING_PROCESSES, SHELL
     uint16_t data_len;  // optional command string length (SHELL only)
     char data[data_len];
@@ -106,7 +107,7 @@ Agent sends RESPONSE after executing a command. Supports chunking:
 
 ```c++
 struct ResponsePayload {
-    uint16_t id;          // command id this response belongs to
+    uint32_t id;          // command id this response belongs to
     uint8_t status;       // 0=OK, 1=ERROR
     uint8_t total_chunks; // total number of chunks
     uint8_t chunk_index;  // 0-based index of this chunk
@@ -142,7 +143,17 @@ std::vector<uint8_t> | processCount (2 bytes) | processList (N bytes) |
 
 ### 4.4 DATA
 
-For unsolicited agent data: Metric
+#### Datasubtype
+| Value | Name              |
+| ----- | ----------------- |
+| 0     | METRICS_SAMPLE    |
+| 1     | HEALTH_CHECK      |
+| 2     | REGISTRATION      |
+| 3     | AGENTS            |
+| 4     | UNKNOWN           |
+
+registration = server push RegisterPayload of a first ever seen agent
+agents = list of RegisterPayload on dashboard connection, retreived from db
 
 ```c++
 struct DataPayload {
@@ -263,3 +274,58 @@ Important: bytes from different messages never interleave, but a single message 
 - All strings are UTF-8
 - COMMAND id ensures correct mapping of RESPONSES, even with multiple simultaneous commands
 - Chunking ensures no single message exceeds the max payload size
+
+
+## Communication between dashboard and server
+dashboard will wrap the previous structure with the target identifier (hostname or ip) so server can route dashboard queries to the rightful agent
+
+```c++
+struct DashboardCommand {
+  std::string target;
+  CommandPayload command;
+};
+
+struct DashboardData {
+  std::string target;
+  DataPayload data;
+};
+
+struct DashboardResponse {
+  std::string target;        // which agent sent this response
+  ResponsePayload response;
+};
+
+struct RegisterPayload {
+    std::string id;
+    OsInfoPayload system
+}
+```
+On the network : 
+```c++
+uint16_t target_len;  // optional command string length (SHELL only)
+char target[target_len];
+std::vector<std::uint8_t> Commandpayload / DashboardData / DashboardResponse serialized
+```
+
+```c++
+uint16_t id_len;  // optional command string length (SHELL only)
+char id[id_len];
+std::vector<std::uint8_t> OsInfoPayload serialized
+```
+
+- Disconnect (côté dashboard) envoie un payload de l'agent id (target dans le protocole dans command.hpp data.hpp et response.hpp) + pas de feedback (on considère qu'une déconnexion se passera toujours bien)
+- L'envoie des `OsInfoPayload` au dashboard se fait via `DataPayload`, `DataType::REGISTRATION `sous forme de `RegisterPayload` lorsqu'il se connecte pour la toute première fois. Se fait par `DataType::AGENTS` pour récupérer une liste de `RegisterPayload` de la db
+- CommandPayload : le dashboard ne génère pas l'ID, c'est le server qui s'en charge, le dashboard laisse à 0 (initialisation par défaut)
+- Le dashboard reçoit la réponse du server d'une commande via `DashboardResponse` qui contient "target", l'agent d'où provient la réponse 
+
+
+```c++
+struct RegisterPayload {
+  std::string id;
+  OsInfoPayload system;
+
+  bool operator==(const RegisterPayload& other) const {
+    return id == other.id && system == other.system;
+  }
+};
+```

@@ -7,37 +7,13 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "stubs/spy_socket.hpp"
-
-// ServerDispatcher — 3 tests covering the only stable invariants.
-// SpySocket accumulates all sent bytes; we parse them back with
-// ProtocolParser to check wire correctness without GMock matchers.
-
-// TEST(ServerDispatcher,
-//      should_register_session_and_send_os_info_command_on_register) {
-//   SpySocket spy;
-//   AgentSession session = makeSession(spy);
-//   ServerDispatcher dispatcher;
-
-//   dispatcher.handleFrame(
-//       session, FrameBuilder::makeFrame(MessageType::REGISTER,
-//                                        FrameBuilder::makeRawOsInfoPayload()));
-
-//   EXPECT_TRUE(session.getIsRegistered());
-//   EXPECT_EQ(session.getAgentInfo().hostname, Protocol::TEST_HOSTNAME_STR);
-
-//   ASSERT_GE(spy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
-//   EXPECT_EQ(spy.messageType(), MessageType::COMMAND);
-
-//   const CommandPayload cmd =
-//   ProtocolParser::parseCommandPayload(spy.payload()); EXPECT_EQ(cmd.type,
-//   CommandType::OS_INFO); EXPECT_EQ(cmd.id, 0);
-// }
-
+#include "session_manager.hpp"
 TEST(ServerDispatcher, should_register_session_on_register) {
   SpySocket spy;
+  SessionManager manager;
   // AgentSession session = makeSession(spy);
   AgentConnection session = AgentConnection(spy.makeUnique());
-  ServerDispatcher dispatcher;
+  ServerDispatcher dispatcher(manager);
 
   dispatcher.handleFrame(
       session, FrameBuilder::makeFrame(MessageType::REGISTER,
@@ -52,7 +28,8 @@ TEST(ServerDispatcher, should_send_error_when_unknown_message_type_received) {
   SpySocket spy;
   // AgentSession session = makeSession(spy);
   AgentConnection session = AgentConnection(spy.makeUnique());
-  ServerDispatcher dispatcher;
+  SessionManager manager;
+  ServerDispatcher dispatcher(manager);
 
   // COMMAND is server→agent — receiving it is a protocol violation
   dispatcher.handleFrame(session,
@@ -65,9 +42,10 @@ TEST(ServerDispatcher, should_send_error_when_unknown_message_type_received) {
 TEST(ServerDispatcher,
      should_increment_command_id_across_successive_register_frames) {
   SpySocket spy;
+  SessionManager manager;
   // AgentSession session = makeSession(spy);
   AgentConnection session = AgentConnection(spy.makeUnique());
-  ServerDispatcher dispatcher;
+  ServerDispatcher dispatcher(manager);
 
   std::vector<std::uint16_t> ids;
 

@@ -34,6 +34,7 @@ add_library(server_lib STATIC
     src/reactor.cpp
     src/agent_connection.cpp
     src/poller/epoller.cpp
+    src/session_manager.cpp
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )
@@ -78,6 +79,7 @@ add_executable(server_tests
     tests/server_dispatcher_test.cpp
     tests/epoller_test.cpp
     tests/reactor_integration_test.cpp
+    tests/reactor_three_participants_integration_test.cpp
     tests/tcp_server_test.cpp
 )
 

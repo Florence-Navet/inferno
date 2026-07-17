@@ -77,7 +77,12 @@ void FrameTransport::sendFrame(const Frame& frame) {
   std::vector<std::uint8_t> frameBytes =
       ProtocolSerializer::serializeFrame(frame);
   what << " sending " << ProtocolHelper::messageTypeToString(frame.header.type)
-       << " header+payload bytes=" << (LPTF_HEADER_SIZE + frame.payload.size());
+       << " header+payload bytes=" << (LPTF_HEADER_SIZE + frame.payload.size())
+       << " payload = ";
+  for (auto character : frame.payload) {
+    what << character;
+  }
+  
   Logger::info("frame transport", what.str());
 
   // Send frame

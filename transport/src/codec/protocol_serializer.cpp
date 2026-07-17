@@ -5,6 +5,7 @@
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
+#include "codec/protocol_serializer.hpp"
 #include "exception/lptf_exception.hpp"
 
 namespace ProtocolSerializer {
@@ -82,7 +83,8 @@ std::vector<std::uint8_t> serializeCommandPayload(
   const std::size_t finalSize{COMMAND_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  // ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  ConvertEndian::writeU32BE(payloadInByte, offset, payload.id);
   payloadInByte[offset] = static_cast<std::uint8_t>(payload.type);
   offset++;
   ConvertEndian::writeU16BE(payloadInByte, offset,
@@ -98,11 +100,14 @@ std::vector<std::uint8_t> serializeResponsePayload(
   const std::size_t finalSize{RESPONSE_FIXED_BYTES + payload.data.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
   std::size_t offset{0};
-  ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
-  payloadInByte[2] = static_cast<std::uint8_t>(payload.status);
-  payloadInByte[3] = payload.total_chunks;
-  payloadInByte[4] = payload.chunk_index;
-  offset = 5;
+  // ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
+  ConvertEndian::writeU32BE(payloadInByte, offset, payload.id);
+  payloadInByte[offset] = static_cast<std::uint8_t>(payload.status);
+  offset++;
+  payloadInByte[offset] = payload.total_chunks;
+  offset++;
+  payloadInByte[offset] = payload.chunk_index;
+  offset++;
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
   // copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
@@ -179,6 +184,82 @@ std::vector<std::uint8_t> serializeProcessInfoList(
   }
 
   return finalList;
+}
+
+std::vector<std::uint8_t> serializeDashboardCommand(
+    const DashboardCommand& command) {
+  std::uint16_t target_len = command.target.size();
+  std::vector<uint8_t> commandPayload =
+      serializeCommandPayload(command.command);
+
+  std::size_t totalSize{sizeof(std::uint16_t) + target_len +
+                        commandPayload.size()};
+  std::vector<uint8_t> payload(totalSize);
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(payload, offset, target_len);
+  std::copy(command.target.begin(), command.target.end(),
+            payload.begin() + offset);
+  offset += target_len;
+  std::copy(commandPayload.begin(), commandPayload.end(),
+            payload.begin() + offset);
+  return payload;
+}
+
+std::vector<std::uint8_t> serializeDashboardData(const DashboardData& data) {
+  std::uint16_t target_len = data.target.size();
+  std::vector<uint8_t> dataPayload = serializeDataPayload(data.data);
+
+  std::size_t totalSize{sizeof(std::uint16_t) + target_len +
+                        dataPayload.size()};
+  std::vector<std::uint8_t> payload(totalSize);
+  std::size_t offset{0};
+
+  ConvertEndian::writeU16BE(payload, offset, target_len);
+  std::copy(data.target.begin(), data.target.end(), payload.begin() + offset);
+  offset += target_len;
+  std::copy(dataPayload.begin(), dataPayload.end(), payload.begin() + offset);
+
+  return payload;
+}
+
+std::vector<std::uint8_t> serializeDashboardResponse(
+    const DashboardResponse& response) {
+  std::uint16_t target_len = response.target.size();
+  std::vector<uint8_t> responsePayload =
+      serializeResponsePayload(response.response);
+
+  std::size_t totalSize{sizeof(std::uint16_t) + target_len +
+                        responsePayload.size()};
+  std::vector<std::uint8_t> payload(totalSize);
+  std::size_t offset{0};
+
+  ConvertEndian::writeU16BE(payload, offset, target_len);
+  std::copy(response.target.begin(), response.target.end(),
+            payload.begin() + offset);
+  offset += target_len;
+  std::copy(responsePayload.begin(), responsePayload.end(),
+            payload.begin() + offset);
+
+  return payload;
+}
+
+std::vector<std::uint8_t> serializeRegisterPayload(
+    const RegisterPayload& payload) {
+  std::uint16_t idLen = payload.id.size();
+  std::vector<uint8_t> registerPayload = serializeOsInfoPayload(payload.system);
+
+  std::size_t totalSize{sizeof(std::uint16_t) + idLen + registerPayload.size()};
+  std::vector<std::uint8_t> finalPayload(totalSize);
+  std::size_t offset{0};
+
+  ConvertEndian::writeU16BE(finalPayload, offset, idLen);
+  std::copy(payload.id.begin(), payload.id.end(),
+            finalPayload.begin() + offset);
+  offset += idLen;
+  std::copy(registerPayload.begin(), registerPayload.end(),
+            finalPayload.begin() + offset);
+
+  return finalPayload;
 }
 
 std::vector<std::uint8_t> serializeFrame(const Frame& frame) {

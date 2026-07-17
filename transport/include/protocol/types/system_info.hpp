@@ -1,12 +1,12 @@
 #ifndef PROTOCOL_SYSTEM_INFO_HPP
 #define PROTOCOL_SYSTEM_INFO_HPP
 #include <cstdint>
-#include <string>
 #include <limits>
+#include <string>
 
 // constexpr std::size_t KMAX_U16_VALUE = 65535u;
 constexpr std::size_t KMAX_U16_VALUE =
-    std::numeric_limits<std::uint16_t>::max(); //  = 65535u;
+    std::numeric_limits<std::uint16_t>::max();  //  = 65535u;
 constexpr std::uint16_t MAX_VALUE_INT16 =
     static_cast<std::uint16_t>(KMAX_U16_VALUE);
 
@@ -47,6 +47,15 @@ struct OsInfoPayload {
     return os_type == other.os_type && arch == other.arch &&
            hostname == other.hostname && os_version == other.os_version &&
            current_user == other.current_user && ip == other.ip;
+  }
+};
+
+struct RegisterPayload {
+  std::string id;
+  OsInfoPayload system;
+
+  bool operator==(const RegisterPayload& other) const {
+    return id == other.id && system == other.system;
   }
 };
 

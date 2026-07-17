@@ -7,6 +7,8 @@ const char* messageTypeToString(MessageType type) noexcept {
   switch (type) {
     case MessageType::REGISTER:
       return "REGISTER";
+    case MessageType::DASHBOARD_REGISTER:
+      return "DASHBOARD REGISTER";
     case MessageType::DATA:
       return "DATA";
     case MessageType::COMMAND:

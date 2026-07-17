@@ -79,6 +79,7 @@ add_executable(server_tests
     tests/server_dispatcher_test.cpp
     tests/epoller_test.cpp
     tests/reactor_integration_test.cpp
+    tests/reactor_three_participants_integration_test.cpp
     tests/tcp_server_test.cpp
 )
 

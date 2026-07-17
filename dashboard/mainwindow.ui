@@ -86,6 +86,16 @@ padding-top: 12px;
 QLabel#offlineLabel {
 color: #82968C;
 font-size: 11px;
+}QLabel#agentNameLabel {
+color: #4C3B4D;
+font-size: 18px;
+font-weight: bold;
+padding-right: 8px;
+}
+QLabel#osBadge, QLabel#ipBadge, QLabel#statusBadge {
+color: #4C3B4D;
+font-size: 12px;
+padding: 0px 6px;
 }</string>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">
@@ -129,6 +139,66 @@ font-size: 11px;
     <item>
      <widget class="QWidget" name="mainPanel" native="true">
       <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+              <layout class="QHBoxLayout" name="headerRow">
+               <item>
+                <widget class="QLabel" name="agentNameLabel">
+                 <property name="text">
+                  <string>agent2-srv</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="osBadge">
+                 <property name="text">
+                  <string>Linux · x64</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="ipBadge">
+                 <property name="text">
+                  <string>192.168.1.42</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="statusBadge">
+                 <property name="text">
+                  <string>● streaming</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="headerSpacer">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="osInfoButton">
+                 <property name="text">
+                  <string>OS info</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="processListButton">
+                 <property name="text">
+                  <string>Process list</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="disconnectButton">
+                 <property name="text">
+                  <string>Disconnect</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
        <item>
         <layout class="QHBoxLayout" name="executeRow">
          <item>

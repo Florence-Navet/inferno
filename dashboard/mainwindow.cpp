@@ -9,9 +9,17 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     populateAgents();
 
+    qDebug() << "target:" << m_target;
+
     connect(ui->runButton, &QPushButton::clicked, this, [this]() {
+            qDebug() << "target:" << m_target;
         showOutput(ui->commandEdit->text());
         });
+
+    connect(ui->agentList, &QListWidget::currentTextChanged,
+            this, [this](const QString &text) {
+                m_target = text;
+            });
 }
 
 MainWindow::~MainWindow()

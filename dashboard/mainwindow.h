@@ -25,5 +25,7 @@ private:
 
     /// Displays command output. TODO: feed with DashboardResponse data.
     void showOutput(const QString &text);
+
+    QString m_target;
 };
 #endif // MAINWINDOW_H

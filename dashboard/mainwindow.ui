@@ -18,7 +18,6 @@
     <string notr="true">QWidget#centralwidget {
     background-color: #C9EDDC;
 }
-
 QListWidget, QListView {
     background-color: #ffffff;
     border: 1px solid #89B6A5;
@@ -27,17 +26,14 @@ QListWidget, QListView {
     color: #4C3B4D;
     font-size: 13px;
 }
-
 QListWidget::item {
     padding: 6px 8px;
     border-radius: 4px;
 }
-
 QListWidget::item:selected {
     background-color: #89B6A5;
     color: #ffffff;
 }
-
 QLineEdit {
     background-color: #ffffff;
     border: 1px solid #82968C;
@@ -46,11 +42,9 @@ QLineEdit {
     color: #4C3B4D;
     font-size: 13px;
 }
-
 QLineEdit:focus {
     border: 1px solid #4C3B4D;
 }
-
 QPushButton {
     background-color: #4C3B4D;
     color: #ffffff;
@@ -60,45 +54,62 @@ QPushButton {
     font-weight: bold;
     font-size: 13px;
 }
-
 QPushButton:hover {
     background-color: #6A706E;
 }
-
 QPushButton:pressed {
     background-color: #82968C;
+}
+QTextEdit {
+    background-color: #4C3B4D;
+    color: #C9EDDC;
+    border: none;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: "Consolas", monospace;
+    font-size: 12px;
 }</string>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QListView" name="listView"/>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
-        <item>
-         <widget class="QLineEdit" name="lineEdit">
-          <property name="placeholderText">
-           <string>custom shel command ...</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton">
-          <property name="text">
-           <string>Run</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QWidget" name="widget" native="true">
-        <layout class="QVBoxLayout" name="verticalLayout"/>
-       </widget>
-      </item>
-     </layout>
+     <widget class="QListWidget" name="agentList"/>
+    </item>
+    <item>
+     <widget class="QWidget" name="mainPanel" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="executeRow">
+         <item>
+          <widget class="QLineEdit" name="commandEdit">
+           <property name="placeholderText">
+            <string>custom shell command...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="runButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Run</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTextEdit" name="outputView">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -108,7 +119,7 @@ QPushButton:pressed {
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>22</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

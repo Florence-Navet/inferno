@@ -24,13 +24,17 @@ class AgentConnection : public FrameTransport {
   // ===== Register payload related methods =====
   const OsInfoPayload& getAgentInfo() const override;
   void setAgentInfo(const OsInfoPayload& info) override;
+  void setIsRegisered(bool registered = true) { isRegistered_ = registered; }
 
   // ===== Register and registration state related method =====
   bool getIsRegistered() const { return isRegistered_; }
 
   // ===== Buffer related methods =====
+  std::string getId() { return id_; }
+  void setId(std::string_view newId) { id_ = newId; }
 
  private:
+  std::string id_ = "";
   bool isRegistered_ = false;
 };
 

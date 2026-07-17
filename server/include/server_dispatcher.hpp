@@ -5,14 +5,15 @@
 #include <map>
 #include <string>
 #include <vector>
-// #include "agent_session.hpp"
+
 #include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
+#include "session_manager.hpp"
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher();
+  explicit ServerDispatcher(SessionManager& manager) : sessionManager_(manager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -20,18 +21,22 @@ class ServerDispatcher : public Dispatcher {
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
   void sendCommand(AgentConnection& agent, CommandType type,
                    const std::string& data = "");
+  SessionManager& getSessionManager() { return sessionManager_; }
 
  private:
+  SessionManager& sessionManager_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
+  void onDashboardRegister(AgentConnection& dashboard,
+                           const std::vector<std::uint8_t>& payload);
   void onResponse(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);
 
   void sendDisconnect(AgentConnection& agent);
 
-  std::uint16_t nextId();
+  std::uint32_t nextId();
 
   struct IncompleteResponse {
     ResponsePayload baseResponse;
@@ -41,10 +46,10 @@ class ServerDispatcher : public Dispatcher {
   std::map<std::uint16_t, IncompleteResponse>
       pendingResponses_;  // keyed by response id
 
-  void processCompleteResponse(const ResponsePayload& response);
+  void processCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
   void createResponseEntry(const ResponsePayload& response);
-  void tryCompleteResponse(const ResponsePayload& response);
-  std::uint16_t nextCmdId_ = 0;
+  void tryCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
+  std::uint32_t nextCmdId_ = 0;
 };
 
 #endif

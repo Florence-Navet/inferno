@@ -48,7 +48,7 @@ target_include_directories(agent_lib PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Link common_lib as PUBLIC so both agent and tests inherit common includes.
+# Link transport_lib as PUBLIC so both agent and tests inherit transport includes.
 target_link_libraries(agent_lib PUBLIC
     transport_lib
 )

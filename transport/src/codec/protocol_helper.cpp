@@ -7,6 +7,8 @@ const char* messageTypeToString(MessageType type) noexcept {
   switch (type) {
     case MessageType::REGISTER:
       return "REGISTER";
+    case MessageType::DASHBOARD_REGISTER:
+      return "DASHBOARD REGISTER";
     case MessageType::DATA:
       return "DATA";
     case MessageType::COMMAND:
@@ -106,33 +108,33 @@ void validateOsInfoPayload(const OsInfoPayload& payload) {
         "arch", std::to_string(static_cast<std::uint8_t>(payload.arch)));
   }
   if (payload.hostname.empty()) {
-    throw InvalidSize("register hostname length", "0");
+    throw InvalidSize("os info hostname length", "0");
   }
 
   if (payload.os_version.empty()) {
-    throw InvalidSize("register os_version length", "0");
+    throw InvalidSize("os info os_version length", "0");
   }
 
   if (payload.current_user.empty()) {
-    throw InvalidSize("register current_user length", "0");
+    throw InvalidSize("os info current_user length", "0");
   }
 
   if (payload.ip.empty()) {
-    throw InvalidSize("register ip length", "0");
+    throw InvalidSize("os info ip length", "0");
   }
 
   if (payload.hostname.size() > REGISTER_MAX_HOSTNAME_LEN) {
-    throw InvalidSize("register hostname length",
+    throw InvalidSize("os info hostname length",
                       std::to_string(payload.hostname.size()));
   }
 
-  ensureFitsU16(payload.hostname.size(), "register hostname length");
+  ensureFitsU16(payload.hostname.size(), "os info hostname length");
 
-  ensureFitsU16(payload.os_version.size(), "register os_version length");
+  ensureFitsU16(payload.os_version.size(), "os info os_version length");
 
-  ensureFitsU16(payload.current_user.size(), "register current_user length");
+  ensureFitsU16(payload.current_user.size(), "os info current_user length");
 
-  ensureFitsU16(payload.ip.size(), "register ip length");
+  ensureFitsU16(payload.ip.size(), "os info ip length");
 }
 
 void validateCommandPayload(const CommandPayload& payload) {

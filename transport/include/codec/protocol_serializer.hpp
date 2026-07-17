@@ -25,6 +25,14 @@ std::vector<std::uint8_t> serializeProcessInfo(const ProcessInfo& info);
 std::vector<std::uint8_t> serializeProcessInfoList(
     const std::vector<ProcessInfo>& infos);
 
+std::vector<std::uint8_t> serializeDashboardCommand(
+    const DashboardCommand& command);
+std::vector<std::uint8_t> serializeDashboardData(const DashboardData& data);
+std::vector<std::uint8_t> serializeDashboardResponse(
+    const DashboardResponse& response);
+std::vector<std::uint8_t> serializeRegisterPayload(
+    const RegisterPayload& payload);
+
 std::vector<std::uint8_t> serializeFrame(const Frame& frame);
 
 inline std::vector<std::uint8_t> toBytes(const std::string& s) {

@@ -21,6 +21,12 @@ ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input);
 ProcessInfo parseProcessInfo(const std::vector<std::uint8_t>& input);
 std::vector<ProcessInfo> parseProcessInfoList(
     const std::vector<std::uint8_t>& input);
+
+DashboardCommand parseDashboardCommand(const std::vector<std::uint8_t>& input);
+DashboardData parseDashboardData(const std::vector<std::uint8_t>& input);
+DashboardResponse parseDashboardResponse(
+    const std::vector<std::uint8_t>& input);
+RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input);
 inline std::string toString(const std::vector<std::uint8_t>& v) {
   return std::string(v.begin(), v.end());
 }

@@ -27,9 +27,10 @@ int main() {
   }
 
   server.setNonBlocking();
-
-  ServerDispatcher dispatcher;
-  Reactor reactor(server, dispatcher, poller);
+  
+  SessionManager manager;
+  ServerDispatcher dispatcher(manager);
+  Reactor reactor(server, dispatcher, poller, manager);
   reactor.run();
   return 0;
 }

@@ -16,11 +16,12 @@ constexpr std::string_view LPTF_IDENTIFIER_STR(LPTF_IDENTIFIER.data(), 4);
 constexpr std::string_view DASHBORD_IDENTIFIER = "DASH";
 enum class MessageType : std::uint8_t {
   REGISTER = 0,
-  DATA = 1,
-  COMMAND = 2,
-  RESPONSE = 3,
-  DISCONNECT = 4,
-  ERROR = 5,
+  DASHBOARD_REGISTER = 1,
+  DATA = 2,
+  COMMAND = 3,
+  RESPONSE = 4,
+  DISCONNECT = 5, // target name
+  ERROR = 6,
   UNKNOWN  // must always be the last !!
 };
 

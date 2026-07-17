@@ -10,8 +10,6 @@
 #include "codec/protocol_serializer.hpp"
 #include "logger.hpp"
 #include "socket/i_socket.hpp"
-// ServerDispatcher::ServerDispatcher() {}
-ServerDispatcher::ServerDispatcher() : Dispatcher() {}
 
 void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
   AgentConnection& connection = static_cast<AgentConnection&>(agent);
@@ -19,15 +17,15 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
     case MessageType::REGISTER:
       onRegister(connection, frame.payload);
       break;
+    case MessageType::DASHBOARD_REGISTER:
+      onDashboardRegister(connection, frame.payload);
+      break;
     case MessageType::RESPONSE:
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
       onData(frame.payload);
       break;
-    // case MessageType::DISCONNECT:
-    //   running = false;
-    //   break;
     case MessageType::ERROR:
       onError(frame.payload);
       break;
@@ -45,6 +43,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   agent.setAgentInfo(agentInfo);
   agent.setId(agentInfo.hostname);
+  sessionManager_.recordAgentTarget(agent.getFd(), agent.getId());
 
   std::ostringstream what;
   what << "[REGISTER] \nhostname : " << agentInfo.hostname
@@ -53,6 +52,14 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
        << "\narch : " << static_cast<int>(agentInfo.arch)
        << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
   Logger::info("server dispatcher", what.str());
+}
+
+void ServerDispatcher::onDashboardRegister(
+    AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
+  OsInfoPayload dashboardInfo = ProtocolParser::parseOsInfoPayload(payload);
+  dashboard.setAgentInfo(dashboardInfo);
+  dashboard.setId(dashboardInfo.hostname);
+  sessionManager_.setDashboardFd(dashboard.getFd());
 }
 
 // A RESPONSE carries the same id as the COMMAND it answers,
@@ -130,11 +137,6 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
   what << "[COMMAND] id=" << command.id
        << "  type=" << static_cast<int>(command.type);
   Logger::info("server dispatcher", what.str());
-}
-
-void ServerDispatcher::setDashboard(
-    std::shared_ptr<DashboardConnection> dashboard) {
-  dashboard_ = dashboard;
 }
 
 void ServerDispatcher::sendDisconnect(AgentConnection& agent) {

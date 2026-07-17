@@ -5,15 +5,15 @@
 #include <map>
 #include <string>
 #include <vector>
-// #include "agent_session.hpp"
+
 #include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "dashboard_connection.hpp"
+#include "session_manager.hpp"
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher();
+  explicit ServerDispatcher(SessionManager& manager) : sessionManager_(manager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -21,13 +21,16 @@ class ServerDispatcher : public Dispatcher {
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
   void sendCommand(AgentConnection& agent, CommandType type,
                    const std::string& data = "");
-  void setDashboard(std::shared_ptr<DashboardConnection> dashboard) ;
+  SessionManager& getSessionManager() { return sessionManager_; }
 
  private:
-  std::shared_ptr<DashboardConnection> dashboard_;
+  SessionManager& sessionManager_;
+  AgentConnection dashboard_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
+  void onDashboardRegister(AgentConnection& dashboard,
+                           const std::vector<std::uint8_t>& payload);
   void onResponse(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);

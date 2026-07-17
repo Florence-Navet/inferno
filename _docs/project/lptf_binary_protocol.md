@@ -42,14 +42,15 @@ Payload immediately follows the header.
 
 ### 3.1 Message Types
 
-| Value | Name       | Description                  |
-| ----- | ---------- | ---------------------------- |
-| 0     | REGISTER   | Agent → Server registration |
-| 1     | DATA       | Unsolicited agent data      |
-| 2     | COMMAND    | Server → Agent instruction  |
-| 3     | RESPONSE   | Agent → Server result       |
-| 4     | DISCONNECT | Close connection             |
-| 5     | ERROR      | Error reporting              |
+| Value | Name               | Description                      |
+| ----- | ------------------ | -------------------------------- |
+| 0     | REGISTER           | Agent → Server registration      |
+| 1     | DASHBOARD_REGISTER | dashboard -> Server registration |
+| 2     | DATA               | Unsolicited agent data           |
+| 3     | COMMAND            | Server → Agent instruction       |
+| 4     | RESPONSE           | Agent → Server result            |
+| 5     | DISCONNECT         | Close connection                 |
+| 6     | ERROR              | Error reporting                  |
 
 ## 4. Payload Structures
 
@@ -142,7 +143,17 @@ std::vector<uint8_t> | processCount (2 bytes) | processList (N bytes) |
 
 ### 4.4 DATA
 
-For unsolicited agent data: Metric
+#### Datasubtype
+| Value | Name              |
+| ----- | ----------------- |
+| 0     | METRICS_SAMPLE    |
+| 1     | HEALTH_CHECK      |
+| 2     | REGISTRATION      |
+| 3     | AGENTS            |
+| 4     | UNKNOWN           |
+
+registration = server push RegisterPayload of a first ever seen agent
+agents = list of RegisterPayload on dashboard connection, retreived from db
 
 ```c++
 struct DataPayload {
@@ -302,3 +313,19 @@ char id[id_len];
 std::vector<std::uint8_t> OsInfoPayload serialized
 ```
 
+- Disconnect (côté dashboard) envoie un payload de l'agent id (target dans le protocole dans command.hpp data.hpp et response.hpp) + pas de feedback (on considère qu'une déconnexion se passera toujours bien)
+- L'envoie des `OsInfoPayload` au dashboard se fait via `DataPayload`, `DataType::REGISTRATION `sous forme de `RegisterPayload` lorsqu'il se connecte pour la toute première fois. Se fait par `DataType::AGENTS` pour récupérer une liste de `RegisterPayload` de la db
+- CommandPayload : le dashboard ne génère pas l'ID, c'est le server qui s'en charge, le dashboard laisse à 0 (initialisation par défaut)
+- Le dashboard reçoit la réponse du server d'une commande via `DashboardResponse` qui contient "target", l'agent d'où provient la réponse 
+
+
+```c++
+struct RegisterPayload {
+  std::string id;
+  OsInfoPayload system;
+
+  bool operator==(const RegisterPayload& other) const {
+    return id == other.id && system == other.system;
+  }
+};
+```

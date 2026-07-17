@@ -8,6 +8,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     ui->setupUi(this);
     populateAgents();
+
+    connect(ui->runButton, &QPushButton::clicked, this, [this]() {
+        showOutput(ui->commandEdit->text());
+        });
 }
 
 MainWindow::~MainWindow()
@@ -23,4 +27,10 @@ void MainWindow::populateAgents()
     ui->agentList->addItem("agent3-lab");
     ui->agentList->addItem("agent4-pi");
     ui->agentList->addItem("agent5-mac");
+}
+
+void MainWindow::showOutput(const QString &text)
+{
+    // TODO: replace with DashboardResponse data
+    ui->outputView->setPlainText(text);
 }

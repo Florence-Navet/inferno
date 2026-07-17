@@ -12,6 +12,8 @@ class AgentItemWidget : public QWidget
 public:
     explicit AgentItemWidget(QWidget *parent = nullptr);
 
+    void setAgent(const QString &name, const QString &details, bool online);
+
 private:
     QLabel *m_nameLabel;
     QLabel *m_detailsLabel;

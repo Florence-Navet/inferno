@@ -31,8 +31,8 @@ QListWidget::item {
     border-radius: 4px;
 }
 QListWidget::item:selected {
-    background-color: #89B6A5;
-    color: #ffffff;
+    background-color: #C9EDDC;
+    color: #4C3B4D;
 }
 QLineEdit {
     background-color: #ffffff;
@@ -96,6 +96,20 @@ QLabel#osBadge, QLabel#ipBadge, QLabel#statusBadge {
 color: #4C3B4D;
 font-size: 12px;
 padding: 0px 6px;
+}QLabel#agentItemName {
+color: #4C3B4D;
+font-size: 13px;
+}
+QLabel#agentItemDetails {
+color: #82968C;
+font-size: 11px;
+}
+QLabel#agentStatusDot {
+color: #89B6A5;
+font-size: 14px;
+}
+QLabel#agentStatusDot[online="false"] {
+color: #6A706E;
 }</string>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">

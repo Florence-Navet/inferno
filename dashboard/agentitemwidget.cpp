@@ -1,9 +1,32 @@
 #include "agentitemwidget.h"
 
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QVBoxLayout>
+
 AgentItemWidget::AgentItemWidget(QWidget *parent)
     : QWidget(parent)
-    , m_nameLabel(nullptr)
-    , m_detailsLabel(nullptr)
-    , m_statusDot(nullptr)
+    , m_nameLabel(new QLabel(this))
+    , m_detailsLabel(new QLabel(this))
+    , m_statusDot(new QLabel(this))
 {
+    m_statusDot->setObjectName("agentStatusDot");
+    m_nameLabel->setObjectName("agentItemName");
+    m_detailsLabel->setObjectName("agentItemDetails");
+
+    QVBoxLayout *textColumn = new QVBoxLayout;
+    textColumn->addWidget(m_nameLabel);
+    textColumn->addWidget(m_detailsLabel);
+
+    QHBoxLayout *row = new QHBoxLayout(this);
+    row->addWidget(m_statusDot);
+    row->addLayout(textColumn);
+    row->addStretch();
+}
+
+void AgentItemWidget::setAgent(const QString &name, const QString &details, bool online)
+{
+    m_nameLabel->setText(name);
+    m_detailsLabel->setText(details);
+    m_statusDot->setProperty("online", online);
 }

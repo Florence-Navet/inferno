@@ -23,6 +23,9 @@ private:
     /// Fills the agent list. TODO: replace hardcoded data with server AGENTS payload.
     void populateAgents();
 
+    /// Adds one rich agent row to the list.
+    void addAgentItem(const QString &name, const QString &details, bool online);
+
     /// Displays command output. TODO: feed with DashboardResponse data.
     void showOutput(const QString &text);
 

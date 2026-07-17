@@ -1,6 +1,10 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+#include "agentitemwidget.h"
+
+#include <QListWidgetItem>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -16,10 +20,11 @@ MainWindow::MainWindow(QWidget *parent)
         showOutput(ui->commandEdit->text());
         });
 
-    connect(ui->agentList, &QListWidget::currentTextChanged,
-            this, [this](const QString &text) {
-                m_target = text;
+    connect(ui->agentList, &QListWidget::currentItemChanged,
+            this, [this](QListWidgetItem *current, QListWidgetItem *) {
+                m_target = current ? current->data(Qt::UserRole).toString() : QString();
             });
+
 }
 
 MainWindow::~MainWindow()
@@ -30,12 +35,26 @@ MainWindow::~MainWindow()
 void MainWindow::populateAgents()
 {
     // TODO: replace with RegisterPayload list from DataType::AGENTS
-    ui->agentList->addItem("agent1-desktop");
-    ui->agentList->addItem("agent2-srv");
-    ui->agentList->addItem("agent3-lab");
-    ui->agentList->addItem("agent4-pi");
-    ui->agentList->addItem("agent5-mac");
+    addAgentItem("agent1-desktop", "Windows · x64 · 192.168.1.10", true);
+    addAgentItem("agent2-srv", "Linux · x64 · 192.168.1.42", true);
+    addAgentItem("agent3-lab", "Windows · x86 · 192.168.1.55", true);
+    addAgentItem("agent4-pi", "Linux · ARM · 192.168.1.80", true);
+    addAgentItem("agent5-mac", "macOS · x64 · offline", false);
+
+    ui->agentList->setCurrentRow(-1);
 }
+
+void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)
+{
+    AgentItemWidget *widget = new AgentItemWidget(this);
+    widget->setAgent(name, details, online);
+
+    QListWidgetItem *item = new QListWidgetItem(ui->agentList);
+    item->setData(Qt::UserRole, name);
+    item->setSizeHint(widget->sizeHint());
+    ui->agentList->setItemWidget(item, widget);
+}
+
 
 void MainWindow::showOutput(const QString &text)
 {

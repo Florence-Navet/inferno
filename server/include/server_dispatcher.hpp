@@ -25,7 +25,6 @@ class ServerDispatcher : public Dispatcher {
 
  private:
   SessionManager& sessionManager_;
-  AgentConnection dashboard_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
@@ -47,9 +46,9 @@ class ServerDispatcher : public Dispatcher {
   std::map<std::uint16_t, IncompleteResponse>
       pendingResponses_;  // keyed by response id
 
-  void processCompleteResponse(const ResponsePayload& response);
+  void processCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
   void createResponseEntry(const ResponsePayload& response);
-  void tryCompleteResponse(const ResponsePayload& response);
+  void tryCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
   std::uint32_t nextCmdId_ = 0;
 };
 

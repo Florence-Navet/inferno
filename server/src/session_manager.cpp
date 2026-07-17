@@ -1,5 +1,9 @@
 #include "session_manager.hpp"
 
+const std::unordered_map<int, AgentConnection>& SessionManager::getAgents() const {
+  return agents_;
+}
+
 void SessionManager::addAgent(int fileDescriptor,
                               std::unique_ptr<ISocket> incoming) {
   agents_.emplace(fileDescriptor, AgentConnection(std::move(incoming)));
@@ -21,9 +25,15 @@ AgentConnection& SessionManager::getAgent(int fileDescriptor) {
   return agents_.at(fileDescriptor);
 }
 
+bool SessionManager::isDashboard() {
+  return dashboardFd_ != -1 && agents_.find(dashboardFd_) != agents_.end();
+}
+
 void SessionManager::setDashboardFd(int fileDescriptor) {
   dashboardFd_ = fileDescriptor;
 }
+
+// int SessionManager::getDashboardFd() { return dashboardFd_; }
 
 AgentConnection& SessionManager::getDashboard() {
   return agents_.at(dashboardFd_);

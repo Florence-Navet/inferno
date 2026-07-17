@@ -52,6 +52,18 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
        << "\narch : " << static_cast<int>(agentInfo.arch)
        << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
   Logger::info("server dispatcher", what.str());
+
+  DataPayload registration;
+  registration.subtype = DataType::REGISTRATION;
+  registration.data = ProtocolSerializer::serializeOsInfoPayload(agentInfo);
+  std::vector<std::uint8_t> registerPayload =
+      ProtocolSerializer::serializeDataPayload(registration);
+  Frame frame{ProtocolHelper::createHeader(MessageType::DATA, payload),
+              payload};
+              
+  if (sessionManager_.isDashboard()) {
+    sessionManager_.getDashboard().sendFrame(frame);
+  }
 }
 
 void ServerDispatcher::onDashboardRegister(
@@ -60,6 +72,30 @@ void ServerDispatcher::onDashboardRegister(
   dashboard.setAgentInfo(dashboardInfo);
   dashboard.setId(dashboardInfo.hostname);
   sessionManager_.setDashboardFd(dashboard.getFd());
+  DataPayload agentsList;
+  agentsList.subtype = DataType::AGENTS;
+  std::vector<std::uint8_t> dataPayload;
+
+  for (const auto& entry : sessionManager_.getAgents()) {
+    const AgentConnection& agent = entry.second;
+    RegisterPayload registration;
+    // registration.id = agent.getId();
+    registration.system = agent.getAgentInfo();
+
+    std::vector<std::uint8_t> registerPayload =
+        ProtocolSerializer::serializeRegisterPayload(registration);
+    dataPayload.insert(dataPayload.end(), registerPayload.begin(),
+                   registerPayload.end());
+  }
+
+  agentsList.data = payload;
+
+  Frame frame{ProtocolHelper::createHeader(MessageType::DATA, payload),
+              payload};
+  if (sessionManager_.isDashboard()) {
+    sessionManager_.getDashboard().sendFrame(frame);
+  }
+
 }
 
 // A RESPONSE carries the same id as the COMMAND it answers,
@@ -74,7 +110,7 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
       ProtocolParser::parseResponsePayload(payload);
 
   if (response.total_chunks == 1) {
-    processCompleteResponse(response);
+    processCompleteResponse(agent, response);
     return;
   }
 
@@ -83,7 +119,7 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
   IncompleteResponse& incomplete = pendingResponses_[response.id];
   incomplete.data.insert(incomplete.data.end(), response.data.begin(),
                          response.data.end());
-  tryCompleteResponse(response);
+  tryCompleteResponse(agent, response);
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND
@@ -159,19 +195,33 @@ void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
 }
 
 void ServerDispatcher::processCompleteResponse(
-    const ResponsePayload& response) {
+    AgentConnection& agent, const ResponsePayload& response) {
   std::ostringstream what;
   what << "[RESPONSE] id=" << response.id
        << " status=" << static_cast<int>(response.status) << "\n"
        << ProtocolParser::toString(response.data);
   Logger::info("server dispatcher", what.str());
 
+  // AgentConnection dashboard = sessionManager_.getDashboard();
+  DashboardResponse finalResponse;
+  finalResponse.target = agent.getId();
+  finalResponse.response = response;
+  std::vector<std::uint8_t> payload =
+      ProtocolSerializer::serializeDashboardResponse(finalResponse);
+  Frame frame = {ProtocolHelper::createHeader(MessageType::RESPONSE, payload),
+                 payload};
+
+  if (sessionManager_.isDashboard()) {
+    sessionManager_.getDashboard().sendFrame(frame);
+  }
+
   if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
     pendingResponses_.erase(response.id);
   }
 }
 
-void ServerDispatcher::tryCompleteResponse(const ResponsePayload& response) {
+void ServerDispatcher::tryCompleteResponse(AgentConnection& agent,
+                                           const ResponsePayload& response) {
   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
   if (lastChunk) {
     IncompleteResponse& incomplete = pendingResponses_[response.id];
@@ -185,6 +235,6 @@ void ServerDispatcher::tryCompleteResponse(const ResponsePayload& response) {
     ResponsePayload complete = incomplete.baseResponse;
     complete.data = incomplete.data;
 
-    processCompleteResponse(complete);
+    processCompleteResponse(agent, complete);
   }
 }

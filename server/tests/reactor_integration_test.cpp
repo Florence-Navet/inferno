@@ -27,33 +27,53 @@ TEST(ReactorIntegration, NotSupportedOnThisPlatform) {
 
 #include <unistd.h>
 
-namespace {
+class ReactorIntegrationTest : public ::testing::Test {
+ public:
+  // ReactorIntegrationTest()
+  //     : poller((spy.makeUnique())), dispatcher(manager) {}
+  // reactor(server, dispatcher, epoller, manager) {}
 
-// Starts the server and reactor in a background thread.
-// Sets reactorReady immediately before reactor.run() — at that point
-// server.start() has returned so the OS is already listening on the port,
-// meaning a client can connect even before the first epoll_wait fires.
-// The OS queues incoming connections in the backlog; the reactor drains
-// them on the first epoll_wait iteration.
-std::thread startReactorThread(TcpServer& server, Reactor& reactor,
-                               std::promise<void>& reactorReady) {
-  server.start();
-  server.setNonBlocking();
-  return std::thread([&reactor, &reactorReady] {
-    reactorReady.set_value();
-    reactor.run();
-  });
-}
-
-}  // namespace
-
-// ① Happy path — agent connects and sends REGISTER.
-TEST(ReactorIntegration, should_accept_register_without_error) {
-  const std::uint16_t port = Ports::Reactor::HAPPY_PATH_PORT;
-  TcpServer server(port);
+ protected:
   Epoller epoller;
   SessionManager manager;
-  ServerDispatcher dispatcher(manager);
+  ServerDispatcher dispatcher{manager};
+  // Reactor reactor;
+
+  std::thread startReactorThread(TcpServer& server, Reactor& reactor,
+                                 std::promise<void>& reactorReady) {
+    server.start();
+    server.setNonBlocking();
+    return std::thread([&reactor, &reactorReady] {
+      reactorReady.set_value();
+      reactor.run();
+    });
+  }
+};
+
+// namespace {
+
+// // Starts the server and reactor in a background thread.
+// // Sets reactorReady immediately before reactor.run() — at that point
+// // server.start() has returned so the OS is already listening on the port,
+// // meaning a client can connect even before the first epoll_wait fires.
+// // The OS queues incoming connections in the backlog; the reactor drains
+// // them on the first epoll_wait iteration.
+// std::thread startReactorThread(TcpServer& server, Reactor& reactor,
+//                                std::promise<void>& reactorReady) {
+//   server.start();
+//   server.setNonBlocking();
+//   return std::thread([&reactor, &reactorReady] {
+//     reactorReady.set_value();
+//     reactor.run();
+//   });
+// }
+
+// }  // namespace
+
+// ① Happy path — agent connects and sends REGISTER.
+TEST_F(ReactorIntegrationTest, should_accept_register_without_error) {
+  const std::uint16_t port = Ports::Reactor::HAPPY_PATH_PORT;
+  TcpServer server(port);
   Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
@@ -72,12 +92,10 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
 }
 
 // ② Protocol enforcement — agent sends COMMAND before REGISTER → ERROR back.
-TEST(ReactorIntegration, should_send_error_when_first_message_is_not_register) {
+TEST_F(ReactorIntegrationTest,
+       should_send_error_when_first_message_is_not_register) {
   const std::uint16_t port = Ports::Reactor::INVALID_FIRST_MESSAGE_PORT;
   TcpServer server(port);
-  Epoller epoller;
-  SessionManager manager;
-  ServerDispatcher dispatcher(manager);
   Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
@@ -105,12 +123,10 @@ TEST(ReactorIntegration, should_send_error_when_first_message_is_not_register) {
 // The second connection is made without sleeping: the OS queues it in the
 // backlog immediately after the first socket closes, and the reactor drains
 // both events (disconnect + new connection) on the next epoll_wait.
-TEST(ReactorIntegration, should_keep_serving_after_first_agent_disconnects) {
+TEST_F(ReactorIntegrationTest,
+       should_keep_serving_after_first_agent_disconnects) {
   const std::uint16_t port = Ports::Reactor::DISCONNECT_PORT;
   TcpServer server(port);
-  Epoller epoller;
-  SessionManager manager;
-  ServerDispatcher dispatcher(manager);
   Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;

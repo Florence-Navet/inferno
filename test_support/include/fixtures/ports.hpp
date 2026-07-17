@@ -23,6 +23,7 @@ namespace Reactor {
 constexpr std::uint16_t HAPPY_PATH_PORT = 19883;
 constexpr std::uint16_t INVALID_FIRST_MESSAGE_PORT = 19884;
 constexpr std::uint16_t DISCONNECT_PORT = 19885;
+constexpr std::uint16_t THREE_PARTICIPANT_PORT = 19886;
 
 }  // namespace Reactor
 

@@ -10,6 +10,7 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
+#include "protocol/lptf_protocol.hpp"
 #include "poller/epoller.hpp"
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
@@ -48,27 +49,26 @@ class ReactorIntegrationTest : public ::testing::Test {
       reactor.run();
     });
   }
+
+  // std::thread startDashboardThread(ISocket& dashboard, std::uint16_t port,
+  //                                  std::promise<void>& dashboardReady) {
+  //   dashboard.connect(Common::SERVER_HOST, port);
+
+  //   OsInfoPayload info = FrameBuilder::makeOsInfoPayload();
+  //   std::vector<std::uint8_t> payload =
+  //       ProtocolSerializer::serializeOsInfoPayload(info);
+
+  //   Frame frame;
+  //   frame.header =
+  //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, payload);
+  //   frame.payload = payload;
+  //   std::vector<std::uint8_t> finalPayload =
+  //       ProtocolSerializer::serializeFrame(frame);
+
+  //   EXPECT_TRUE(socket->send(registerFrame).ok());
+  //   dashboardReady.set_value();
+  // }
 };
-
-// namespace {
-
-// // Starts the server and reactor in a background thread.
-// // Sets reactorReady immediately before reactor.run() — at that point
-// // server.start() has returned so the OS is already listening on the port,
-// // meaning a client can connect even before the first epoll_wait fires.
-// // The OS queues incoming connections in the backlog; the reactor drains
-// // them on the first epoll_wait iteration.
-// std::thread startReactorThread(TcpServer& server, Reactor& reactor,
-//                                std::promise<void>& reactorReady) {
-//   server.start();
-//   server.setNonBlocking();
-//   return std::thread([&reactor, &reactorReady] {
-//     reactorReady.set_value();
-//     reactor.run();
-//   });
-// }
-
-// }  // namespace
 
 // ① Happy path — agent connects and sends REGISTER.
 TEST_F(ReactorIntegrationTest, should_accept_register_without_error) {

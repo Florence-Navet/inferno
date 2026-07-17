@@ -24,6 +24,7 @@ class AgentConnection : public FrameTransport {
   // ===== Register payload related methods =====
   const OsInfoPayload& getAgentInfo() const override;
   void setAgentInfo(const OsInfoPayload& info) override;
+  void setIsRegisered(bool registered = true) { isRegistered_ = registered; }
 
   // ===== Register and registration state related method =====
   bool getIsRegistered() const { return isRegistered_; }

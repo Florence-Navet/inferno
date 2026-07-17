@@ -10,6 +10,8 @@ constexpr std::size_t DATA_FIXED_BYTES =
 enum class DataType : std::uint8_t {
   METRICS_SAMPLE = 0,
   HEALTH_CHECK = 1,
+  REGISTRATION = 2,
+  AGENTS = 3, // registerPayload list
   UNKNOWN  // must be the last one
 };
 

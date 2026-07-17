@@ -13,6 +13,7 @@
 #include "poller/epoller.hpp"
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
+#include "session_manager.hpp"
 #include "socket/socket_factory.hpp"
 #include "tcp_server.hpp"
 
@@ -51,8 +52,9 @@ TEST(ReactorIntegration, should_accept_register_without_error) {
   const std::uint16_t port = Ports::Reactor::HAPPY_PATH_PORT;
   TcpServer server(port);
   Epoller epoller;
-  ServerDispatcher dispatcher;
-  Reactor reactor(server, dispatcher, epoller);
+  SessionManager manager;
+  ServerDispatcher dispatcher(manager);
+  Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);
@@ -74,8 +76,9 @@ TEST(ReactorIntegration, should_send_error_when_first_message_is_not_register) {
   const std::uint16_t port = Ports::Reactor::INVALID_FIRST_MESSAGE_PORT;
   TcpServer server(port);
   Epoller epoller;
-  ServerDispatcher dispatcher;
-  Reactor reactor(server, dispatcher, epoller);
+  SessionManager manager;
+  ServerDispatcher dispatcher(manager);
+  Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);
@@ -106,8 +109,9 @@ TEST(ReactorIntegration, should_keep_serving_after_first_agent_disconnects) {
   const std::uint16_t port = Ports::Reactor::DISCONNECT_PORT;
   TcpServer server(port);
   Epoller epoller;
-  ServerDispatcher dispatcher;
-  Reactor reactor(server, dispatcher, epoller);
+  SessionManager manager;
+  ServerDispatcher dispatcher(manager);
+  Reactor reactor(server, dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);

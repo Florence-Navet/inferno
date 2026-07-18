@@ -11,6 +11,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     ui->setupUi(this);
+
+    for (QPushButton *button : findChildren<QPushButton *>())
+        button->setCursor(Qt::PointingHandCursor);
+
     populateAgents();
 
     qDebug() << "target:" << m_target;

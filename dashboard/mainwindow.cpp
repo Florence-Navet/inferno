@@ -6,17 +6,25 @@
 #include <QListWidgetItem>
 #include <QVector>
 
+#include <QFrame>
+#include <QVBoxLayout>
+#include <QLabel>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->setupUi(this);
+
 
     for (QPushButton *button : findChildren<QPushButton *>())
         button->setCursor(Qt::PointingHandCursor);
 
     populateAgents();
+
+    buildContentArea();
+
+
 
     qDebug() << "target:" << m_target;
 
@@ -58,6 +66,45 @@ void MainWindow::populateAgents()
     addAgentItem("agent5-mac", "macOS · x64 · offline", false);
 
     ui->agentList->setCurrentRow(-1);
+}
+
+void MainWindow::buildContentArea()
+{
+    // TODO: build metric cards, process table
+    QHBoxLayout *metricsRow = new QHBoxLayout;
+    metricsRow->addWidget(createMetricCard("cpu", "CPU overall", "34%", "4 cores"));
+    metricsRow->addWidget(createMetricCard("memory", "Memory used", "5.2 GB", "of 16 GB · swap 0.1"));
+    metricsRow->addWidget(createMetricCard("disk", "Disk read", "12 MB/s", "write 4 MB/s"));
+    metricsRow->addWidget(createMetricCard("network", "Network rx", "820 KB/s", "tx 210 KB/s"));
+    ui->contentLayout->insertLayout(0, metricsRow);
+}
+
+QLabel *MainWindow::makeLabel(const QString &text, const QString &objectName)
+{
+    QLabel *label = new QLabel(text);
+    label->setObjectName(objectName);
+    return label;
+}
+
+QWidget *MainWindow::createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle)
+{
+    QFrame *card = new QFrame;
+    card->setObjectName("metricCard");
+    QLabel *valueLabel = makeLabel(value, "metricValue");
+    m_metricValues.insert(key, valueLabel);
+    QVBoxLayout *layout = new QVBoxLayout(card);
+    layout->addWidget(makeLabel(title, "metricTitle"));
+    layout->addWidget(valueLabel);
+    layout->addWidget(makeLabel(subtitle, "metricSubtitle"));
+    return card;
+
+    return card;
+}
+
+void MainWindow::updateMetric(const QString &key, const QString &value)
+{
+    if (m_metricValues.contains(key))
+        m_metricValues[key]->setText(value);
 }
 
 void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)

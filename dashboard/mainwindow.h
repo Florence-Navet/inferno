@@ -4,14 +4,22 @@
 #include <QMainWindow>
 #include <QString>
 
-#include <QMainWindow>
-#include <QString>
 
 #include <QHash>
 
 class QLabel;
 
-QT_BEGIN_NAMESPACE
+struct ProcessInfo {
+    QString pid;
+    QString name;
+    QString cpuPercent;  // display text, e.g. "18%"
+    QString memPercent; // display text, e.g. "2.1%"
+    QString status;
+    int cpuValue = 0;      // 0-100, drives the CPU bar
+    int memValue = 0;      // 0-100, drives the Mem bar
+};
+
+
 
 
 QT_BEGIN_NAMESPACE
@@ -46,7 +54,7 @@ private:
     /// Creates one metric card (title + big value + subtitle).
     QWidget *createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle);
 
-    /// Creates a QLabel with the given text and object name.QWidget *createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle);
+    /// Creates a QLabel with the given text and object name.
     QLabel *makeLabel(const QString &text, const QString &objectName);
 
     QString m_target;
@@ -55,5 +63,14 @@ private:
 
     /// Updates a metric card value by key. TODO: call from server DataPayload.
     void updateMetric(const QString &key, const QString &value);
+
+    /// Builds one process table row from a ProcessInfo.
+    QWidget *createProcessRow(const ProcessInfo &process, bool isHeader = false);
+
+    /// Builds the RUNNING PROCESSES section (title + header + rows).
+    QWidget *createProcessTable();
+
+    /// Creates a mini progress bar (0-100) for the process table.
+    QWidget *createBar(int value);
 };
 #endif // MAINWINDOW_H

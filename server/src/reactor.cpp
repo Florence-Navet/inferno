@@ -14,6 +14,7 @@ void Reactor::run() {
 
   while (running_) {
     const int firedCount = poller_.wait(events, -1);
+    // const int firedCount = poller_.wait(events, 1000); // for debug, waits for 1second
     if (firedCount <= 0) {
       running_ = false;
       Logger::info("reactor", "will stop since fire count is <= 0");

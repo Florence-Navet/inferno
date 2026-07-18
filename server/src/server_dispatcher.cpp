@@ -62,7 +62,13 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
               registerPayload};
 
   if (sessionManager_.isDashboard()) {
-    sessionManager_.getDashboard().sendFrame(frame);
+    try {
+      sessionManager_.getDashboard().sendFrame(frame);
+    } catch (const std::exception& e) {
+      Logger::error(
+          "server dispatcher",
+          "Failed to send registration to dashboard: " + std::string(e.what()));
+    }
   }
 }
 
@@ -77,6 +83,8 @@ void ServerDispatcher::onDashboardRegister(
 
   Logger::info("server dispatcher",
                "[DASHBOARD REGISTER] : " + dashboard.getId());
+
+  if (sessionManager_.getAgents().empty()) return;
   DataPayload agentsList;
   agentsList.subtype = DataType::AGENTS;
   std::vector<std::uint8_t> dataPayload;
@@ -216,7 +224,13 @@ void ServerDispatcher::processCompleteResponse(
                  payload};
 
   if (sessionManager_.isDashboard()) {
-    sessionManager_.getDashboard().sendFrame(frame);
+    try {
+      sessionManager_.getDashboard().sendFrame(frame);
+    } catch (const std::exception& e) {
+      Logger::error(
+          "server dispatcher",
+          "Failed to send registration to dashboard: " + std::string(e.what()));
+    }
   }
 
   if (pendingResponses_.find(response.id) != pendingResponses_.end()) {

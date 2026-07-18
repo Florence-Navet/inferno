@@ -4,6 +4,7 @@
 #include "agentitemwidget.h"
 
 #include <QListWidgetItem>
+#include <QVector>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,6 +24,17 @@ MainWindow::MainWindow(QWidget *parent)
             qDebug() << "target:" << m_target;
         showOutput(ui->commandEdit->text());
         });
+
+    const QVector<QPair<QPushButton *, QString>> presets = {
+        { ui->presetDfButton, "df -h" },
+        { ui->presetNetstatButton, "netstat -tulpn" },
+        { ui->presetTopButton, "top -bn1" }
+    };
+    for (const QPair<QPushButton *, QString> &preset : presets) {
+        connect(preset.first, &QPushButton::clicked, this, [this, preset]() {
+            ui->commandEdit->setText(preset.second);
+        });
+    }
 
     connect(ui->agentList, &QListWidget::currentItemChanged,
             this, [this](QListWidgetItem *current, QListWidgetItem *) {

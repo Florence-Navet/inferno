@@ -60,7 +60,7 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: #82968C;
 }
-QPushButton#osInfoButton, QPushButton#processListButton {
+QPushButton#osInfoButton, QPushButton#processListButton, QPushButton#presetDfButton, QPushButton#presetNetstatButton, QPushButton#presetTopButton {
     background-color: #ffffff;
     color: #4C3B4D;
     border: 1px solid #82968C;
@@ -70,10 +70,10 @@ QPushButton#disconnectButton {
     color: #b23b3b;
     border: 1px solid #d99a9a;
 }
-QPushButton#osInfoButton:hover, QPushButton#processListButton:hover, QPushButton#disconnectButton:hover {
+QPushButton#osInfoButton:hover, QPushButton#processListButton:hover, QPushButton#disconnectButton:hover, QPushButton#presetDfButton:hover, QPushButton#presetNetstatButton:hover, QPushButton#presetTopButton:hover {
 background-color: #eef1f0;
 }
-QPushButton#osInfoButton:pressed, QPushButton#processListButton:pressed, QPushButton#disconnectButton:pressed {
+QPushButton#osInfoButton:pressed, QPushButton#processListButton:pressed, QPushButton#disconnectButton:pressed, QPushButton#presetDfButton:pressed, QPushButton#presetNetstatButton:pressed, QPushButton#presetTopButton:pressed {
 background-color: #dfe4e2;
 }
 QTextEdit {
@@ -115,10 +115,23 @@ font-weight: bold;
 padding-right: 8px;
 }
 QLabel#osBadge, QLabel#ipBadge, QLabel#statusBadge {
-color: #4C3B4D;
 font-size: 12px;
-padding: 0px 6px;
-}QLabel#agentItemName {
+padding: 2px 8px;
+border-radius: 9px;
+}
+QLabel#osBadge {
+background-color: #d6ece1;
+color: #3f6b58;
+}
+QLabel#ipBadge {
+background-color: #e4e2ee;
+color: #52506b;
+}
+QLabel#statusBadge {
+background-color: #d6ece1;
+color: #3f6b58;
+}
+QLabel#agentItemName {
 color: #4C3B4D;
 font-size: 13px;
 }
@@ -210,6 +223,12 @@ color: #6A706E;
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
                  </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>180</width>
+                   <height>20</height>
+                  </size>
+                 </property>
                 </spacer>
                </item>
                <item>
@@ -245,12 +264,53 @@ color: #6A706E;
                   </widget>
                  </item>
          <item>
+
+              <widget class="QPushButton" name="presetDfButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>df -h</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+                       <widget class="QPushButton" name="presetNetstatButton">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="text">
+                         <string>netstat -tulpn</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="presetTopButton">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="text">
+                         <string>top -bn1</string>
+                        </property>
+                       </widget>
+                      </item>
+             <item>
           <widget class="QLineEdit" name="commandEdit">
            <property name="placeholderText">
             <string>custom shell command...</string>
            </property>
           </widget>
          </item>
+
          <item>
           <widget class="QPushButton" name="runButton">
            <property name="sizePolicy">

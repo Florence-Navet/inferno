@@ -6,17 +6,17 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>INFERNO</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
     <string notr="true">QWidget#centralwidget {
-    background-color: #C9EDDC;
+    background-color: #F4F6F5;
 }
 QListWidget, QListView {
     background-color: #ffffff;
@@ -60,6 +60,22 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: #82968C;
 }
+QPushButton#osInfoButton, QPushButton#processListButton {
+    background-color: #ffffff;
+    color: #4C3B4D;
+    border: 1px solid #82968C;
+}
+QPushButton#disconnectButton {
+    background-color: #ffffff;
+    color: #b23b3b;
+    border: 1px solid #d99a9a;
+}
+QPushButton#osInfoButton:hover, QPushButton#processListButton:hover, QPushButton#disconnectButton:hover {
+background-color: #eef1f0;
+}
+QPushButton#osInfoButton:pressed, QPushButton#processListButton:pressed, QPushButton#disconnectButton:pressed {
+background-color: #dfe4e2;
+}
 QTextEdit {
     background-color: #4C3B4D;
     color: #C9EDDC;
@@ -82,6 +98,12 @@ color: #6A706E;
 font-size: 11px;
 font-weight: bold;
 padding-top: 12px;
+}
+QLabel#executeLabel {
+color: #6A706E;
+font-size: 11px;
+font-weight: bold;
+padding-right: 8px;
 }
 QLabel#offlineLabel {
 color: #82968C;
@@ -215,6 +237,13 @@ color: #6A706E;
              </item>
        <item>
         <layout class="QHBoxLayout" name="executeRow">
+        <item>
+                  <widget class="QLabel" name="executeLabel">
+                   <property name="text">
+                    <string>EXECUTE</string>
+                   </property>
+                  </widget>
+                 </item>
          <item>
           <widget class="QLineEdit" name="commandEdit">
            <property name="placeholderText">

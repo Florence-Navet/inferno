@@ -79,10 +79,25 @@ void MainWindow::buildContentArea()
     LineChartWidget *chart = new LineChartWidget;
     chart->setMinimumHeight(200);
     chart->setTitle("CPU — per core (last 20 s)");
-    // TODO: replace hardcoded series with real CPU history.
+    // TODO: replace hardcoded series with real per-core CPU history.
     // Server sends one MetricsSample per second (METRICS_INTERVAL_MS);
-    // append sample.cpu.total_percent to a rolling history, then setData it.
-    chart->setData({ 30, 45, 40, 60, 55, 50, 65, 70, 60 });
+    // each sample.cpu.per_core is a vector<float> (one value per core).
+    // Append each core's value to a rolling history, then setSeries it.
+    // Labels can be built as "core0".."coreN" from per_core.size().
+    chart->setSeries({
+        { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
+        { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
+        { 55, 60, 58, 65, 70, 68, 72, 75, 70 },
+        { 10, 12, 15, 14, 18, 16, 20, 22, 19 }
+    });
+    chart->setLabels({ "core0", "core1", "core2", "core3" });
+    chart->setSeries({
+        { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
+        { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
+        { 55, 60, 58, 65, 70, 68, 72, 75, 70 },
+        { 10, 12, 15, 14, 18, 16, 20, 22, 19 }
+    });
+    chart->setLabels({ "core0", "core1", "core2", "core3" });
     ui->contentLayout->insertWidget(0, chart);
 
     // TODO: build metric cards, process table

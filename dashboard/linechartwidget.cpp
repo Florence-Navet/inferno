@@ -9,13 +9,25 @@ LineChartWidget::LineChartWidget(QWidget *parent)
 
 void LineChartWidget::setData(const QVector<double> &data)
 {
-    m_data = data;
+    m_series = { data };
     update();
 }
 
 void LineChartWidget::setTitle(const QString &title)
 {
     m_title = title;
+    update();
+}
+
+void LineChartWidget::setSeries(const QVector<QVector<double>> &series)
+{
+    m_series = series;
+    update();
+}
+
+void LineChartWidget::setLabels(const QStringList &labels)
+{
+    m_labels = labels;
     update();
 }
 
@@ -38,9 +50,9 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     const double pad = 30.0;
     const double leftPad = 44.0;
     double plotLeft = leftPad;
-    double plotTop = pad;
+    double plotTop = pad + 42;
     double plotWidth = w - leftPad - pad;
-    double plotHeight = h - 2 * pad;
+    double plotHeight = h - plotTop - pad;
 
     if (!m_title.isEmpty()) {
         QFont titleFont = painter.font();
@@ -48,16 +60,35 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         titleFont.setPointSize(titleFont.pointSize() + 1);
         painter.setFont(titleFont);
         painter.setPen(QColor(90, 90, 90));
-        painter.drawText(QRectF(plotLeft, 6, plotWidth, 18),
+        painter.drawText(QRectF(plotLeft, 16, plotWidth, 18),
                          Qt::AlignLeft | Qt::AlignVCenter,
                          m_title);
         painter.setFont(QFont());
     }
 
-
     // if no data no graph
-    if (m_data.isEmpty())
+    if (m_series.isEmpty())
         return;
+
+    const QVector<QColor> palette = {
+        QColor("#89B6A5"),
+        QColor("#48679c"),
+        QColor("#768eb6"),
+        QColor("#617ba8")
+    };
+
+    double legendX = plotLeft;
+    const double legendY = 48;
+    for (int i = 0; i < m_labels.size(); ++i) {
+        painter.setPen(QPen(palette[i % palette.size()], 2));
+        painter.drawLine(QPointF(legendX, legendY), QPointF(legendX + 14, legendY));
+        legendX += 20;
+
+        painter.setPen(QColor(120, 120, 120));
+        QRectF textRect(legendX, legendY - 8, 60, 16);
+        painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, m_labels[i]);
+        legendX += painter.fontMetrics().horizontalAdvance(m_labels[i]) + 16;
+    }
 
 
     // TODO: make the Y scale configurable per chart (0-100 for CPU %,
@@ -89,14 +120,25 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
                          xLabels[i]);
     }
 
-    QPolygonF points;
-    for (int i = 0; i < m_data.size(); ++i) {
-        double x = plotLeft + i * (plotWidth / (m_data.size() - 1));
-        double y = plotTop + plotHeight - (m_data[i] - minVal) / (maxVal - minVal) * plotHeight; // in pixels (*h)
-        points << QPointF(x, y); // store the point
+
+    painter.setBrush(Qt::NoBrush); // got out the for
+
+    //
+    for (int s = 0; s < m_series.size(); ++s) {
+        const QVector<double> &serie = m_series[s];
+        if (serie.size() < 2)
+            continue;
+
+        QPolygonF points;
+        for (int i = 0; i < serie.size(); ++i) {
+            double x = plotLeft + i * (plotWidth / (serie.size() - 1));
+            double y = plotTop + plotHeight - (serie[i] - minVal) / (maxVal - minVal) * plotHeight;
+            points << QPointF(x, y);
+        }
+
+        painter.setPen(QPen(palette[s % palette.size()], 2));
+        painter.drawPolyline(points);
     }
 
-    painter.setBrush(Qt::NoBrush);
-    painter.setPen(QPen(QColor("#89B6A5"), 2));
-    painter.drawPolyline(points);
+
 }

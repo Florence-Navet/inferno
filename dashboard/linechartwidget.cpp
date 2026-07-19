@@ -40,7 +40,11 @@ void LineChartWidget::setFilled(const QVector<int> &indices)
     m_filled = indices;
     update();
 }
-
+void LineChartWidget::setTopRight(const QString &text)
+{
+    m_topRight = text;
+    update();
+}
 void LineChartWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
@@ -74,6 +78,13 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
                          Qt::AlignLeft | Qt::AlignVCenter,
                          m_title);
         painter.setFont(QFont());
+    }
+
+    if (!m_topRight.isEmpty()) {
+        painter.setPen(QColor(120, 120, 120));
+        painter.drawText(QRectF(plotLeft, 16, plotWidth, 18),
+                         Qt::AlignRight | Qt::AlignVCenter,
+                         m_topRight);
     }
 
     // if no data no graph

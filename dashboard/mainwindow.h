@@ -56,12 +56,12 @@ private:
     /// Creates one metric card (title + big value + subtitle).
     QWidget *createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle);
 
-    /// Creates a ready-to-use line chart (title + series + legend labels).
     LineChartWidget *createChart(const QString &title,
                                  const QVector<QVector<double>> &series,
                                  const QStringList &labels,
                                  const QVector<int> &dashed = {},
-                                 const QVector<int> &filled = {});
+                                 const QVector<int> &filled = {},
+                                 const QString &topRight = {});
 
     /// Creates a QLabel with the given text and object name.
     QLabel *makeLabel(const QString &text, const QString &objectName);

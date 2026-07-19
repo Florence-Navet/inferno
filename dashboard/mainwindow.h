@@ -60,7 +60,8 @@ private:
     LineChartWidget *createChart(const QString &title,
                                  const QVector<QVector<double>> &series,
                                  const QStringList &labels,
-                                 const QVector<int> &dashed = {});
+                                 const QVector<int> &dashed = {},
+                                 const QVector<int> &filled = {});
 
     /// Creates a QLabel with the given text and object name.
     QLabel *makeLabel(const QString &text, const QString &objectName);

@@ -35,6 +35,11 @@ void LineChartWidget::setDashed(const QVector<int> &indices)
     m_dashed = indices;
     update();
 }
+void LineChartWidget::setFilled(const QVector<int> &indices)
+{
+    m_filled = indices;
+    update();
+}
 
 void LineChartWidget::paintEvent(QPaintEvent *event)
 {
@@ -147,6 +152,19 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         painter.setPen(pen);
 
         painter.drawPolyline(points);
+
+        if (m_filled.contains(s)) {
+            QPolygonF area = points;
+            double bottom = plotTop + plotHeight;
+            area << QPointF(plotLeft + plotWidth, bottom);
+            area << QPointF(plotLeft, bottom);
+
+            QColor fillColor = palette[s % palette.size()];
+            fillColor.setAlpha(40);
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(fillColor);
+            painter.drawPolygon(area);
+        }
     }
 
 

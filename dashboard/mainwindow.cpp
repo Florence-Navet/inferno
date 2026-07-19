@@ -94,7 +94,9 @@ void MainWindow::buildContentArea()
 
     chartsGrid->addWidget(createChart("Memory over time",
                                       { { 40, 42, 45, 44, 48, 50, 52, 55, 58 } },
-                                      { "used" }), 0, 1);
+                                      { "used" },
+                                      {},          // dashed: none
+                                      { 0 }), 0, 1);   // filled: series 0
 
     chartsGrid->addWidget(createChart("Network I/O — eth0",
                                       { { 30, 50, 40, 60, 55, 70, 50, 65, 45 },
@@ -143,7 +145,8 @@ QWidget *MainWindow::createMetricCard(const QString &key, const QString &title, 
 LineChartWidget *MainWindow::createChart(const QString &title,
                                          const QVector<QVector<double>> &series,
                                          const QStringList &labels,
-                                         const QVector<int> &dashed)
+                                         const QVector<int> &dashed,
+                                         const QVector<int> &filled)
 {
     LineChartWidget *chart = new LineChartWidget;
     chart->setMinimumHeight(200);
@@ -151,6 +154,7 @@ LineChartWidget *MainWindow::createChart(const QString &title,
     chart->setSeries(series);
     chart->setLabels(labels);
     chart->setDashed(dashed);
+    chart->setFilled(filled);
     return chart;
 }
 

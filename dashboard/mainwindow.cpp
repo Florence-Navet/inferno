@@ -6,7 +6,7 @@
 
 #include <QListWidgetItem>
 #include <QVector>
-
+#include <QGridLayout>
 #include <QFrame>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -76,29 +76,37 @@ void MainWindow::buildContentArea()
 {
     ui->contentLayout->insertWidget(0, createProcessTable());
 
-    LineChartWidget *chart = new LineChartWidget;
-    chart->setMinimumHeight(200);
-    chart->setTitle("CPU — per core (last 20 s)");
-    // TODO: replace hardcoded series with real per-core CPU history.
-    // Server sends one MetricsSample per second (METRICS_INTERVAL_MS);
-    // each sample.cpu.per_core is a vector<float> (one value per core).
-    // Append each core's value to a rolling history, then setSeries it.
-    // Labels can be built as "core0".."coreN" from per_core.size().
-    chart->setSeries({
-        { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
-        { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
-        { 55, 60, 58, 65, 70, 68, 72, 75, 70 },
-        { 10, 12, 15, 14, 18, 16, 20, 22, 19 }
-    });
-    chart->setLabels({ "core0", "core1", "core2", "core3" });
-    chart->setSeries({
-        { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
-        { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
-        { 55, 60, 58, 65, 70, 68, 72, 75, 70 },
-        { 10, 12, 15, 14, 18, 16, 20, 22, 19 }
-    });
-    chart->setLabels({ "core0", "core1", "core2", "core3" });
-    ui->contentLayout->insertWidget(0, chart);
+    QGridLayout *chartsGrid = new QGridLayout;
+
+    // TODO: replace hardcoded series with real metrics history from the server.
+    // One MetricsSample per second (METRICS_INTERVAL_MS); build a rolling history per chart:
+    //   CPU:     sample.cpu.per_core        (vector<float>, one value per core)
+    //   Memory:  sample.mem.phys_used/total (uint64_t bytes, convert to GB)
+    //   Network: sample.interfaces[].rx/tx_bytes_per_sec (float)
+    //   Disk:    sample.disks[].read/write_bytes_per_sec (float)
+    // Then setSeries each with its rolling history.
+    chartsGrid->addWidget(createChart("CPU — per core (last 20 s)",
+                                      { { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
+                                       { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
+                                       { 55, 60, 58, 65, 70, 68, 72, 75, 70 },
+                                       { 10, 12, 15, 14, 18, 16, 20, 22, 19 } },
+                                      { "core0", "core1", "core2", "core3" }), 0, 0);
+
+    chartsGrid->addWidget(createChart("Memory over time",
+                                      { { 40, 42, 45, 44, 48, 50, 52, 55, 58 } },
+                                      { "used" }), 0, 1);
+
+    chartsGrid->addWidget(createChart("Network I/O — eth0",
+                                      { { 30, 50, 40, 60, 55, 70, 50, 65, 45 },
+                                       { 10, 15, 12, 18, 14, 20, 16, 22, 18 } },
+                                      { "rx", "tx" }), 1, 0);
+
+    chartsGrid->addWidget(createChart("Disk I/O — sda",
+                                      { { 20, 35, 30, 45, 40, 55, 35, 50, 40 },
+                                       { 5, 8, 6, 10, 7, 12, 8, 14, 9 } },
+                                      { "read", "write" }), 1, 1);
+
+    ui->contentLayout->insertLayout(0, chartsGrid);
 
     // TODO: build metric cards, process table
     QHBoxLayout *metricsRow = new QHBoxLayout;
@@ -129,6 +137,18 @@ QWidget *MainWindow::createMetricCard(const QString &key, const QString &title, 
 
 
     return card;
+}
+
+LineChartWidget *MainWindow::createChart(const QString &title,
+                                         const QVector<QVector<double>> &series,
+                                         const QStringList &labels)
+{
+    LineChartWidget *chart = new LineChartWidget;
+    chart->setMinimumHeight(200);
+    chart->setTitle(title);
+    chart->setSeries(series);
+    chart->setLabels(labels);
+    return chart;
 }
 
 

@@ -19,6 +19,8 @@ set(PROJECT_SOURCES
         mainwindow.ui
         agentitemwidget.cpp
         agentitemwidget.h
+        linechartwidget.cpp
+        linechartwidget.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

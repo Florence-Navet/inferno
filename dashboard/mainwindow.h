@@ -75,5 +75,8 @@ private:
 
     /// Creates a thin horizontal separator line.
     QWidget *createSeparator();
+
+    /// Fills the bottom status bar. TODO: feed with live server status.
+    void buildStatusBar();
 };
 #endif // MAINWINDOW_H

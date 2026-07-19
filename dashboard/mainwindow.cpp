@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     buildContentArea();
 
+    buildStatusBar();
+
 
 
     qDebug() << "target:" << m_target;
@@ -141,6 +143,21 @@ QWidget *MainWindow::createProcessRow(const ProcessInfo &process, bool isHeader)
 
 
     return row;
+}
+
+void MainWindow::buildStatusBar()
+{
+    ui->statusbar->setStyleSheet(
+        "QStatusBar { background-color: #4C3B4D; }"
+        "QStatusBar::item { border: none; }"
+        "QLabel#statusItem { color: #b8b2bd; font-size: 12px; padding: 2px 12px; }");
+
+    ui->statusbar->setContentsMargins(280, 0, 16, 0);
+    // TODO: replace hardcoded values with live server status
+    ui->statusbar->addWidget(makeLabel("● 4 agents online", "statusItem"));
+    ui->statusbar->addWidget(makeLabel("last sample: 0.3 s ago", "statusItem"));
+    ui->statusbar->addWidget(makeLabel("db: PostgreSQL connected", "statusItem"));
+    ui->statusbar->addPermanentWidget(makeLabel("v1.0.0", "statusItem"));
 }
 
 QWidget *MainWindow::createProcessTable()

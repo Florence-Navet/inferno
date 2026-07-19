@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 
 #include "agentitemwidget.h"
+#include "linechartwidget.h"
 
 #include <QListWidgetItem>
 #include <QVector>
@@ -74,6 +75,15 @@ void MainWindow::populateAgents()
 void MainWindow::buildContentArea()
 {
     ui->contentLayout->insertWidget(0, createProcessTable());
+
+    LineChartWidget *chart = new LineChartWidget;
+    chart->setMinimumHeight(200);
+    // TODO: replace hardcoded series with real CPU history.
+    // Server sends one MetricsSample per second (METRICS_INTERVAL_MS);
+    // append sample.cpu.total_percent to a rolling history, then setData it.
+    chart->setData({ 30, 45, 40, 60, 55, 50, 65, 70, 60 });
+    ui->contentLayout->insertWidget(0, chart);
+
     // TODO: build metric cards, process table
     QHBoxLayout *metricsRow = new QHBoxLayout;
     metricsRow->addWidget(createMetricCard("cpu", "CPU overall", "34%", "4 cores"));

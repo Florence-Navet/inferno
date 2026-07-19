@@ -2,6 +2,7 @@
 #include "./ui_mainwindow.h"
 
 #include "agentitemwidget.h"
+#include "linechartwidget.h"
 
 #include <QListWidgetItem>
 #include <QVector>
@@ -24,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     populateAgents();
 
     buildContentArea();
+
+    buildStatusBar();
 
 
 
@@ -72,6 +75,16 @@ void MainWindow::populateAgents()
 void MainWindow::buildContentArea()
 {
     ui->contentLayout->insertWidget(0, createProcessTable());
+
+    LineChartWidget *chart = new LineChartWidget;
+    chart->setMinimumHeight(200);
+    chart->setTitle("CPU — per core (last 20 s)");
+    // TODO: replace hardcoded series with real CPU history.
+    // Server sends one MetricsSample per second (METRICS_INTERVAL_MS);
+    // append sample.cpu.total_percent to a rolling history, then setData it.
+    chart->setData({ 30, 45, 40, 60, 55, 50, 65, 70, 60 });
+    ui->contentLayout->insertWidget(0, chart);
+
     // TODO: build metric cards, process table
     QHBoxLayout *metricsRow = new QHBoxLayout;
     metricsRow->addWidget(createMetricCard("cpu", "CPU overall", "34%", "4 cores"));
@@ -143,6 +156,25 @@ QWidget *MainWindow::createProcessRow(const ProcessInfo &process, bool isHeader)
     return row;
 }
 
+void MainWindow::buildStatusBar()
+{
+    ui->statusbar->setStyleSheet(
+        "QStatusBar { background-color: #4C3B4D; }"
+        "QStatusBar::item { border: none; }"
+        "QLabel#statusItem { color: #b8b2bd; font-size: 12px; padding: 2px 12px; }");
+
+    ui->statusbar->setContentsMargins(280, 0, 16, 0);
+    // TODO: replace hardcoded values with live server status
+    // ui->statusbar->addWidget(makeLabel(QString("● %1 agents online").arg(ui->agentList->count()), "statusItem"));
+    ui->statusbar->addWidget(makeLabel("● 4 agents online", "statusItem"));
+    // TODO: show elapsed since last MetricsSample (arrives every METRICS_INTERVAL_MS)
+    ui->statusbar->addWidget(makeLabel("last sample: 0.3 s ago", "statusItem"));
+    // TODO: db status — no payload exposes it yet, to confirm with the server side
+    ui->statusbar->addWidget(makeLabel("db: PostgreSQL connected", "statusItem"));
+    // App version — static, not server-driven.
+    ui->statusbar->addPermanentWidget(makeLabel("v1.0.0", "statusItem"));
+}
+
 QWidget *MainWindow::createProcessTable()
 {
     QWidget *section = new QWidget;
@@ -172,13 +204,17 @@ QWidget *MainWindow::createProcessTable()
     // Fill loop: one grid row per process. Column order matches the header above.
     int row = 1;
     for (const ProcessInfo &p : processes) {
-        g->addWidget(makeLabel(p.pid, "processCell"), row, 0);
+        g->addWidget(makeLabel(p.pid, "processPid"), row, 0);
         g->addWidget(makeLabel(p.name, "processCell"), row, 1);
         g->addWidget(makeLabel(p.cpuPercent, "processCell"), row, 2);
         g->addWidget(createBar(p.cpuValue), row, 3);
         g->addWidget(makeLabel(p.memPercent, "processCell"), row, 4);
         g->addWidget(createBar(p.memValue), row, 5);
         g->addWidget(makeLabel(p.status, "processStatus"), row, 6);
+        ++row;
+
+        // Separator line spanning all 7 columns
+        g->addWidget(createSeparator(), row, 0, 1, 7);
         ++row;
     }
 
@@ -193,9 +229,18 @@ QWidget *MainWindow::createBar(int value)
     bar->setRange(0, 100);
     bar->setValue(value);
     bar->setTextVisible(false);
-    bar->setFixedHeight(10);
+    bar->setFixedHeight(6);
+    bar->setMaximumWidth(140);
     bar->setProperty("high", value >= 50);   // ← more when >=50 the color change
     return bar;
+}
+
+QWidget *MainWindow::createSeparator()
+{
+    QWidget *line = new QWidget;
+    line->setObjectName("processSeparator");
+    line->setFixedHeight(1);
+    return line;
 }
 void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)
 {

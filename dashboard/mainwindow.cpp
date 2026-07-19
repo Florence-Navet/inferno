@@ -262,6 +262,10 @@ QWidget *MainWindow::createProcessTable()
         ++row;
     }
 
+    // Footer row: hint that more rows exist (static, matches the mockup).
+    g->addWidget(makeLabel("...  more rows", "processFooter"), row, 0, 1, 3);
+    g->addWidget(makeLabel("scroll to load more", "processFooter"), row, 4, 1, 3);
+
     outer->addWidget(grid);
     return section;
 }

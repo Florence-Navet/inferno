@@ -189,6 +189,10 @@ QLabel#processHeaderCell {
 color: #9aa0a0;
 font-size: 12px;
 }
+QLabel#processFooter {
+color: #9aa0a0;
+font-size: 12px;
+}
 QProgressBar#processBar {
 background-color: #e8ebe9;
 border: none;

@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QVector>
+#include <QString>
 
 class LineChartWidget : public QWidget
 {
@@ -11,12 +12,15 @@ class LineChartWidget : public QWidget
 public:
     explicit LineChartWidget(QWidget *parent = nullptr);
     void setData(const QVector<double> &data);
+     void setTitle(const QString &title);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
     QVector<double> m_data;
+    QString m_title;
+
 };
 
 #endif // LINECHARTWIDGET_H

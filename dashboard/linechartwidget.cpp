@@ -13,6 +13,12 @@ void LineChartWidget::setData(const QVector<double> &data)
     update();
 }
 
+void LineChartWidget::setTitle(const QString &title)
+{
+    m_title = title;
+    update();
+}
+
 void LineChartWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
@@ -25,9 +31,6 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     painter.setBrush(QColor(255, 255, 255));
     painter.drawRoundedRect(card, 12, 12);
 
-    // if no data no graph
-    if (m_data.isEmpty())
-        return;
 
     double w = width();
     double h = height();
@@ -38,6 +41,24 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     double plotTop = pad;
     double plotWidth = w - leftPad - pad;
     double plotHeight = h - 2 * pad;
+
+    if (!m_title.isEmpty()) {
+        QFont titleFont = painter.font();
+        titleFont.setBold(true);
+        titleFont.setPointSize(titleFont.pointSize() + 1);
+        painter.setFont(titleFont);
+        painter.setPen(QColor(90, 90, 90));
+        painter.drawText(QRectF(plotLeft, 6, plotWidth, 18),
+                         Qt::AlignLeft | Qt::AlignVCenter,
+                         m_title);
+        painter.setFont(QFont());
+    }
+
+
+    // if no data no graph
+    if (m_data.isEmpty())
+        return;
+
 
     // TODO: make the Y scale configurable per chart (0-100 for CPU %,
     // but GB for memory, MB/s for I/O). Hardcoded to percentages for now.
@@ -57,6 +78,15 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         painter.drawText(QRectF(0, y - 8, plotLeft - 4, 16),
                          Qt::AlignRight | Qt::AlignVCenter,
                          QString::number(percent) + "%");
+    }
+
+    const QStringList xLabels = { "-20s", "-10s", "now" };
+    painter.setPen(QColor(120, 120, 120));
+    for (int i = 0; i < xLabels.size(); ++i) {
+        double x = plotLeft + (plotWidth / 2) * i;
+        painter.drawText(QRectF(x - 30, plotTop + plotHeight + 4, 60, 16),
+                         Qt::AlignCenter,
+                         xLabels[i]);
     }
 
     QPolygonF points;

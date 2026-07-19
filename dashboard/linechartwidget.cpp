@@ -32,15 +32,37 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     double w = width();
     double h = height();
 
+    const double pad = 30.0;
+    const double leftPad = 44.0;
+    double plotLeft = leftPad;
+    double plotTop = pad;
+    double plotWidth = w - leftPad - pad;
+    double plotHeight = h - 2 * pad;
+
     // TODO: make the Y scale configurable per chart (0-100 for CPU %,
     // but GB for memory, MB/s for I/O). Hardcoded to percentages for now.
     double minVal = 0.0;
     double maxVal = 100.0;
 
+    //hache et graduation
+
+    for (int i = 0; i <= 2; ++i) {
+        double y = plotTop + (plotHeight / 2) * i;
+
+        painter.setPen(QPen(QColor(229, 229, 229), 1));
+        painter.drawLine(QPointF(plotLeft, y), QPointF(plotLeft + plotWidth, y));
+
+        int percent = 100 - i * 50;
+        painter.setPen(QColor(120, 120, 120));
+        painter.drawText(QRectF(0, y - 8, plotLeft - 4, 16),
+                         Qt::AlignRight | Qt::AlignVCenter,
+                         QString::number(percent) + "%");
+    }
+
     QPolygonF points;
     for (int i = 0; i < m_data.size(); ++i) {
-        double x = i * (w / (m_data.size() - 1));
-        double y = h - (m_data[i] - minVal) / (maxVal - minVal) * h; // in pixels (*h)
+        double x = plotLeft + i * (plotWidth / (m_data.size() - 1));
+        double y = plotTop + plotHeight - (m_data[i] - minVal) / (maxVal - minVal) * plotHeight; // in pixels (*h)
         points << QPointF(x, y); // store the point
     }
 

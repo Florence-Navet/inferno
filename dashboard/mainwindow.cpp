@@ -164,9 +164,13 @@ void MainWindow::buildStatusBar()
 
     ui->statusbar->setContentsMargins(280, 0, 16, 0);
     // TODO: replace hardcoded values with live server status
+    // ui->statusbar->addWidget(makeLabel(QString("● %1 agents online").arg(ui->agentList->count()), "statusItem"));
     ui->statusbar->addWidget(makeLabel("● 4 agents online", "statusItem"));
+    // TODO: show elapsed since last MetricsSample (arrives every METRICS_INTERVAL_MS)
     ui->statusbar->addWidget(makeLabel("last sample: 0.3 s ago", "statusItem"));
+    // TODO: db status — no payload exposes it yet, to confirm with the server side
     ui->statusbar->addWidget(makeLabel("db: PostgreSQL connected", "statusItem"));
+    // App version — static, not server-driven.
     ui->statusbar->addPermanentWidget(makeLabel("v1.0.0", "statusItem"));
 }
 

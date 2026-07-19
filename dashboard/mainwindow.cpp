@@ -95,8 +95,9 @@ void MainWindow::buildContentArea()
     chartsGrid->addWidget(createChart("Memory over time",
                                       { { 40, 42, 45, 44, 48, 50, 52, 55, 58 } },
                                       { "used" },
-                                      {},          // dashed: none
-                                      { 0 }), 0, 1);   // filled: series 0
+                                      {},            // dashed: none
+                                      { 0 },         // filled: series 0
+                                      "16 GB total"), 0, 1);
 
     chartsGrid->addWidget(createChart("Network I/O — eth0",
                                       { { 30, 50, 40, 60, 55, 70, 50, 65, 45 },
@@ -146,7 +147,8 @@ LineChartWidget *MainWindow::createChart(const QString &title,
                                          const QVector<QVector<double>> &series,
                                          const QStringList &labels,
                                          const QVector<int> &dashed,
-                                         const QVector<int> &filled)
+                                         const QVector<int> &filled,
+                                         const QString &topRight)
 {
     LineChartWidget *chart = new LineChartWidget;
     chart->setMinimumHeight(200);
@@ -155,6 +157,7 @@ LineChartWidget *MainWindow::createChart(const QString &title,
     chart->setLabels(labels);
     chart->setDashed(dashed);
     chart->setFilled(filled);
+    chart->setTopRight(topRight);
     return chart;
 }
 

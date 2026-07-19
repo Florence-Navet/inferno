@@ -72,5 +72,8 @@ private:
 
     /// Creates a mini progress bar (0-100) for the process table.
     QWidget *createBar(int value);
+
+    /// Creates a thin horizontal separator line.
+    QWidget *createSeparator();
 };
 #endif // MAINWINDOW_H

@@ -172,13 +172,17 @@ QWidget *MainWindow::createProcessTable()
     // Fill loop: one grid row per process. Column order matches the header above.
     int row = 1;
     for (const ProcessInfo &p : processes) {
-        g->addWidget(makeLabel(p.pid, "processCell"), row, 0);
+        g->addWidget(makeLabel(p.pid, "processPid"), row, 0);
         g->addWidget(makeLabel(p.name, "processCell"), row, 1);
         g->addWidget(makeLabel(p.cpuPercent, "processCell"), row, 2);
         g->addWidget(createBar(p.cpuValue), row, 3);
         g->addWidget(makeLabel(p.memPercent, "processCell"), row, 4);
         g->addWidget(createBar(p.memValue), row, 5);
         g->addWidget(makeLabel(p.status, "processStatus"), row, 6);
+        ++row;
+
+        // Separator line spanning all 7 columns
+        g->addWidget(createSeparator(), row, 0, 1, 7);
         ++row;
     }
 
@@ -193,9 +197,18 @@ QWidget *MainWindow::createBar(int value)
     bar->setRange(0, 100);
     bar->setValue(value);
     bar->setTextVisible(false);
-    bar->setFixedHeight(10);
+    bar->setFixedHeight(6);
+    bar->setMaximumWidth(140);
     bar->setProperty("high", value >= 50);   // ← more when >=50 the color change
     return bar;
+}
+
+QWidget *MainWindow::createSeparator()
+{
+    QWidget *line = new QWidget;
+    line->setObjectName("processSeparator");
+    line->setFixedHeight(1);
+    return line;
 }
 void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)
 {

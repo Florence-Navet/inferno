@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="styleSheet">
-    <string notr="true">QWidget#centralwidget {
+    <string notr="true">QWidget#centralwidget, QWidget#contentArea, QWidget#mainPanel {
     background-color: #F4F6F5;
 }
 QListWidget, QListView {

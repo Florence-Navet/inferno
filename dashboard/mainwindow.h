@@ -59,7 +59,8 @@ private:
     /// Creates a ready-to-use line chart (title + series + legend labels).
     LineChartWidget *createChart(const QString &title,
                                  const QVector<QVector<double>> &series,
-                                 const QStringList &labels);
+                                 const QStringList &labels,
+                                 const QVector<int> &dashed = {});
 
     /// Creates a QLabel with the given text and object name.
     QLabel *makeLabel(const QString &text, const QString &objectName);

@@ -78,6 +78,7 @@ void MainWindow::buildContentArea()
 
     LineChartWidget *chart = new LineChartWidget;
     chart->setMinimumHeight(200);
+    chart->setTitle("CPU — per core (last 20 s)");
     // TODO: replace hardcoded series with real CPU history.
     // Server sends one MetricsSample per second (METRICS_INTERVAL_MS);
     // append sample.cpu.total_percent to a rolling history, then setData it.

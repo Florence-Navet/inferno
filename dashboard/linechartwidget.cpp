@@ -30,6 +30,11 @@ void LineChartWidget::setLabels(const QStringList &labels)
     m_labels = labels;
     update();
 }
+void LineChartWidget::setDashed(const QVector<int> &indices)
+{
+    m_dashed = indices;
+    update();
+}
 
 void LineChartWidget::paintEvent(QPaintEvent *event)
 {
@@ -136,7 +141,11 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
             points << QPointF(x, y);
         }
 
-        painter.setPen(QPen(palette[s % palette.size()], 2));
+        QPen pen(palette[s % palette.size()], 2);
+        if (m_dashed.contains(s))
+            pen.setStyle(Qt::DashLine);
+        painter.setPen(pen);
+
         painter.drawPolyline(points);
     }
 

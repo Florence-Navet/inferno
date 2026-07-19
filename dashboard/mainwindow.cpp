@@ -99,7 +99,8 @@ void MainWindow::buildContentArea()
     chartsGrid->addWidget(createChart("Network I/O — eth0",
                                       { { 30, 50, 40, 60, 55, 70, 50, 65, 45 },
                                        { 10, 15, 12, 18, 14, 20, 16, 22, 18 } },
-                                      { "rx", "tx" }), 1, 0);
+                                      { "rx", "tx" },
+                                      { 1 }), 1, 0);
 
     chartsGrid->addWidget(createChart("Disk I/O — sda",
                                       { { 20, 35, 30, 45, 40, 55, 35, 50, 40 },
@@ -141,16 +142,17 @@ QWidget *MainWindow::createMetricCard(const QString &key, const QString &title, 
 
 LineChartWidget *MainWindow::createChart(const QString &title,
                                          const QVector<QVector<double>> &series,
-                                         const QStringList &labels)
+                                         const QStringList &labels,
+                                         const QVector<int> &dashed)
 {
     LineChartWidget *chart = new LineChartWidget;
     chart->setMinimumHeight(200);
     chart->setTitle(title);
     chart->setSeries(series);
     chart->setLabels(labels);
+    chart->setDashed(dashed);
     return chart;
 }
-
 
 void MainWindow::updateMetric(const QString &key, const QString &value)
 {

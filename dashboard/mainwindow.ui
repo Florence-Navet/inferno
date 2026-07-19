@@ -178,6 +178,12 @@ border-radius: 8px;
 QLabel#processCell {
 color: #4C3B4D;
 font-size: 13px;
+font-weight: 700;
+}
+QLabel#processPid {
+color: #4C3B4D;
+font-size: 13px;
+font-weight: normal;
 }
 QLabel#processHeaderCell {
 color: #9aa0a0;
@@ -186,11 +192,11 @@ font-size: 12px;
 QProgressBar#processBar {
 background-color: #e8ebe9;
 border: none;
-border-radius: 4px;
+border-radius: 3px;
 }
 QProgressBar#processBar::chunk {
 background-color: #7fae94;
-border-radius: 4px;
+border-radius: 3px;
 }
 QProgressBar#processBar[high="true"]::chunk {
 background-color: #e0b062;
@@ -198,6 +204,9 @@ background-color: #e0b062;
 QLabel#processStatus {
 color: #5a9b78;
 font-size: 13px;
+}
+QWidget#processSeparator {
+background-color: #eef0ef;
 }</string>
    </property>
    <layout class="QHBoxLayout" name="horizontalLayout">

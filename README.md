@@ -184,6 +184,62 @@ To start the complete project:
 
 ```bash
 docker compose --profile server --profile agent --profile dashboard up --build
+
+```
+
+---
+
+### Linux
+
+Linux users do not need XLaunch.
+
+First, check that the graphical display is available:
+
+```bash
+echo $DISPLAY
+```
+
+The command should return a value such as `:0` or `:1`.
+
+Allow the Docker container to access the graphical display:
+
+```bash
+xhost +SI:localuser:root
+```
+
+Then start the server and the Qt dashboard using the Linux Compose configuration:
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.linux.yml \
+  --profile server \
+  --profile dashboard \
+  up --build
+```
+
+To start the complete project with an agent:
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.linux.yml \
+  --profile server \
+  --profile agent \
+  --profile dashboard \
+  up --build
+```
+
+After stopping the project, revoke the graphical display permission:
+
+```bash
+xhost -SI:localuser:root
+```
+
+If the `xhost` command is not installed:
+
+```bash
+sudo apt install x11-xserver-utils
 ```
 
 ## How to build

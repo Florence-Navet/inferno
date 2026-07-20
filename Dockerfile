@@ -18,7 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     file \
     # Quality of life
     git \
-    libssl-dev \ 
+    qt6-base-dev \
+    qt6-base-dev-tools \
+    qt6-qpa-plugins \
+    libssl-dev \
+    libxcb-cursor0 \
+    libxkbcommon-x11-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

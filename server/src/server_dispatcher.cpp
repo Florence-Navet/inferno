@@ -89,7 +89,13 @@ void ServerDispatcher::onDashboardRegister(
   agentsList.subtype = DataType::AGENTS;
   std::vector<std::uint8_t> dataPayload;
 
+  //  int dashboardFd = dashboard.getFd();  
+  int dashboardFd = sessionManager_.getDashboardFd();
+
   for (const auto& entry : sessionManager_.getAgents()) {
+
+    if (entry.first == dashboardFd) continue; // skip dashboard as an agent, dashboardFd can be = -1 at this point though
+
     const AgentConnection& agent = entry.second;
     RegisterPayload registration;
     // registration.id = agent.getId();

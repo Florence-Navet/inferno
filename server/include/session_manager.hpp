@@ -18,14 +18,16 @@ class SessionManager {
       targetByFd_;  // agent id currently hostname, filedescriptor
 
  public:
- const std::unordered_map<int, AgentConnection>& getAgents() const;
+  const std::unordered_map<int, AgentConnection>& getAgents() const;
+  int getDashboardFd();
   void addAgent(int fileDescriptor, std::unique_ptr<ISocket> incoming);
   void recordAgentTarget(int fd, const std::string& target);
   void deleteAgentTarget(int fd, const std::string& target);
   AgentConnection& getAgent(int fileDescriptor);
   bool isDashboard();
   void setDashboardFd(int fileDescriptor);
-//   int getDashboardFd();
+  void resetDashboard();
+  //   int getDashboardFd();
   AgentConnection& getDashboard();
   std::string getTargetByFd(int fileDescriptor);
   int getFdByTarget(const std::string& target);

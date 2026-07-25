@@ -30,10 +30,17 @@ bool SessionManager::isDashboard() {
 }
 
 void SessionManager::setDashboardFd(int fileDescriptor) {
+  if (dashboardFd_ != -1 ) return; // set it once
   dashboardFd_ = fileDescriptor;
 }
 
-// int SessionManager::getDashboardFd() { return dashboardFd_; }
+void SessionManager::resetDashboard() {
+  if (dashboardFd_ == -1) return;
+  deleteAgentTarget(dashboardFd_, getTargetByFd(dashboardFd_));
+  dashboardFd_ = -1;
+}
+
+int SessionManager::getDashboardFd() { return dashboardFd_ ; }
 
 AgentConnection& SessionManager::getDashboard() {
   return agents_.at(dashboardFd_);

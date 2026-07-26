@@ -12,6 +12,8 @@ enum class ErrorType : std::uint8_t {
   UNKNOWN_COMMAND = 2,
   EXECUTION_FAILED = 3,
   SIZE_EXCEEDED = 4,
+  INVALID_TYPE = 5,
+  NOT_IMPLEMENTED = 6,
   UNKNOWN  // must be the last one
 };
 

@@ -13,7 +13,8 @@
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher(SessionManager& manager) : sessionManager_(manager) {};
+  explicit ServerDispatcher(SessionManager& manager)
+      : sessionManager_(manager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -34,6 +35,11 @@ class ServerDispatcher : public Dispatcher {
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);
 
+  void onDashboardCommand(AgentConnection& dashboard,
+                          const std::vector<std::uint8_t>& payload);
+
+  void onDisconnect(AgentConnection& connection);
+
   void sendDisconnect(AgentConnection& agent);
 
   std::uint32_t nextId();
@@ -46,9 +52,12 @@ class ServerDispatcher : public Dispatcher {
   std::map<std::uint16_t, IncompleteResponse>
       pendingResponses_;  // keyed by response id
 
-  void processCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
+  void processCompleteResponse(AgentConnection& agent,
+                               const ResponsePayload& response);
   void createResponseEntry(const ResponsePayload& response);
-  void tryCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
+  void tryCompleteResponse(AgentConnection& agent,
+                           const ResponsePayload& response);
+
   std::uint32_t nextCmdId_ = 0;
 };
 

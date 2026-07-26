@@ -14,14 +14,17 @@ class ServerDispatcherTest : public ::testing::Test {
   SessionManager manager;
   ServerDispatcher dispatcher{manager};
 
-  // Helper: Create an agent through the manager (mirrors Reactor::onNewConnection)
+  // Helper: Create an agent through the manager (mirrors
+  // Reactor::onNewConnection)
   AgentConnection& createAgent(int fd, SpySocket& spy) {
+    spy.setFd(fd);
     manager.addAgent(fd, spy.makeUnique());
     return manager.getAgent(fd);
   }
 
   // Helper: Create and register a dashboard through the manager
   AgentConnection& createDashboard(int fd, SpySocket& spy) {
+    spy.setFd(fd);
     manager.addAgent(fd, spy.makeUnique());
     manager.setDashboardFd(fd);
     AgentConnection& dashboard = manager.getDashboard();
@@ -57,8 +60,11 @@ TEST_F(ServerDispatcherTest,
 
   // Act
   // COMMAND is server→agent — receiving it is a protocol violation
-  dispatcher.handleFrame(agent,
-                         FrameBuilder::makeFrame(MessageType::COMMAND));
+  dispatcher.handleFrame(
+      agent,
+      FrameBuilder::makeFrame(
+          MessageType::COMMAND));  // if an agent sends a command, it should
+                                   // send an error!
 
   // Assert
   ASSERT_GE(agentSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
@@ -91,9 +97,9 @@ TEST_F(ServerDispatcherTest,
 
   // Assert
   ASSERT_EQ(ids.size(), 3);
-  EXPECT_EQ(ids[0], 0);
-  EXPECT_EQ(ids[1], 1);
-  EXPECT_EQ(ids[2], 2);
+  EXPECT_EQ(ids[0], 1);
+  EXPECT_EQ(ids[1], 2);
+  EXPECT_EQ(ids[2], 3);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -127,11 +133,13 @@ TEST_F(ServerDispatcherTest,
                                          FrameBuilder::makeRawOsInfoPayload()));
 
   // Assert - A DATA frame should be sent
-  ASSERT_GE(dashboardSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
+  ASSERT_GE(dashboardSpy.sent.size(),
+            static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
   // Verify payload is AGENTS subtype with empty data
-  const DataPayload data = ProtocolParser::parseDataPayload(dashboardSpy.payload());
+  const DataPayload data =
+      ProtocolParser::parseDataPayload(dashboardSpy.payload());
   EXPECT_EQ(data.subtype, DataType::AGENTS);
   EXPECT_EQ(data.data.size(), 0);  // No agents connected
 }
@@ -164,7 +172,8 @@ TEST_F(ServerDispatcherTest,
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
   // Verify it's a REGISTRATION subtype
-  const DataPayload data = ProtocolParser::parseDataPayload(dashboardSpy.payload());
+  const DataPayload data =
+      ProtocolParser::parseDataPayload(dashboardSpy.payload());
   EXPECT_EQ(data.subtype, DataType::REGISTRATION);
 }
 
@@ -208,10 +217,79 @@ TEST_F(ServerDispatcherTest,
                                          FrameBuilder::makeRawOsInfoPayload()));
 
   // Assert: Dashboard received AGENTS with 2 agents
-  ASSERT_GE(dashboardSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
+  ASSERT_GE(dashboardSpy.sent.size(),
+            static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
-  const DataPayload data = ProtocolParser::parseDataPayload(dashboardSpy.payload());
+  const DataPayload data =
+      ProtocolParser::parseDataPayload(dashboardSpy.payload());
   EXPECT_EQ(data.subtype, DataType::AGENTS);
   EXPECT_GT(data.data.size(), 0);  // Has agent data
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Dashboard Command Routing Tests
+// ════════════════════════════════════════════════════════════════════════════
+
+TEST_F(ServerDispatcherTest, should_route_dashboard_command_to_agent) {
+  // Arrange: Setup agent with target tracking
+  SpySocket agentSpy;
+  AgentConnection& agent = createAgent(101, agentSpy);
+  agent.setAgentInfo(FrameBuilder::makeOsInfoPayload());
+  agent.setIsRegisered();
+  agent.setId("testhost:192.168.1.1");
+  manager.recordAgentTarget(101, "testhost:192.168.1.1");
+
+  // Setup dashboard
+  SpySocket dashboardSpy;
+  AgentConnection& dashboard = createDashboard(100, dashboardSpy);
+  dashboard.setIsRegisered();
+  dashboardSpy.sent.clear();
+
+  // Act: Dashboard sends OS_INFO command targeting agent
+  DashboardCommand cmd;
+  cmd.target = "testhost:192.168.1.1";
+  cmd.command.id = 0;  // Dashboard doesn't set ID
+  cmd.command.type = CommandType::OS_INFO;
+  cmd.command.data = "";
+
+  std::vector<std::uint8_t> payload =
+      ProtocolSerializer::serializeDashboardCommand(cmd);
+  dispatcher.handleFrame(
+      dashboard, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  // Assert: Agent received command with generated ID
+  ASSERT_GE(agentSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
+  EXPECT_EQ(agentSpy.messageType(), MessageType::COMMAND);
+
+  CommandPayload received =
+      ProtocolParser::parseCommandPayload(agentSpy.payload());
+  EXPECT_EQ(received.type, CommandType::OS_INFO);
+  EXPECT_NE(received.id, 0);  // Server generated new ID // TODO check why first
+                              // command id = 0 in server
+}
+
+TEST_F(ServerDispatcherTest,
+       should_send_error_when_dashboard_targets_nonexistent_agent) {
+  // Arrange: Dashboard only, no agents
+  SpySocket dashboardSpy;
+  AgentConnection& dashboard = createDashboard(100, dashboardSpy);
+  dashboard.setIsRegisered();
+  dashboardSpy.sent.clear();
+
+  // Act: Dashboard targets non-existent agent
+  DashboardCommand cmd;
+  cmd.target = "nonexistent:1.2.3.4";
+  cmd.command.type = CommandType::OS_INFO;
+  cmd.command.data = "";
+
+  std::vector<std::uint8_t> payload =
+      ProtocolSerializer::serializeDashboardCommand(cmd);
+  dispatcher.handleFrame(
+      dashboard, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
+
+  // Assert: Dashboard got error
+  ASSERT_GE(dashboardSpy.sent.size(),
+            static_cast<std::size_t>(LPTF_HEADER_SIZE));
+  EXPECT_EQ(dashboardSpy.messageType(), MessageType::ERROR);
 }

@@ -12,53 +12,35 @@
 #include "socket/i_socket.hpp"
 
 void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
-  std::cout << "ENTER handleFrame\n";
-
   AgentConnection& connection = static_cast<AgentConnection&>(agent);
-  std::cout << "AFTER CAST\n";
-
   std::cout << "type = " << static_cast<int>(frame.header.type) << std::endl;
 
   switch (frame.header.type) {
     case MessageType::REGISTER:
-      std::cout << "REGISTER\n";
       onRegister(connection, frame.payload);
       break;
     case MessageType::DASHBOARD_REGISTER:
-      std::cout << "DASHBOARD REGISTER\n";
       onDashboardRegister(connection, frame.payload);
       break;
     case MessageType::RESPONSE:
-      std::cout << "RESPONSE\n";
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
-      std::cout << "DATA\n";
       onData(frame.payload);
       break;
     case MessageType::DISCONNECT:
-      std::cout << "DISCONNECT\n";
       onDisconnect(connection);
       break;
     case MessageType::ERROR:
-      std::cout << "ERROR\n";
       onError(frame.payload);
       break;
     case MessageType::COMMAND: {
-      std::cout << "COMMAND\n";
-      std::cout << "A\n";
-
       if (sessionManager_.isDashboardConnection(connection.getFd())) {
-        std::cout << "B\n";
         onDashboardCommand(connection, frame.payload);
-        std::cout << "C\n";
       } else {
-        std::cout << "D\n";
         sendError(connection, ErrorType::UNKNOWN_TYPE,
                   "Agents send RESPONSE, not COMMAND");
-        std::cout << "E\n";
       }
-
       break;
     }
     default:
@@ -75,14 +57,16 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   agent.setAgentInfo(agentInfo);
   agent.setIsRegisered();
-  agent.setId(agentInfo.hostname + ":" + agentInfo.ip);
+  // agent.setId(agentInfo.hostname + ":" + agentInfo.ip);
+  agent.setId(agentInfo.mac);
 
   std::ostringstream what;
   what << "[REGISTER] \nhostname : " << agentInfo.hostname
        << "\nuser : " << agentInfo.current_user
        << "\nos : " << static_cast<int>(agentInfo.os_type)
        << "\narch : " << static_cast<int>(agentInfo.arch)
-       << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip;
+       << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip
+       << "\nmac : " << agentInfo.mac;
   Logger::info("server dispatcher", what.str());
 
   DataPayload registration;
@@ -109,7 +93,8 @@ void ServerDispatcher::onDashboardRegister(
   OsInfoPayload dashboardInfo = ProtocolParser::parseOsInfoPayload(payload);
   dashboard.setAgentInfo(dashboardInfo);
   dashboard.setIsRegisered();
-  dashboard.setId(dashboardInfo.hostname + ":" + dashboardInfo.ip);
+  // dashboard.setId(dashboardInfo.hostname + ":" + dashboardInfo.ip);
+  dashboard.setId(dashboardInfo.mac);
   sessionManager_.setDashboardFd(dashboard.getFd());
   sessionManager_.recordAgentTarget(dashboard.getFd(), dashboard.getId());
 
@@ -154,23 +139,37 @@ void ServerDispatcher::onDashboardRegister(
 void ServerDispatcher::onResponse(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
   std::ostringstream what;
-  what << "Response from agent :" << agent.getAgentInfo().ip << "\n";
+  what << "Response from agent :" << agent.getAgentInfo().ip;
   Logger::info("server dispatcher", what.str());
 
   const ResponsePayload response =
       ProtocolParser::parseResponsePayload(payload);
 
-  if (response.total_chunks == 1) {
-    processCompleteResponse(agent, response);
+  auto it =
+      commandTargets_.find(response.id);  // used auto since it is an iterator
+  if (it == commandTargets_.end()) {
+    Logger::error("server dispatcher", "Unknown command id in response");
     return;
   }
 
-  createResponseEntry(response);
+  DashboardResponse dashResponse;
+  dashResponse.target = it->second;
+  dashResponse.response = response;
 
-  IncompleteResponse& incomplete = pendingResponses_[response.id];
-  incomplete.data.insert(incomplete.data.end(), response.data.begin(),
-                         response.data.end());
-  tryCompleteResponse(agent, response);
+  std::vector<std::uint8_t> dashPayload =
+      ProtocolSerializer::serializeDashboardResponse(dashResponse);
+  Frame frame = {
+      ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
+      dashPayload};
+
+  if (sessionManager_.isDashboard()) {
+    sessionManager_.getDashboard().sendFrame(frame);
+  }
+
+  // Clean up when last chunk received
+  if (response.chunk_index + 1 == response.total_chunks) {
+    commandTargets_.erase(it);
+  }
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND
@@ -255,6 +254,8 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
 
   Frame frame = {ProtocolHelper::createHeader(MessageType::COMMAND, payload),
                  payload};
+
+  commandTargets_[command.id] = agent.getId();
   agent.sendFrame(frame);
   std::ostringstream what;
 
@@ -279,61 +280,60 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
 
 std::uint32_t ServerDispatcher::nextId() { return ++nextCmdId_; }
 
-void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
-  if (pendingResponses_.find(response.id) == pendingResponses_.end()) {
-    IncompleteResponse incomplete;
-    incomplete.baseResponse = response;
-    pendingResponses_[response.id] = incomplete;
-  }
-}
+// TODO DASHBOARD SHOULD GET THESE
 
-void ServerDispatcher::processCompleteResponse(
-    AgentConnection& agent, const ResponsePayload& response) {
-  std::ostringstream what;
-  what << "[RESPONSE] id=" << response.id
-       << " status=" << static_cast<int>(response.status) << "\n"
-       << ProtocolParser::toString(response.data);
-  Logger::info("server dispatcher", what.str());
+// void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
+//   if (pendingResponses_.find(response.id) == pendingResponses_.end()) {
+//     IncompleteResponse incomplete;
+//     incomplete.baseResponse = response;
+//     pendingResponses_[response.id] = incomplete;
+//   }
+// }
 
-  // AgentConnection dashboard = sessionManager_.getDashboard();
-  DashboardResponse finalResponse;
-  finalResponse.target = agent.getId();
-  finalResponse.response = response;
-  std::vector<std::uint8_t> payload =
-      ProtocolSerializer::serializeDashboardResponse(finalResponse);
-  Frame frame = {ProtocolHelper::createHeader(MessageType::RESPONSE, payload),
-                 payload};
+// void ServerDispatcher::processCompleteResponse(
+//     AgentConnection& agent, const ResponsePayload& response) {
+//   std::ostringstream what;
+//   what << "[RESPONSE] id=" << response.id
+//        << "\nstatus=" << static_cast<int>(response.status)
+//        << "\n" << ProtocolParser::toString(response.data);
+//   Logger::info("server dispatcher", what.str());
 
-  if (sessionManager_.isDashboard()) {
-    try {
-      sessionManager_.getDashboard().sendFrame(frame);
-    } catch (const std::exception& e) {
-      Logger::error(
-          "server dispatcher",
-          "Failed to send registration to dashboard: " + std::string(e.what()));
-    }
-  }
+//   // AgentConnection dashboard = sessionManager_.getDashboard();
+//   DashboardResponse finalResponse;
+//   finalResponse.target = agent.getId();
+//   finalResponse.response = response;
+//   std::vector<std::uint8_t> payload =
+//       ProtocolSerializer::serializeDashboardResponse(finalResponse);
+//   Frame frame = {ProtocolHelper::createHeader(MessageType::RESPONSE,
+//   payload),
+//                  payload};
 
-  if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
-    pendingResponses_.erase(response.id);
-  }
-}
+//   if (sessionManager_.isDashboard()) {
+//     try {
+//       sessionManager_.getDashboard().sendFrame(frame);
+//     } catch (const std::exception& e) {
+//       Logger::error(
+//           "server dispatcher",
+//           "Failed to send registration to dashboard: " +
+//           std::string(e.what()));
+//     }
+//   }
 
-void ServerDispatcher::tryCompleteResponse(AgentConnection& agent,
-                                           const ResponsePayload& response) {
-  const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
-  if (lastChunk) {
-    IncompleteResponse& incomplete = pendingResponses_[response.id];
+//   if (pendingResponses_.find(response.id) != pendingResponses_.end()) {
+//     pendingResponses_.erase(response.id);
+//   }
+// }
 
-    // if (incomplete.chunksReceived != response.total_chunks) {
-    //   throw std::runtime_error("Missing chunks for response id " +
-    //                            std::to_string(response.id));
-    // }
+// void ServerDispatcher::tryCompleteResponse(AgentConnection& agent,
+//                                            const ResponsePayload& response) {
+//   const bool lastChunk = response.chunk_index + 1 == response.total_chunks;
+//   if (lastChunk) {
+//     IncompleteResponse& incomplete = pendingResponses_[response.id];
 
-    // Reassemble all chunks
-    ResponsePayload complete = incomplete.baseResponse;
-    complete.data = incomplete.data;
+//     // Reassemble all chunks
+//     ResponsePayload complete = incomplete.baseResponse;
+//     complete.data = incomplete.data;
 
-    processCompleteResponse(agent, complete);
-  }
-}
+//     processCompleteResponse(agent, complete);
+//   }
+// }

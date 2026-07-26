@@ -38,6 +38,8 @@ inline const std::uint16_t TEST_CURRENT_USER_LEN =
 inline const std::vector<std::uint8_t> TEST_CURRENT_USER{
     TEST_CURRENT_USER_STR.begin(), TEST_CURRENT_USER_STR.end()};
 
+inline const std::string TEST_MAC_STR = "AA:BB:CC:DD:EE:FF";
+
 }  // namespace Protocol
 
 #endif

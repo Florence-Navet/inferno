@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include <cctype>   // std::isdigit
-#include <cstdio>  // popen(), pclose()
+#include <cstdio>   // popen(), pclose()
 #include <cstdlib>  // getenv()
 #include <fstream>  // std::ifstream
 #include <sstream>
@@ -116,9 +116,7 @@ bool startsWithSudo(const std::string& command) {
   return command.rfind("sudo", 0) == 0;  // true if sudo at the start
 }
 
-}// namespace
-
-
+}  // namespace
 
 OsInfoPayload LinuxSystemMonitor::getOsInfo() {
   OsInfoPayload info;
@@ -129,6 +127,7 @@ OsInfoPayload LinuxSystemMonitor::getOsInfo() {
   info.arch = readArch();
   info.os_version = readOsVersion();
   info.ip = readIpAddress();
+  info.mac = readMacAdress();
 
   return info;
 }
@@ -192,8 +191,8 @@ std::string LinuxSystemMonitor::executeShell(const std::string& command) {
     return "Command rejected";
   }
   // Runs the command through /bin/sh - shell metacharacters are interpreted.
-// only sudo is rejected, so "ls ls; sudo rm -rf /" still runs the sudo part"
- // This is a guard rail, not a security boundary: access control belongs to
+  // only sudo is rejected, so "ls ls; sudo rm -rf /" still runs the sudo part"
+  // This is a guard rail, not a security boundary: access control belongs to
   // the server, which is the only TLS-authenticated peer allowed to send
   // commands.
   FILE* pipe = popen(trimmed.c_str(), "r");
@@ -204,10 +203,10 @@ std::string LinuxSystemMonitor::executeShell(const std::string& command) {
   std::string output;
 
   while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-    output += buffer; // Append the output to the result string
+    output += buffer;  // Append the output to the result string
   }
 
-pclose(pipe); // Close the pipe and get the exit status
+  pclose(pipe);  // Close the pipe and get the exit status
   return output;
 }
 
@@ -269,7 +268,7 @@ std::string LinuxSystemMonitor::readOsVersion() {
 
   if (!file.is_open()) {
     return std::string{};
-  // address family constants
+    // address family constants
   }
 
   // TODO : read the file line by line and find PRETTY_NAME
@@ -350,8 +349,8 @@ std::string LinuxSystemMonitor::readIpAddress() {
 
           result = std::string{addressBuffer};
           freeifaddrs(ifaddr);
-          
-          return result;// Return first valid non-loopback interface
+
+          return result;  // Return first valid non-loopback interface
         }
       }
     }
@@ -360,4 +359,38 @@ std::string LinuxSystemMonitor::readIpAddress() {
   freeifaddrs(ifaddr);
   throw std::runtime_error("Failed to retrieve network interfaces");
   // return result;
+}
+
+std::string LinuxSystemMonitor::readMacAdress() {
+  // This picks the same interface as readIpAddress() — first non-loopback IPv4
+  // interface up — so IP and MAC always refer to the same NIC.
+  struct ifaddrs* ifaddr = nullptr;
+
+  if (getifaddrs(&ifaddr) == -1) {
+    throw std::runtime_error("Failed to retrieve network interfaces");
+  }
+
+  for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
+    if (ifa->ifa_addr == nullptr) continue;
+    if (ifa->ifa_flags & IFF_LOOPBACK) continue;
+    if (!(ifa->ifa_flags & IFF_UP)) continue;
+
+    if (ifa->ifa_addr->sa_family == AF_INET) {
+      // Found the same interface as readIpAddress()
+      // Read MAC from /sys/class/net/<ifname>/address
+      std::string macPath =
+          "/sys/class/net/" + std::string(ifa->ifa_name) + "/address";
+      std::ifstream macFile(macPath);
+
+      if (macFile.is_open()) {
+        std::string mac;
+        std::getline(macFile, mac);
+        freeifaddrs(ifaddr);
+        return mac;  // e.g. "aa:bb:cc:dd:ee:ff"
+      }
+    }
+  }
+
+  freeifaddrs(ifaddr);
+  throw std::runtime_error("Failed to retrieve MAC address");
 }

@@ -73,7 +73,8 @@ inline OsInfoPayload makeOsInfoPayload(
     const std::string& hostname = Protocol::TEST_HOSTNAME_STR,
     const std::string& os_version = Protocol::TEST_OS_VERSION_STR,
     const std::string& current_user = Protocol::TEST_CURRENT_USER_STR,
-    const std::string& ip = Protocol::TEST_IP_STR) {
+    const std::string& ip = Protocol::TEST_IP_STR,
+    const std::string& mac = Protocol::TEST_MAC_STR) {
   OsInfoPayload info;
   info.os_type = os_type;
   info.arch = arch;
@@ -81,6 +82,7 @@ inline OsInfoPayload makeOsInfoPayload(
   info.os_version = os_version;
   info.current_user = current_user;
   info.ip = ip;
+  info.mac = mac;
   return info;
 }
 
@@ -89,9 +91,10 @@ inline std::vector<std::uint8_t> makeRawOsInfoPayload(
     const std::string& hostname = Protocol::TEST_HOSTNAME_STR,
     const std::string& os_version = Protocol::TEST_OS_VERSION_STR,
     const std::string& current_user = Protocol::TEST_CURRENT_USER_STR,
-    const std::string& ip = Protocol::TEST_IP_STR) {
-  const OsInfoPayload info = {os_type,    arch,         hostname,
-                              os_version, current_user, ip};
+    const std::string& ip = Protocol::TEST_IP_STR,
+    const std::string& mac = Protocol::TEST_MAC_STR) {
+  const OsInfoPayload info = {os_type,      arch, hostname, os_version,
+                              current_user, ip,   mac};
   return ProtocolSerializer::serializeOsInfoPayload(info);
 }
 

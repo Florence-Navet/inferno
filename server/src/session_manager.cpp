@@ -1,6 +1,7 @@
 #include "session_manager.hpp"
 
-const std::unordered_map<int, AgentConnection>& SessionManager::getAgents() const {
+const std::unordered_map<int, AgentConnection>& SessionManager::getAgents()
+    const {
   return agents_;
 }
 
@@ -30,11 +31,11 @@ bool SessionManager::isDashboard() const {
 }
 
 bool SessionManager::isDashboardConnection(int fd) const {
-    return isDashboard() && fd == dashboardFd_;
+  return isDashboard() && fd == dashboardFd_;
 }
 
 void SessionManager::setDashboardFd(int fileDescriptor) {
-  if (dashboardFd_ != -1 ) return; // set it once
+  if (dashboardFd_ != -1) return;  // set it once
   dashboardFd_ = fileDescriptor;
 }
 
@@ -45,7 +46,7 @@ void SessionManager::resetDashboard() {
   dashboardFd_ = -1;
 }
 
-int SessionManager::getDashboardFd() { return dashboardFd_ ; }
+int SessionManager::getDashboardFd() { return dashboardFd_; }
 
 AgentConnection& SessionManager::getDashboard() {
   return agents_.at(dashboardFd_);

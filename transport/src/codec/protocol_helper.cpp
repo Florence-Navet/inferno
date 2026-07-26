@@ -135,6 +135,8 @@ void validateOsInfoPayload(const OsInfoPayload& payload) {
   ensureFitsU16(payload.current_user.size(), "os info current_user length");
 
   ensureFitsU16(payload.ip.size(), "os info ip length");
+
+  ensureFitsU16(payload.mac.size(), "os info mac length");
 }
 
 void validateCommandPayload(const CommandPayload& payload) {

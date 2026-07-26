@@ -34,7 +34,8 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
 
   const std::size_t finalSize{OS_INFO_FIXED_BYTES + payload.hostname.size() +
                               payload.os_version.size() +
-                              payload.current_user.size() + payload.ip.size()};
+                              payload.current_user.size() + payload.ip.size() +
+                              payload.mac.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.os_type);
@@ -55,6 +56,9 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.ip.size()));
 
+  ConvertEndian::writeU16BE(payloadInByte, offset,
+                            static_cast<std::uint16_t>(payload.mac.size()));
+
   ProtocolHelper::copyString(payloadInByte, OS_INFO_FIXED_BYTES,
                              payload.hostname);
 
@@ -73,6 +77,12 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
                                  payload.current_user.size(),
                              payload.ip);
 
+  ProtocolHelper::copyString(payloadInByte,
+                             OS_INFO_FIXED_BYTES + payload.hostname.size() +
+                                 payload.os_version.size() +
+                                 payload.current_user.size() +
+                                 payload.ip.size(),
+                             payload.mac);
   return payloadInByte;
 }
 

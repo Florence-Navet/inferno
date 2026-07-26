@@ -10,7 +10,7 @@ The project is composed of:
 
 - a central server responsible for orchestration and analysis,
 - remote agents deployed on monitored machines,
-- and a future Qt desktop client for visualization and control.
+- and a future Qt desktop dashboard for visualization and control.
 
 The system focuses on:
 
@@ -41,7 +41,7 @@ A central service responsible for:
 - coordinating requests and responses,
 - preparing data for visualization and analysis.
 
-### Desktop client (future)
+### Desktop dashboard (future)
 
 A Qt-based interface providing:
 
@@ -80,7 +80,7 @@ A Qt-based interface providing:
 | Containerization         | Docker & Docker Compose |
 | Testing                  | Google Test             |
 | Database (planned)       | PostgreSQL              |
-| Desktop client (planned) | Qt 6                    |
+| Desktop dashboard (planned) | Qt 6                    |
 
 ## Prerequisites
 
@@ -151,7 +151,7 @@ Windows users must first launch **XLaunch** and configure it as follows:
 1. Select **Multiple windows**
 2. Keep **Display number** set to `0`
 3. Click **Next**
-4. Select **Start no client**
+4. Select **Start no dashboard**
 5. Click **Next**
 6. Enable:
    - **Clipboard**
@@ -242,7 +242,7 @@ If the `xhost` command is not installed:
 sudo apt install x11-xserver-utils
 ```
 
-## How to build
+## How to build agent and server
 
 This project uses a **multi-stage container build pipeline** orchestrated through Docker Compose-compatible services. The pipeline has been tested with both Docker and Podman.
 
@@ -262,3 +262,92 @@ Multiple runtime instances can be started without rebuilding the binary, since a
 
 The following diagram illustrates the pipeline:
 ![pipeline](./_docs/project/build_pipeline_&_artifact_flow.png)
+
+## How to build dashboard
+
+First, check if you already have the required tools:
+
+```bash
+qmake6 --version && cmake --version
+```
+
+If anything is missing, you have two options:
+
+**Option A — via WSL (Windows Subsystem for Linux):**
+
+```bash
+sudo apt install qt6-base-dev qt6-base-dev-tools
+sudo apt install cmake
+sudo apt install qt6-websockets-dev
+```
+
+**Option B — via the Qt official installer:**
+
+Download Qt from [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source) (free community version, account required).
+Install `Qt` with `gcc`, `g++` and `cmake` to avoid path issues.
+Qt **6.4.2 minimum**, **6.10.2** was used for development.
+
+Then add these to your `PATH`:
+
+```
+C:\Qt\Tools\QtCreator\bin
+C:\Qt\6.x.x\mingw_64\bin
+```
+
+**Build the dashboard:**
+
+From **PowerShell**:
+```powershell
+./dashboard/build.bat
+```
+
+From **Git Bash**:
+```bash
+powershell.exe -NoProfile -Command "& '$(cygpath -w ./dashboard/build.bat)'"
+```
+
+**Run the dashboard:**
+
+```bash
+./dashboard/build/dashboard.exe
+```
+> **WSL:** if you get EGL/MESA errors, add `export LIBGL_ALWAYS_SOFTWARE=1` to your `~/.bashrc`
+---
+
+### Client (Linux)
+
+Check your tools first:
+
+```bash
+qmake6 --version && cmake --version
+```
+
+Install if needed:
+
+```bash
+sudo apt install qt6-base-dev qt6-base-dev-tools
+sudo apt install cmake
+sudo apt install qt6-websockets-dev
+```
+
+Make the scripts executable (only needed once):
+
+```bash
+chmod +x ./dashboard/build.sh
+chmod +x ./dashboard/run-dashboard.sh
+```
+
+Build then run:
+
+```bash
+./dashboard/build.sh
+./dashboard/run-dashboard.sh
+```
+
+**WSL only:** if you get EGL/MESA rendering errors, add this to your `~/.bashrc` and restart your terminal:
+```bash
+export LIBGL_ALWAYS_SOFTWARE=1
+```
+> WSL has no GPU access, so Qt's hardware OpenGL rendering fails. This flag forces software rendering instead.
+
+---

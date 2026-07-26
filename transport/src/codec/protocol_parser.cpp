@@ -49,6 +49,7 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   const std::uint16_t osVersionLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t ipLen{ConvertEndian::readU16BE(input, offset)};
+  const std::uint16_t macLen{ConvertEndian::readU16BE(input, offset)};
 
   const std::size_t maxFieldLen{MAX_VALUE_INT16 - OS_INFO_FIXED_BYTES};
 
@@ -56,9 +57,10 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   ProtocolHelper::validateNotNullLength(osVersionLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(currentUserLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(ipLen, maxFieldLen);
+  ProtocolHelper::validateNotNullLength(macLen, maxFieldLen);
 
   const std::size_t expectedSize{OS_INFO_FIXED_BYTES + hostnameLen +
-                                 osVersionLen + currentUserLen + ipLen};
+                                 osVersionLen + currentUserLen + ipLen + macLen};
   ProtocolHelper::validateExpectedLength(input, expectedSize);
   // validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
   // TODO validateStringLength needs to check each string or all payload
@@ -84,6 +86,11 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
                         input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
                         osVersionLen + currentUserLen),
                     ipLen);
+
+  payload.mac.assign(reinterpret_cast<const char*>(
+                         input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
+                         osVersionLen + currentUserLen + ipLen),
+                     macLen);
   return payload;
 }
 

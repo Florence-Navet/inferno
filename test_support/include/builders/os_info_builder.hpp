@@ -16,6 +16,7 @@ inline OsInfoPayload create() {
   // info.current_user = "test-currentuser";
   info.current_user = Protocol::TEST_CURRENT_USER_STR;
   info.ip = Protocol::TEST_IP_STR;
+  info.mac = Protocol::TEST_MAC_STR;
   return info;
 }
 };  // namespace OsInfoBuilder

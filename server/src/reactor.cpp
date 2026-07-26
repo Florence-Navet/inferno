@@ -80,9 +80,9 @@ void Reactor::onAgentReady(int fileDescriptor) {
 
     Logger::info(
         "reactor",
-        "on agent ready before if in while loop, bool value:" + canHandleFrame
+        std::string("on agent ready before if in while loop, bool value:") + std::string(canHandleFrame
             ? "true"
-            : "false");
+            : "false"));
     if (canHandleFrame) {
       dispatcher_.sendError(session, ErrorType::INVALID_FORMAT,
                             "First message must be REGISTER");

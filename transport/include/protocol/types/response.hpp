@@ -3,10 +3,11 @@
 #include <cstdint>
 #include <vector>
 
+constexpr int MAC_SIZE = 17;
+
 constexpr std::size_t RESPONSE_FIXED_BYTES =
-    sizeof(std::uint32_t) + sizeof(std::uint16_t) +
-    sizeof(std::uint8_t) *
-        3;  // id + data_len + status + total_chunks + chunk_index
+    sizeof(std::uint32_t) + sizeof(std::uint16_t) + sizeof(std::uint8_t) * 3 +
+    MAC_SIZE;  // id + data_len + status + total_chunks + chunk_index
 
 enum class ResponseStatus : std::uint8_t {
   OK = 0,

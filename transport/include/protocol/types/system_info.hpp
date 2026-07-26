@@ -11,7 +11,7 @@ constexpr std::uint16_t MAX_VALUE_INT16 =
     static_cast<std::uint16_t>(KMAX_U16_VALUE);
 
 constexpr std::size_t OS_INFO_FIXED_BYTES =
-    4 * sizeof(std::uint16_t) +
+    5 * sizeof(std::uint16_t) +
     2 * sizeof(std::uint8_t);  // hostname_len + os_version_len +
                                // current_user_len + ip_len + os_type + arch
 constexpr std::size_t REGISTER_MAX_HOSTNAME_LEN =
@@ -42,11 +42,12 @@ struct OsInfoPayload {
   std::string os_version = "";    // new — "Ubuntu 22.04", "Windows 11"
   std::string current_user = "";  // new — getenv("USER") / GetUserName()
   std::string ip = "";
+  std::string mac = "";
 
   bool operator==(const OsInfoPayload& other) const {
     return os_type == other.os_type && arch == other.arch &&
            hostname == other.hostname && os_version == other.os_version &&
-           current_user == other.current_user && ip == other.ip;
+           current_user == other.current_user && ip == other.ip && mac == other.mac;
   }
 };
 

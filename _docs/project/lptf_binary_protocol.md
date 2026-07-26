@@ -1,179 +1,244 @@
-# lptf binary protocol
+# LPTF Binary Protocol
 
 ## 1. Overview
 
-LPTF is a custom binary agent-server protocol:
+LPTF is a custom binary protocol for agent-server-dashboard communication.
 
 - Agent connects and registers itself.
-- Server sends COMMANDS.
+- Server sends COMMANDS to agents on behalf of the dashboard.
 - Agent executes commands and sends RESPONSES (possibly chunked).
-- Agent may send unsolicited DATA.
+- Agent may send unsolicited DATA (metrics, health checks).
+- Dashboard connects and registers itself.
+- Dashboard sends COMMANDS targeting specific agents via MAC address.
+- Dashboard receives RESPONSES and DATA forwarded by the server.
 - TCP sockets are used as the transport.
 
-The protocol is designed to be:
-
+**Design goals:**
 - Cross-platform
 - Lightweight
 - Extendable
 
+---
+
 ## 2. Transport
 
-- Use TCP sockets (SOCK_STREAM) at low level.
+- TCP sockets (`SOCK_STREAM`)
 - TCP provides reliability, ordered delivery, and byte-stream semantics.
-- Your protocol is responsible for parsing bytes into messages, including chunked responses.
+- The protocol is responsible for framing: parsing the byte stream into discrete messages, including reassembly of chunked responses.
+
+---
 
 ## 3. Message Format
 
-All messages have a fixed-size header followed by a payload:
+All messages share a fixed 8-byte header, immediately followed by a payload.
 
-```text
-[Identifier][Version][Type][Size] 
- 4 bytes     1B      1B     2B
+```
+[Identifier][Version][Type][Size]
+  4 bytes     1 byte   1B    2B
 ```
 
-| Field      | Size | Description                          |
-| ---------- | ---- | ------------------------------------ |
-| Identifier | 4B   | ASCII string (e.g. `"LPTF"`)         |
-| Version    | 1B   | Protocol version (current: `1`)      |
-| Type       | 1B   | Message type                         |
-| Size       | 2B   | Payload length (uint16, max `65535`) |
+| Field      | Size | Type     | Description                        |
+| ---------- | ---- | -------- | ---------------------------------- |
+| Identifier | 4B   | char[4]  | ASCII magic: `"LPTF"`              |
+| Version    | 1B   | uint8    | Protocol version (current: `1`)    |
+| Type       | 1B   | uint8    | Message type (see §3.1)            |
+| Size       | 2B   | uint16   | Payload length in bytes (0–65535)  |
 
-Payload immediately follows the header.
+All integers are **big-endian**. All strings are **UTF-8**, length-prefixed, no null terminator.
 
 ### 3.1 Message Types
 
-| Value | Name               | Description                      |
-| ----- | ------------------ | -------------------------------- |
-| 0     | REGISTER           | Agent → Server registration      |
-| 1     | DASHBOARD_REGISTER | dashboard -> Server registration |
-| 2     | DATA               | Unsolicited agent data           |
-| 3     | COMMAND            | Server → Agent instruction       |
-| 4     | RESPONSE           | Agent → Server result            |
-| 5     | DISCONNECT         | Close connection                 |
-| 6     | ERROR              | Error reporting                  |
+| Value | Name               | Direction                        | Description                        |
+| ----- | ------------------ | -------------------------------- | ---------------------------------- |
+| 0     | REGISTER           | Agent → Server                   | Agent registration                 |
+| 1     | DASHBOARD_REGISTER | Dashboard → Server               | Dashboard registration             |
+| 2     | DATA               | Agent → Server → Dashboard       | Unsolicited data (metrics, etc.)   |
+| 3     | COMMAND            | Dashboard → Server → Agent       | Instruction to execute             |
+| 4     | RESPONSE           | Agent → Server → Dashboard       | Result of a COMMAND                |
+| 5     | DISCONNECT         | Any → Server, or Server → Agent  | Graceful disconnection (see §4.6)  |
+| 6     | ERROR              | Server → Any                     | Error notification                 |
+
+---
 
 ## 4. Payload Structures
 
 ### 4.1 REGISTER
 
-Agent sends REGISTER immediately after connecting.
+Sent by agent immediately after connecting. Must be the first message.
 
-```c++
-    struct OsInfoPayload {
-        uint8_t os_type;        // 0=Windows, 1=Linux, 2=macOS
-        uint8_t arch;           // 0=x86, 1=x64, 2=ARM
-        uint16_t hostname_len;
-        uint16_t os_version_len
-        uint16_t current_user_len;
-        uint16_t ip_len;
-        uint16_t mac_len;
-        char hostname[hostname_len]; // UTF-8
-        char os_version[os_version_len];
-        char current_user[current_user_len];
-        char ip[ip_len];
-        char mac[mac_len];
-    };
+```
+uint8_t  os_type
+uint8_t  arch
+uint16_t hostname_len
+uint16_t os_version_len
+uint16_t current_user_len
+uint16_t ip_len
+uint16_t mac_len
+char     hostname[hostname_len]
+char     os_version[os_version_len]
+char     current_user[current_user_len]
+char     ip[ip_len]
+char     mac[mac_len]
 ```
 
-Rules:
+```cpp
+struct OsInfoPayload {
+    uint8_t  os_type;           // 0=Windows, 1=Linux, 2=macOS
+    uint8_t  arch;              // 0=x86, 1=x64, 2=ARM
+    string    hostname;
+    string     os_version;
+    string     current_user;
+    string     ip;
+    string     mac;      // e.g. "aa:bb:cc:dd:ee:ff" — always 17 bytes
+};
+```
 
-- Server ignores other messages until REGISTER is received.
-- Invalid or missing REGISTER → connection may be closed.
-mac adress is meant to recognize an agent in between connection and if an agent process is stopped (computer shutdown)
+Fixed header size: `2 × sizeof(uint8_t) + 5 × sizeof(uint16_t) = 12 bytes`
+
+Rules:
+- Server ignores all messages until REGISTER (or DASHBOARD_REGISTER) is received.
+- Invalid or missing REGISTER → server may close the connection.
+- The MAC address is used as the persistent agent identity across reconnections.
+
+DASHBOARD_REGISTER uses the same payload structure as REGISTER.
+The message type in the header distinguishes agent from dashboard.
+
+---
 
 ### 4.2 COMMAND
 
-Server sends COMMAND to request action:
+Sent by server to agent after routing a dashboard request.
 
-```c++
+```
+uint32_t id
+uint8_t  type
+uint16_t data_len
+char     data[data_len]
+```
+
+```cpp
 struct CommandPayload {
-    uint32_t id;        // unique id for this command
-    uint8_t type;       // OS_INFO, RUNNING_PROCESSES, SHELL
-    uint16_t data_len;  // optional command string length (SHELL only)
-    char data[data_len];
+    uint32_t id;            // server-generated unique command id
+    uint8_t  type;          // see command types below
+    string   data; // none unless type == SHELL
 };
 ```
 
-#### Command types
+Fixed size: `sizeof(uint32_t) + sizeof(uint8_t) + sizeof(uint16_t) = 7 bytes`
 
-| Value | Name              |
-| ----- | ----------------- |
-| 0     | OS_INFO           |
-| 1     | RUNNING_PROCESSES |
-| 2     | SHELL             |
-| 3     | START_METRICS     |
-| 4     | STOP_METRICS      |
+#### Command Types
+
+| Value | Name              | Description                                                       |
+| ----- | ----------------- | ----------------------------------------------------------------- |
+| 0     | OS_INFO           | Request OS and hardware information                               |
+| 1     | RUNNING_PROCESSES | Request current process list                                      |
+| 2     | SHELL             | Execute a shell command (`data` field carries the command string) |
+| 3     | START_METRICS     | Start periodic metrics sampling                                   |
+| 4     | STOP_METRICS      | Stop periodic metrics sampling                                    |
+
+Note: The dashboard does not generate the command `id`. It leaves it at `0`; the server assigns the actual id before forwarding to the agent.
+
+---
 
 ### 4.3 RESPONSE
 
-Agent sends RESPONSE after executing a command. Supports chunking:
+Sent by agent after executing a COMMAND. Supports chunking for large outputs.
 
-```c++
+```
+uint32_t id
+uint8_t  status
+uint8_t  total_chunks
+uint8_t  chunk_index
+uint16_t data_len
+uint8_t  data[data_len]
+```
+
+```cpp
 struct ResponsePayload {
-    uint32_t id;          // command id this response belongs to
-    uint8_t status;       // 0=OK, 1=ERROR
-    uint8_t total_chunks; // total number of chunks
-    uint8_t chunk_index;  // 0-based index of this chunk
-    uint16_t data_len;    // length of this chunk
-    uint8_t data[data_len];  
+    uint32_t id;            // matches the command id this responds to
+    uint8_t  status;        // 0=OK, 1=ERROR
+    uint8_t  total_chunks;  // total number of chunks for this response
+    uint8_t  chunk_index;   // 0-based index of this chunk
+    string  data;
 };
 ```
-the max length for a chunk is the response payload fixed byte ( 4 * uint8_t size + uint16_t + uint32_t ) + the target id size (uint32_t) given by server to allow dashboard <-> server communication (and agent identification)
 
-if process info , response.data will be a vector of processInfo:
-```c++
+Fixed size: `sizeof(uint32_t) + sizeof(uint16_t) + 3 × sizeof(uint8_t) = 9 bytes`
+
+#### Chunking
+
+The server does **not** reassemble chunks. Each chunk is forwarded individually to the dashboard as a `DashboardResponse`. The dashboard is responsible for reassembly using `id`, `chunk_index`, and `total_chunks`.
+
+Maximum data per chunk:
+```
+max_data = 65535 - RESPONSE_FIXED_BYTES
+         = 65535 - 26
+         = 65509 bytes
+```
+`RESPONSE_FIXED_BYTES = sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint8_t) * 3 + MAC_SIZE`
+> The agent reserves `MAC_SIZE = 17` bytes in each chunk to allow the server to prepend the agent identity string when wrapping as `DashboardResponse`. The agent does not know its own identity, the server assigns and inserts it. Today the identity is the MAC address (17 bytes); this may change in future versions as long as the identity size stays ≤ 17 bytes.
+
+#### Process Info (RUNNING_PROCESSES response data)
+```
+uint32_t pid;
+float    cpu_percent;   // 0.0–100.0, lifetime average
+uint64_t mem_bytes;     // resident memory in kB (VmRSS)
+uint16_t name_len;
+char     name[name_len];
+```
+
+```cpp
 struct ProcessInfo {
     uint32_t pid;
-    float cpu_percent;  // 0.0 – 100.0
-    uint64_t mem_bytes;
-    uint16_t name_len
-    char name[name_len];
+    float    cpu_percent;   // 0.0–100.0, lifetime average
+    uint64_t mem_bytes;     // resident memory in kB (VmRSS)
+    string     name;
 };
 ```
 
-vector will look like this :
+`response.data` layout for RUNNING_PROCESSES:
 ```
-std::vector<uint8_t> | processCount (2 bytes) | processList (N bytes) |
+uint16_t process_count
+ProcessInfo[process_count]
 ```
 
-#### Chunking rules
-
-- Each chunk ≤ 65535 bytes
-- Server reassembles using:
-  - `id`
-  - `chunk_index`
-  - `total_chunks`
-- Large outputs must be split into multiple chunks
+---
 
 ### 4.4 DATA
 
-#### Datasubtype
-| Value | Name              |
-| ----- | ----------------- |
-| 0     | METRICS_SAMPLE    |
-| 1     | HEALTH_CHECK      |
-| 2     | REGISTRATION      |
-| 3     | AGENTS            |
-| 4     | UNKNOWN           |
+Sent by agent without a prior COMMAND (proactive push). Also used by server to push agent info to dashboard.
 
-registration = server push RegisterPayload of a first ever seen agent
-agents = list of RegisterPayload on dashboard connection, retreived from db
+```
+uint8_t  subtype
+uint16_t data_len
+uint8_t  data[data_len]
+```
 
-```c++
+```cpp
 struct DataPayload {
-    uint8_t subtype;        // custom type
-    uint16_t data_len;
-    uint8_t data[data_len];
+    uint8_t  subtype;
+    string  data;
 };
 ```
 
-### 4.4.1 Metric Sample
-```c++
+#### Data Subtypes
+
+| Value | Name           | Description                                                                 |
+| ----- | -------------- | --------------------------------------------------------------------------- |
+| 0     | METRICS_SAMPLE | Periodic system metrics snapshot (CPU, memory, disk, network)               |
+| 1     | HEALTH_CHECK   | Agent heartbeat                                                             |
+| 2     | REGISTRATION   | Server → Dashboard: new agent just connected (single RegisterPayload)       |
+| 3     | AGENTS         | Server → Dashboard: full list of connected agents on dashboard registration |
+| 4     | UNKNOWN        | Unrecognized subtype                                                        |
+
+#### 4.4.1 Metrics Sample
+
+```cpp
 struct CpuSample {
-    float total_percent;
+    float   total_percent;
     uint8_t core_number;
-    float per_core[core_number]
-}
+    float   per_core[core_number];
+};
 
 struct MemSample {
     uint64_t phys_total;
@@ -181,159 +246,212 @@ struct MemSample {
     uint64_t phys_available;
     uint64_t swap_total;
     uint64_t swap_used;
-}
-
+};
 
 struct DiskSample {
-    float read_bytes_per_sec;
-    float write_bytes_per_sec;
+    float    read_bytes_per_sec;
+    float    write_bytes_per_sec;
     uint16_t device_len;
-    uint8_t   device[device_len];           // e.g. "sda", "C:"
+    char     device[device_len];    // e.g. "sda", "C:"
 };
 
 struct NetSample {
-    float rx_bytes_per_sec;
-    float tx_bytes_per_sec;
-    uint16_t iface_len
-    uint8_t   iface[iface_len];            // e.g. "eth0", "Ethernet"
+    float    rx_bytes_per_sec;
+    float    tx_bytes_per_sec;
+    uint16_t iface_len;
+    char     iface[iface_len];      // e.g. "eth0", "Ethernet"
 };
 
 struct MetricsSample {
-    CpuSample             cpu;
-    MemSample             mem;
-    uint8_t disk_count;
-    uint8_t interface_count;
+    CpuSample cpu;
+    MemSample mem;
+    uint8_t   disk_count;
+    uint8_t   interface_count;
     DiskSample disks[disk_count];
     NetSample  interfaces[interface_count];
 };
-
 ```
 
+---
 
 ### 4.5 ERROR
 
-```c++
+Sent by server to report a protocol or routing error.
+
+```
+uint8_t  code
+uint16_t message_len
+char     message[message_len]
+```
+
+```cpp
 struct ErrorPayload {
-    uint8_t code;           // see table below
-    uint16_t message_len;
-    char message[message_len]; // UTF-8
+    uint8_t  code;
+    string     message;
 };
 ```
 
-#### Error codes
+#### Error Codes
 
-| Code | Meaning          |
-| ---- | ---------------- |
-| 0    | UNKNOWN_TYPE     |
-| 1    | INVALID_FORMAT   |
-| 2    | UNKNOWN_COMMAND  |
-| 3    | EXECUTION_FAILED |
-| 4    | SIZE_EXCEEDED    |
+| Code | Name             | Description                                           |
+| ---- | ---------------- | ----------------------------------------------------- |
+| 0    | UNKNOWN_TYPE     | Unrecognized message type                             |
+| 1    | INVALID_FORMAT   | Malformed payload                                     |
+| 2    | UNKNOWN_COMMAND  | Command type not recognized or target agent not found |
+| 3    | EXECUTION_FAILED | Agent failed to execute command                       |
+| 4    | SIZE_EXCEEDED    | Payload exceeds maximum size                          |
+| 5    | INVALID_TYPE     | Invalid type sent (wrong direction)                   |
+| 6    | NOT_IMPLEMENTED  | Planned but not implemented yet                       |
+
+---
 
 ### 4.6 DISCONNECT
 
-- No payload
-- Server may force disconnect
-- Agent must:
-  - Close socket
-  - Optionally reconnect
+The DISCONNECT message type covers three distinct flows depending on sender and payload.
 
-## 5. Parsing Guidelines (TCP Stream)
+#### Agent → Server (graceful shutdown, no payload)
 
-TCP provides a continuous byte stream. You must reconstruct messages:
+Agent is shutting down normally (e.g. host machine shutdown). Warns server before closing the socket.
 
-- Maintain a receive buffer.
-- Append all received bytes.
-- While buffer contains at least 8 bytes (header):
-  - Peek header → read size
-  - Compute:  
-        `total_size = 8 + size`
-  - If buffer < total_size → wait for more data
-  - Else:
-    - extract full message
-    - process it
-    - Repeat (handle multiple messages in the buffer)
+```
+[DISCONNECT header | size=0]
+```
 
-Important: bytes from different messages never interleave, but a single message may be fragmented across multiple recv() calls.
+No payload. Server acknowledges by removing the agent from its session table. No response is sent.
 
-## 6. Versioning
+#### Dashboard → Server (disconnect request, with payload)
 
-- Agent version < protocol version → reject
-- Agent version > protocol version → accept (backward-compatible)
-- Always check version in REGISTER
+Dashboard requests that the server disconnect a specific agent.
 
-## 7. Limits & Timeouts
+```
+[DISCONNECT header | size = 2 + target_len]
+uint16_t target_len
+char     target[target_len]   // agent MAC address, e.g. "aa:bb:cc:dd:ee:ff"
+```
 
-- Max payload = 65535 bytes (chunking for larger data)
-- Optional: limit number of concurrent agents
-
-### Optional constraints
-
-- Limit number of concurrent agents
-- Disconnect if message incomplete after timeout
-
-## 8. Notes
-
-- All integers are big-endian
-- All strings are UTF-8
-- COMMAND id ensures correct mapping of RESPONSES, even with multiple simultaneous commands
-- Chunking ensures no single message exceeds the max payload size
-
-
-## Communication between dashboard and server
-dashboard will wrap the previous structure with the target identifier (hostname or ip) so server can route dashboard queries to the rightful agent
-
-```c++
-struct DashboardCommand {
-  std::string target;
-  CommandPayload command;
-};
-
-struct DashboardData {
-  std::string target;
-  DataPayload data;
-};
-
-struct DashboardResponse {
-  std::string target;        // which agent sent this response
-  ResponsePayload response;
-};
-
-struct RegisterPayload {
-    std::string id;
-    OsInfoPayload system
-}
-
+```cpp
 struct DashboardDisconnect {
-  std::string target;  // "agent-1" to disconnect that agent
+    std::string target;   // agent MAC address
 };
 ```
-On the network : 
-```c++
-uint16_t target_len;  // optional command string length (SHELL only)
-char target[target_len];
-std::vector<std::uint8_t> Commandpayload / DashboardData / DashboardResponse serialized
+
+Server parses the target, looks up the agent, and forwards a no-payload DISCONNECT frame to that agent. No confirmation is sent back to the dashboard.
+
+#### Server → Agent (disconnect order, no payload)
+
+```
+[DISCONNECT header | size=0]
 ```
 
-```c++
-uint16_t id_len;  // optional command string length (SHELL only)
-char id[id_len];
-std::vector<std::uint8_t> OsInfoPayload serialized
+Agent receives this, performs cleanup (stops metrics stream, etc.), and closes the socket. The agent ignores any payload if present.
+
+---
+
+## 5. Dashboard ↔ Server Protocol
+
+The dashboard never sends raw agent-level messages. All dashboard messages wrap agent payloads with a `target` field identifying the destination agent by MAC address.
+
+### 5.1 Wire Format (dashboard → server)
+
+```
+uint16_t target_len
+char     target[target_len]
+<serialized payload>           // CommandPayload 
 ```
 
-- Disconnect (côté dashboard) envoie un payload de l'agent id (target dans le protocole dans command.hpp data.hpp et response.hpp) + pas de feedback (on considère qu'une déconnexion se passera toujours bien)
-- L'envoie des `OsInfoPayload` au dashboard se fait via `DataPayload`, `DataType::REGISTRATION `sous forme de `RegisterPayload` lorsqu'il se connecte pour la toute première fois. Se fait par `DataType::AGENTS` pour récupérer une liste de `RegisterPayload` de la db
-- CommandPayload : le dashboard ne génère pas l'ID, c'est le server qui s'en charge, le dashboard laisse à 0 (initialisation par défaut)
-- Le dashboard reçoit la réponse du server d'une commande via `DashboardResponse` qui contient "target", l'agent d'où provient la réponse 
+### 5.2 Wire Format (server → dashboard)
 
+```
+uint16_t target_len
+char     target[target_len]
+<serialized payload>           // ResponsePayload or DataPayload
+```
 
-```c++
+### 5.3 Structures
+
+```cpp
+// Dashboard sends a command to a specific agent
+struct DashboardCommand {
+    std::string    target;   // agent MAC address
+    CommandPayload command;  // command.id must be 0; server assigns the real id
+};
+
+// Server forwards agent data to dashboard
+struct DashboardData {
+    std::string target;      // agent MAC address
+    DataPayload data;
+};
+
+// Server forwards agent response to dashboard (one per chunk)
+struct DashboardResponse {
+    std::string     target;   // agent MAC address
+    ResponsePayload response; // chunk forwarded as-is; dashboard reassembles
+};
+
+// Agent registration info sent to dashboard
 struct RegisterPayload {
-  std::string id;
-  OsInfoPayload system;
+    std::string    id;        // agent MAC address
+    OsInfoPayload  system;
+};
 
-  bool operator==(const RegisterPayload& other) const {
-    return id == other.id && system == other.system;
-  }
+// Dashboard ask for an agent to disconnect
+struct DashboardDisconnect {
+  std::string target;  // agent MAC address
+
 };
 ```
+
+### 5.4 Rules
+
+- Dashboard **MUST** send COMMAND with `command.id = 0`; server replaces it with a server-generated id before forwarding to the agent.
+- Server **MUST** track `commandId → agent target (MAC)` to route responses back correctly.
+- Server **MUST** forward each RESPONSE chunk individually; dashboard **MUST** reassemble using `id`, `chunk_index`, `total_chunks`.
+- Server **MUST** forward each `DATA / METRICS_SAMPLE` from agent as `DashboardData` to dashboard
+- When a new agent registers, server **SHOULD** push a `DATA / REGISTRATION` frame to dashboard containing a single `RegisterPayload` through a `DataPayload`.
+- When dashboard registers, server **SHOULD** send a `DATA / AGENTS` frame containing all currently connected agents as a list of `RegisterPayload` through a `DashboardData`.
+- DISCONNECT from dashboard **MUST** carry a `DashboardDisconnect` payload; DISCONNECT from agent or server **SHOULD NOT** carry a payload.
+---
+
+## 6. Stream Parsing
+
+TCP delivers a continuous byte stream. Receivers **MUST** reconstruct frames:
+
+1. Buffer all incoming bytes.
+2. When buffer contains ≥ 8 bytes: parse the header, read `size`.
+3. Compute `total_size = 8 + size`.
+4. If `buffer.size() < total_size`: wait for more data.
+5. Extract `total_size` bytes, dispatch the frame, repeat.
+
+A single message may be split across multiple `recv()` calls. Bytes from different messages never interleave.
+
+---
+
+## 7. Versioning
+
+| Agent version     | Server behavior                  |
+| ----------------- | -------------------------------- |
+| < protocol version | Reject connection               |
+| = protocol version | Accept                          |
+| > protocol version | Accept (backward-compatible)    |
+
+Version is checked on REGISTER.
+
+---
+
+## 8. Limits
+
+| Constraint            | Value                                       |
+| --------------------- | ------------------------------------------- |
+| Max payload size      | 65535 bytes                                 |
+| Max chunk data        | 65509 bytes (65535 − 26 fixed (9 + 17 MAC)) |
+| MAC address size      | 17 bytes (`"aa:bb:cc:dd:ee:ff"`)            |
+| Max concurrent agents | Implementation-defined                      |
+
+---
+
+## 9. Notes
+
+- All integers are big-endian.
+- All strings are UTF-8, serialized as `uint16_t length + char[length]`, no null terminator.
+- The agent MAC address is the persistent agent identity. The server uses it to recognize reconnecting agents and as the `target` field in all dashboard communication.
+- COMMAND ids are server-generated and unique per server session. They map responses back to the originating command and agent.

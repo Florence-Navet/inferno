@@ -2,6 +2,7 @@
 
 ## 📋 Table of Contents
 
+- [Communication protocol](./_docs/project/lptf_binary_protocol.md)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Dependencies](#dependencies)

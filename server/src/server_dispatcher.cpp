@@ -29,8 +29,17 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       onData(frame.payload);
       break;
     case MessageType::DISCONNECT:
-      onDisconnect(connection);
+      if (sessionManager_.isDashboardConnection(connection.getFd())) {
+        // DashboardDisconnect target = ProtocolParser::parseDashboardDisconnect(frame.payload);
+        std::string target = ProtocolParser::parseDashboardDisconnect(frame.payload).target;
+        onDisconnect(sessionManager_.getAgentByTarget(target));
+      } else {
+        sendError(connection, ErrorType::UNKNOWN_TYPE,
+                  "Agents cannot ask for disconnection");
+      }
       break;
+
+      // onDisconnect(connection);
     case MessageType::ERROR:
       onError(frame.payload);
       break;
@@ -213,8 +222,9 @@ void ServerDispatcher::onDashboardCommand(
 
   // Route to agent
   try {
-    int agentFd = sessionManager_.getFdByTarget(commandDashboard.target);
-    AgentConnection& agent = sessionManager_.getAgent(agentFd);
+    // int agentFd = sessionManager_.getFdByTarget(commandDashboard.target);
+    // AgentConnection& agent = sessionManager_.getAgent(agentFd);
+    AgentConnection& agent = sessionManager_.getAgentByTarget(commandDashboard.target);
 
     // Forward to agent
     sendCommand(agent, commandDashboard.command.type,

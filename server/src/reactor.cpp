@@ -14,6 +14,8 @@ void Reactor::run() {
 
   while (running_) {
     const int firedCount = poller_.wait(events, -1);
+    // const int firedCount = poller_.wait(events, 1000); // for debug, waits
+    // for 1second
     if (firedCount <= 0) {
       running_ = false;
       Logger::info("reactor", "will stop since fire count is <= 0");
@@ -78,9 +80,9 @@ void Reactor::onAgentReady(int fileDescriptor) {
 
     Logger::info(
         "reactor",
-        "on agent ready before if in while loop, bool value:" + canHandleFrame
+        std::string("on agent ready before if in while loop, bool value:") + std::string(canHandleFrame
             ? "true"
-            : "false");
+            : "false"));
     if (canHandleFrame) {
       dispatcher_.sendError(session, ErrorType::INVALID_FORMAT,
                             "First message must be REGISTER");
@@ -93,6 +95,15 @@ void Reactor::onAgentReady(int fileDescriptor) {
 
 void Reactor::onAgentDisconnected(int fileDescriptor) {
   poller_.remove(fileDescriptor);
-  // agents_.erase(fileDescriptor);
-  sessionManager_.removeAgent(fileDescriptor);
+  if (fileDescriptor == sessionManager_.getDashboardFd()) {
+    sessionManager_.resetDashboard();
+  } else {
+    sessionManager_.removeAgent(fileDescriptor);
+  }
 }
+
+// void Reactor::onAgentDisconnected(int fileDescriptor) {
+//   // poller_.remove(fileDescriptor);
+//   // sessionManager_.removeAgent(fileDescriptor);
+//   // But dispatcher doesn't know!
+// }

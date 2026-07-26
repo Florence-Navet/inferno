@@ -13,7 +13,8 @@
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher(SessionManager& manager) : sessionManager_(manager) {};
+  explicit ServerDispatcher(SessionManager& manager)
+      : sessionManager_(manager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -34,22 +35,35 @@ class ServerDispatcher : public Dispatcher {
                   const std::vector<std::uint8_t>& payload);
   void onData(const std::vector<std::uint8_t>& payload);
 
+  void onDashboardCommand(AgentConnection& dashboard,
+                          const std::vector<std::uint8_t>& payload);
+
+  void onDisconnect(AgentConnection& connection);
+
   void sendDisconnect(AgentConnection& agent);
 
   std::uint32_t nextId();
 
-  struct IncompleteResponse {
-    ResponsePayload baseResponse;
-    std::vector<std::uint8_t> data;  // indexed by chunk_index
-    // std::uint8_t chunksReceived = 0;
-  };
-  std::map<std::uint16_t, IncompleteResponse>
-      pendingResponses_;  // keyed by response id
+  // map<command.id, target string = mac adress>
+  std::map<std::uint32_t, std::string> commandTargets_;
 
-  void processCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
-  void createResponseEntry(const ResponsePayload& response);
-  void tryCompleteResponse(AgentConnection& agent, const ResponsePayload& response);
   std::uint32_t nextCmdId_ = 0;
 };
 
 #endif
+
+// TODO DASHBOARD SHOULD GET THESE
+// pendingResponses_;  // keyed by response id
+// struct IncompleteResponse {
+//   ResponsePayload baseResponse;
+//   std::vector<std::uint8_t> data;  // indexed by chunk_index
+//   // std::uint8_t chunksReceived = 0;
+// };
+// std::map<std::uint16_t, IncompleteResponse>
+//     pendingResponses_;  // keyed by response id
+
+// void processCompleteResponse(AgentConnection& agent,
+//                              const ResponsePayload& response);
+// void createResponseEntry(const ResponsePayload& response);
+// void tryCompleteResponse(AgentConnection& agent,
+//                          const ResponsePayload& response);

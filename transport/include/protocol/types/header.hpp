@@ -20,7 +20,7 @@ enum class MessageType : std::uint8_t {
   DATA = 2,
   COMMAND = 3,
   RESPONSE = 4,
-  DISCONNECT = 5, // target name
+  DISCONNECT = 5,  // target name
   ERROR = 6,
   UNKNOWN  // must always be the last !!
 };
@@ -42,7 +42,10 @@ struct LptfHeader {
 };
 
 struct DashboardDisconnect {
-  std::string target;  // "agent-1" to disconnect that agent
+  std::string target = "";  // "agent-1" to disconnect that agent
+  bool operator==(const DashboardDisconnect& other) const {
+    return target == other.target;
+  }
 };
 
 // Generic struct for recv()

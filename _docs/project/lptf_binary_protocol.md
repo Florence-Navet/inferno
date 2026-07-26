@@ -66,10 +66,12 @@ Agent sends REGISTER immediately after connecting.
         uint16_t os_version_len
         uint16_t current_user_len;
         uint16_t ip_len;
+        uint16_t mac_len;
         char hostname[hostname_len]; // UTF-8
         char os_version[os_version_len];
         char current_user[current_user_len];
         char ip[ip_len];
+        char mac[mac_len];
     };
 ```
 
@@ -77,6 +79,7 @@ Rules:
 
 - Server ignores other messages until REGISTER is received.
 - Invalid or missing REGISTER → connection may be closed.
+mac adress is meant to recognize an agent in between connection and if an agent process is stopped (computer shutdown)
 
 ### 4.2 COMMAND
 
@@ -115,6 +118,7 @@ struct ResponsePayload {
     uint8_t data[data_len];  
 };
 ```
+the max length for a chunk is the response payload fixed byte ( 4 * uint8_t size + uint16_t + uint32_t ) + the target id size (uint32_t) given by server to allow dashboard <-> server communication (and agent identification)
 
 if process info , response.data will be a vector of processInfo:
 ```c++
@@ -299,6 +303,10 @@ struct RegisterPayload {
     std::string id;
     OsInfoPayload system
 }
+
+struct DashboardDisconnect {
+  std::string target;  // "agent-1" to disconnect that agent
+};
 ```
 On the network : 
 ```c++

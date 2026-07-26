@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 echo ========================================
-echo   WizzMania Client Build Script
+echo   Inferno Dashboard Build Script
 echo ========================================
 echo.
 
@@ -38,7 +38,7 @@ echo [INFO] Working directory: %CD%
 echo.
 
 REM Check if Qt6 is in PATH
-where /q qmake >nul 2>&1
+where /q qmake6 >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Qt6 not found in PATH!
     echo.
@@ -68,12 +68,12 @@ echo.
 REM Clean build directory if it exists (with retry for locked files)
 if exist "build" (
     echo [INFO] Cleaning old build directory...
-    timeout /t 1 /nobreak >nul
+    %SystemRoot%\System32\timeout.exe /t 1 /nobreak >nul
     rmdir /s /q build 2>nul
     if exist "build" (
         echo [WARNING] Could not delete build directory (files in use)
         echo [INFO] Trying to force clean...
-        timeout /t 2 /nobreak >nul
+        %SystemRoot%\System32\timeout.exe /t 1 /nobreak >nul
         rmdir /s /q build 2>nul
         if exist "build" (
             echo [ERROR] Build directory is locked!
@@ -93,19 +93,19 @@ echo Step 1: Configuring with CMake
 echo ========================================
 echo.
 
-REM Get Qt installation root from qmake
-for /f "delims=" %%i in ('where qmake') do set QT_QMAKE=%%i
+REM Get Qt installation root from qmake6
+for /f "delims=" %%i in ('where qmake6') do set QT_QMAKE=%%i
 for %%i in ("%QT_QMAKE%") do set QT_BIN_DIR=%%~dpi
 
 REM Remove trailing backslash
 if "%QT_BIN_DIR:~-1%"=="\" set "QT_BIN_DIR=%QT_BIN_DIR:~0,-1%"
 
 REM Qt's standard installation structure:
-REM - qmake is in:     C:\Qt\6.10.1\mingw_64\bin\qmake.exe
+REM - qmake6 is in:     C:\Qt\6.10.1\mingw_64\bin\qmake.exe
 REM - Compilers are in: C:\Qt\Tools\mingw1310_64\bin\gcc.exe
 REM We need to go from C:\Qt\6.10.1\mingw_64\bin up to C:\Qt
 
-REM Extract just the drive and path (remove qmake.exe)
+REM Extract just the drive and path (remove qmake6.exe)
 for %%i in ("%QT_QMAKE%") do set QT_PATH=%%~dpi
 REM Remove trailing backslash: C:\Qt\6.10.1\mingw_64\bin\
 if "%QT_PATH:~-1%"=="\" set "QT_PATH=%QT_PATH:~0,-1%"
@@ -171,11 +171,20 @@ REM Build full paths to tools
 set "QT_GCC=%MINGW_BIN%\gcc.exe"
 set "QT_GPP=%MINGW_BIN%\g++.exe"
 set "QT_MAKE=%MINGW_BIN%\mingw32-make.exe"
+set "WINDEPLOYQT=%QT_BIN_DIR%\windeployqt.exe"
+
+if not exist "%WINDEPLOYQT%" (
+    echo [ERROR] windeployqt.exe not found:
+    echo %WINDEPLOYQT%
+    pause
+    exit /b 1
+)
 
 echo [INFO] Using compilers:
 echo   GCC:  %QT_GCC%
 echo   G++:  %QT_GPP%
 echo   MAKE: %QT_MAKE%
+echo   WINDEPLOYQT: %WINDEPLOYQT%
 echo.
 
 REM CRITICAL: Prepend both Qt bin and MinGW bin to PATH
@@ -188,10 +197,11 @@ echo.
 REM Configure with CMake using explicit tool paths
 cmake .. -G "MinGW Makefiles" ^
     -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-    -DCMAKE_C_COMPILER="%QT_GCC%" ^
     -DCMAKE_CXX_COMPILER="%QT_GPP%" ^
     -DCMAKE_MAKE_PROGRAM="%QT_MAKE%" ^
     -DCMAKE_PREFIX_PATH="%QT_BIN_DIR%\.."
+
+echo CMake returned %ERRORLEVEL%
 
 if errorlevel 1 (
     echo.
@@ -224,6 +234,26 @@ if errorlevel 1 (
     echo.
     pause
     exit /b 1
+)
+
+echo.
+echo ========================================
+echo Step 3: Deploying Qt Runtime
+echo ========================================
+echo.
+
+if exist "%WINDEPLOYQT%" (
+    "%WINDEPLOYQT%" --no-translations dashboard.exe
+
+    if errorlevel 1 (
+        echo [WARNING] windeployqt failed.
+        echo The executable may require Qt DLLs to be present in PATH.
+    ) else (
+        echo [OK] Qt runtime deployed.
+    )
+) else (
+    echo [WARNING] windeployqt not found:
+    echo %WINDEPLOYQT%
 )
 
 echo.

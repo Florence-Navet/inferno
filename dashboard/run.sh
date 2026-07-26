@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "  Running WizzMania Client"
+echo "  Running Inferno Dashboard"
 echo "========================================"
 echo ""
 

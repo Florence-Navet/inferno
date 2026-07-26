@@ -59,6 +59,7 @@ agent/build/
 server/build/
 shared/build/
 transport/build/
+dashboad/build/
 
 # Environment
 .env

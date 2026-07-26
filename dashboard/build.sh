@@ -23,10 +23,10 @@ failure() {
   echo -e "${RED}$1${RESET}"
 }
 
-title "  WizzMania Client Build Script (Linux)"
+title "  Inferno Dashboard Build Script (Linux)"
 
 # echo "========================================"
-# echo "  WizzMania Client Build Script (Linux)"
+# echo "  Inferno Dashboard Build Script (Linux)"
 # echo "========================================"
 
 

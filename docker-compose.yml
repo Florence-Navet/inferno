@@ -29,7 +29,7 @@ services:
     attach: true
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     # container_name: inferno-shared
     volumes:
       - type: bind
@@ -62,7 +62,7 @@ services:
         condition: service_completed_successfully
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     # container_name: inferno-server
     volumes:
       - type: bind
@@ -99,7 +99,7 @@ services:
     #   - inferno-db
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     environment:
       DB_HOST: inferno-db
       DB_PORT: 5432
@@ -130,7 +130,7 @@ services:
         condition: service_completed_successfully
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     volumes:
       - type: bind
         source: ./agent
@@ -166,7 +166,7 @@ services:
         condition: service_completed_successfully
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.backend
     environment:
       # Server configuration
       SERVER_PORT: ${SERVER_PORT}
@@ -180,95 +180,8 @@ services:
         target: /app/certs
     command: ["./agent/build/bin/agent"]
 
-  # ============================================
-  # Qt Dashboard (Development / Builder)
-  # ============================================
-  dashboard-builder:
-    profiles: [dashboard]
-    attach: true
-
-    depends_on:
-      transport:
-        condition: service_completed_successfully
-
-    build:
-      context: .
-      dockerfile: Dockerfile
-
-    volumes:
-      - type: bind
-        source: ./dashboard
-        target: /app/dashboard
-
-      - type: bind
-        source: ./transport
-        target: /app/transport
-
-      - type: volume
-        source: transport-build
-        target: /app/transport/build
-
-      - type: volume
-        source: dashboard-build
-        target: /app/dashboard/build
-
-      - type: bind
-        source: ./certs
-        target: /app/certs
-
-    command:
-      - bash
-      - -lc
-      - >
-        cmake
-        -S /app/dashboard
-        -B /app/dashboard/build
-        -DCMAKE_BUILD_TYPE=Debug
-        &&
-        cmake
-        --build /app/dashboard/build
-        --parallel
-
-  # ============================================
-  # Qt Dashboard (Runtime)
-  # ============================================
-  dashboard:
-    profiles: [dashboard]
-
-    depends_on:
-      dashboard-builder:
-        condition: service_completed_successfully
-
-      server:
-        condition: service_started
-
-    build:
-      context: .
-      dockerfile: Dockerfile
-
-    environment:
-      DISPLAY: host.docker.internal:0.0
-      QT_QPA_PLATFORM: xcb
-      QT_X11_NO_MITSHM: "1"
-
-      SERVER_HOST: server
-      SERVER_PORT: ${SERVER_PORT}
-      TLS: ${TLS}
-
-    volumes:
-      - type: volume
-        source: dashboard-build
-        target: /app/dashboard/build
-
-      - type: bind
-        source: ./certs
-        target: /app/certs
-
-    command: ["./dashboard/build/dashboard"]
-
 volumes:
   # inferno-data:
   transport-build:
   server-build:
   agent-build:
-  dashboard-build:

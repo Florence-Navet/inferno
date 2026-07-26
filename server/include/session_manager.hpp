@@ -24,7 +24,8 @@ class SessionManager {
   void recordAgentTarget(int fd, const std::string& target);
   void deleteAgentTarget(int fd, const std::string& target);
   AgentConnection& getAgent(int fileDescriptor);
-  bool isDashboard();
+  bool isDashboard() const;
+  bool isDashboardConnection(int fd) const;
   void setDashboardFd(int fileDescriptor);
   void resetDashboard();
   //   int getDashboardFd();

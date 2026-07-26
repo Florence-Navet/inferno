@@ -25,8 +25,12 @@ AgentConnection& SessionManager::getAgent(int fileDescriptor) {
   return agents_.at(fileDescriptor);
 }
 
-bool SessionManager::isDashboard() {
+bool SessionManager::isDashboard() const {
   return dashboardFd_ != -1 && agents_.find(dashboardFd_) != agents_.end();
+}
+
+bool SessionManager::isDashboardConnection(int fd) const {
+    return isDashboard() && fd == dashboardFd_;
 }
 
 void SessionManager::setDashboardFd(int fileDescriptor) {
@@ -36,7 +40,8 @@ void SessionManager::setDashboardFd(int fileDescriptor) {
 
 void SessionManager::resetDashboard() {
   if (dashboardFd_ == -1) return;
-  deleteAgentTarget(dashboardFd_, getTargetByFd(dashboardFd_));
+  // deleteAgentTarget(dashboardFd_, getTargetByFd(dashboardFd_));
+  removeAgent(dashboardFd_);
   dashboardFd_ = -1;
 }
 

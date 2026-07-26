@@ -12,25 +12,57 @@
 #include "socket/i_socket.hpp"
 
 void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
+  std::cout << "ENTER handleFrame\n";
+
   AgentConnection& connection = static_cast<AgentConnection&>(agent);
+  std::cout << "AFTER CAST\n";
+
+  std::cout << "type = " << static_cast<int>(frame.header.type) << std::endl;
+
   switch (frame.header.type) {
     case MessageType::REGISTER:
+      std::cout << "REGISTER\n";
       onRegister(connection, frame.payload);
       break;
     case MessageType::DASHBOARD_REGISTER:
+      std::cout << "DASHBOARD REGISTER\n";
       onDashboardRegister(connection, frame.payload);
       break;
     case MessageType::RESPONSE:
+      std::cout << "RESPONSE\n";
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
+      std::cout << "DATA\n";
       onData(frame.payload);
       break;
+    case MessageType::DISCONNECT:
+      std::cout << "DISCONNECT\n";
+      onDisconnect(connection);
+      break;
     case MessageType::ERROR:
+      std::cout << "ERROR\n";
       onError(frame.payload);
       break;
+    case MessageType::COMMAND: {
+      std::cout << "COMMAND\n";
+      std::cout << "A\n";
+
+      if (sessionManager_.isDashboardConnection(connection.getFd())) {
+        std::cout << "B\n";
+        onDashboardCommand(connection, frame.payload);
+        std::cout << "C\n";
+      } else {
+        std::cout << "D\n";
+        sendError(connection, ErrorType::UNKNOWN_TYPE,
+                  "Agents send RESPONSE, not COMMAND");
+        std::cout << "E\n";
+      }
+
+      break;
+    }
     default:
-      sendError(agent, ErrorType::UNKNOWN_TYPE, "Unexpected message type");
+      sendError(connection, ErrorType::UNKNOWN_TYPE, "Unexpected message type");
   }
 }
 
@@ -89,12 +121,13 @@ void ServerDispatcher::onDashboardRegister(
   agentsList.subtype = DataType::AGENTS;
   std::vector<std::uint8_t> dataPayload;
 
-  //  int dashboardFd = dashboard.getFd();  
+  //  int dashboardFd = dashboard.getFd();
   int dashboardFd = sessionManager_.getDashboardFd();
 
   for (const auto& entry : sessionManager_.getAgents()) {
-
-    if (entry.first == dashboardFd) continue; // skip dashboard as an agent, dashboardFd can be = -1 at this point though
+    if (entry.first == dashboardFd)
+      continue;  // skip dashboard as an agent, dashboardFd can be = -1 at this
+                 // point though
 
     const AgentConnection& agent = entry.second;
     RegisterPayload registration;
@@ -173,10 +206,46 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
   Logger::info("server dispatcher", what.str());
 }
 
+void ServerDispatcher::onDashboardCommand(
+    AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
+  // Parse: target_len + target + CommandPayload
+  DashboardCommand commandDashboard =
+      ProtocolParser::parseDashboardCommand(payload);
+
+  // Route to agent
+  try {
+    int agentFd = sessionManager_.getFdByTarget(commandDashboard.target);
+    AgentConnection& agent = sessionManager_.getAgent(agentFd);
+
+    // Forward to agent
+    sendCommand(agent, commandDashboard.command.type,
+                commandDashboard.command.data);
+
+  } catch (const std::exception& e) {
+    sendError(dashboard, ErrorType::UNKNOWN_COMMAND,
+              "Agent target not found: " + commandDashboard.target);
+  }
+}
+
+void ServerDispatcher::onDisconnect(AgentConnection& connection) {
+  std::ostringstream what;
+  what << "[DISCONNECT] " << connection.getId();
+  Logger::info("server dispatcher", what.str());
+  // maybe handle the rest of pending response and communication before closing
+  // anything?
+}
+
 // ── Outgoing senders ─────────────────────────────────────────
 
 void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
                                    const std::string& data) {
+  if (type == CommandType::UNKNOWN) {
+    // sendError(agent, ErrorType::UNKNOWN_COMMAND, "unknown command asked");
+    // // throw error here instead, catch it above so we can send it to the
+    // right caller! return;
+    throw InvalidType(std::to_string(static_cast<int>(type)));
+  }
+
   CommandPayload command;
   command.id = nextId();
   command.type = type;
@@ -188,8 +257,14 @@ void ServerDispatcher::sendCommand(AgentConnection& agent, CommandType type,
                  payload};
   agent.sendFrame(frame);
   std::ostringstream what;
-  what << "[COMMAND] id=" << command.id
-       << "  type=" << static_cast<int>(command.type);
+
+  what << "[COMMAND] target=" << agent.getId()
+       << "\ntype=" << static_cast<int>(command.type)
+       << "\ncmd_id=" << std::to_string(command.id);
+
+  // what << "[COMMAND] id=" << command.id
+  // << "  type=" << static_cast<int>(command.type);
+
   Logger::info("server dispatcher", what.str());
 }
 
@@ -202,7 +277,7 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   Logger::info("server dispatcher", "[DISCONNECT]");
 }
 
-std::uint32_t ServerDispatcher::nextId() { return nextCmdId_++; }
+std::uint32_t ServerDispatcher::nextId() { return ++nextCmdId_; }
 
 void ServerDispatcher::createResponseEntry(const ResponsePayload& response) {
   if (pendingResponses_.find(response.id) == pendingResponses_.end()) {

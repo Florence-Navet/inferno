@@ -17,6 +17,11 @@
 // Owns no fd. isValid() reflects close() so tests can assert shutdown.
 class SpySocket : public ISocket {
  public:
+  SpySocket() = default;
+  explicit SpySocket(int fd) : fd_(fd) {}  // Constructor with fd
+
+  // Or add a setter
+  void setFd(int fd) { fd_ = fd; }
   // Transfers ownership to an AgentSession while keeping spy accessible.
   // Works because SpySocket is stored by pointer inside the unique_ptr,
   // and the SpySocket itself lives on the stack for the test duration.
@@ -58,7 +63,7 @@ class SpySocket : public ISocket {
   bool listen(int) override { return false; }
   std::unique_ptr<ISocket> accept() override { return nullptr; }
   bool setNonBlocking(bool) override { return true; }
-  int getFd() override { return -1; }
+  int getFd() override { return fd_; }
   std::string remoteAddress() const override { return ""; }
   std::uint16_t remotePort() const override { return 0; }
   SocketStatus translateStatus(int /*err*/) const override {
@@ -67,6 +72,7 @@ class SpySocket : public ISocket {
 
  private:
   bool closed_ = false;
+   int fd_ = -1;
   // Thin wrapper that delegates to the SpySocket without taking ownership.
   struct SpySocketRef : public ISocket {
     explicit SpySocketRef(SpySocket& spy) : spy_(spy) {}

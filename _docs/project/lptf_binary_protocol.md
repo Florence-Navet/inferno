@@ -303,6 +303,10 @@ struct RegisterPayload {
     std::string id;
     OsInfoPayload system
 }
+
+struct DashboardDisconnect {
+  std::string target;  // "agent-1" to disconnect that agent
+};
 ```
 On the network : 
 ```c++

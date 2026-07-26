@@ -26,6 +26,11 @@ AgentConnection& SessionManager::getAgent(int fileDescriptor) {
   return agents_.at(fileDescriptor);
 }
 
+AgentConnection& SessionManager::getAgentByTarget(const std::string& target) {
+  // TODO: insert return statement here
+  return agents_.at(getFdByTarget(target));
+}
+
 bool SessionManager::isDashboard() const {
   return dashboardFd_ != -1 && agents_.find(dashboardFd_) != agents_.end();
 }

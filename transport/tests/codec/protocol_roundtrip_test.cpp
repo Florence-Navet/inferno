@@ -99,6 +99,18 @@ TEST(ProtocolRoundRrip,
 }
 
 TEST(ProtocolRoundRrip,
+     should_preserve_dashboard_disconnect_through_serialize_then_parse) {
+  DashboardDisconnect disconnect;
+  disconnect.target = "targetId";
+
+  const std::vector<std::uint8_t> bytes =
+      ProtocolSerializer::serializeDashboardDisconnect(disconnect);
+  const DashboardDisconnect result = ProtocolParser::parseDashboardDisconnect(bytes);
+  EXPECT_EQ(result, disconnect);
+}
+
+
+TEST(ProtocolRoundRrip,
      should_preserve_dashboard_response_through_serialize_then_parse) {
   DashboardResponse response;
   response.target = "targetId";

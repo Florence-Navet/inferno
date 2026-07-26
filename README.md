@@ -256,14 +256,14 @@ sudo apt install qt6-websockets-dev
 Make the scripts executable (only needed once):
 
 ```bash
-chmod +x ./dashboard/build.sh
+chmod +x ./dashboard/linux-build.sh
 chmod +x ./dashboard/run.sh
 ```
 
 Build then run:
 
 ```bash
-./dashboard/build.sh
+./dashboard/linux-build.sh
 ./dashboard/run.sh
 ```
 

@@ -139,5 +139,5 @@ else
 fi
 
 echo ""
-echo "Or run with: ./run-dashboard.sh"
+echo "Or run with: ./run.sh"
 echo ""

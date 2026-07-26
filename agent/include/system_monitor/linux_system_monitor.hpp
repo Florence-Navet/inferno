@@ -36,6 +36,8 @@ class LinuxSystemMonitor : public ISystemMonitor {
   // unsigned long long readCpuTicks(int pid);
   // float toCpuPercent(unsigned long long ticks, double uptime, long hz);
 
+  std::string readMacAdress();
+
   ProcessInfo getProcessInfo(dirent* directoryEntry,
                              const double& systemUptimeSeconds,
                              const long& clockTicksPerSecond);

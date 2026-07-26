@@ -1,7 +1,7 @@
-#include "codec/protocol_serializer.hpp"
-
 #include <cstddef>
 #include <string>
+
+#include "codec/protocol_serializer.hpp"
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
@@ -34,7 +34,8 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
 
   const std::size_t finalSize{OS_INFO_FIXED_BYTES + payload.hostname.size() +
                               payload.os_version.size() +
-                              payload.current_user.size() + payload.ip.size()};
+                              payload.current_user.size() + payload.ip.size() +
+                              payload.mac.size()};
   std::vector<std::uint8_t> payloadInByte(finalSize);
 
   payloadInByte[0] = static_cast<std::uint8_t>(payload.os_type);
@@ -55,6 +56,9 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.ip.size()));
 
+  ConvertEndian::writeU16BE(payloadInByte, offset,
+                            static_cast<std::uint16_t>(payload.mac.size()));
+
   ProtocolHelper::copyString(payloadInByte, OS_INFO_FIXED_BYTES,
                              payload.hostname);
 
@@ -73,6 +77,12 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
                                  payload.current_user.size(),
                              payload.ip);
 
+  ProtocolHelper::copyString(payloadInByte,
+                             OS_INFO_FIXED_BYTES + payload.hostname.size() +
+                                 payload.os_version.size() +
+                                 payload.current_user.size() +
+                                 payload.ip.size(),
+                             payload.mac);
   return payloadInByte;
 }
 
@@ -257,6 +267,21 @@ std::vector<std::uint8_t> serializeRegisterPayload(
             finalPayload.begin() + offset);
   offset += idLen;
   std::copy(registerPayload.begin(), registerPayload.end(),
+            finalPayload.begin() + offset);
+
+  return finalPayload;
+}
+
+std::vector<std::uint8_t> serializeDashboardDisconnect(
+    const DashboardDisconnect& payload) {
+  std::uint16_t targetLen = payload.target.size();
+  std::size_t totalSize{sizeof(std::uint16_t) + targetLen};
+  std::vector<std::uint8_t> finalPayload(totalSize);
+
+  std::size_t offset{0};
+  ConvertEndian::writeU16BE(finalPayload, offset, targetLen);
+
+  std::copy(payload.target.begin(), payload.target.end(),
             finalPayload.begin() + offset);
 
   return finalPayload;

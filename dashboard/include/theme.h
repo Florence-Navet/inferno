@@ -18,6 +18,10 @@ inline const QColor TitleText      = QColor(90, 90, 90);
 inline const QColor MutedText      = QColor(120, 120, 120);
 inline const QColor GridLine       = QColor(229, 229, 229);
 
+// Status bar.
+inline const QColor StatusBarBackground = QColor("#4C3B4D");
+inline const QColor StatusBarText       = QColor("#b8b2bd");
+
 }
 
 #endif // THEME_H

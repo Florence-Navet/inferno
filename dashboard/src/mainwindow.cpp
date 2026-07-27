@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "processtablewidget.h"
 
 #include "agentitemwidget.h"
 #include "linechartwidget.h"
@@ -74,7 +75,8 @@ void MainWindow::populateAgents()
 
 void MainWindow::buildContentArea()
 {
-    ui->contentLayout->insertWidget(0, createProcessTable());
+
+   ui->contentLayout->insertWidget(0, new ProcessTableWidget(this));
 
     QGridLayout *chartsGrid = new QGridLayout;
 
@@ -167,38 +169,6 @@ void MainWindow::updateMetric(const QString &key, const QString &value)
         m_metricValues[key]->setText(value);
 }
 
-// Builds one display row from a ProcessInfo. Works the same for hardcoded
-// or server data — no change needed when wiring the network.
-QWidget *MainWindow::createProcessRow(const ProcessInfo &process, bool isHeader)
-{
-    QWidget *row = new QWidget;
-    row->setObjectName("processRow");
-
-     const QString cellName = isHeader ? "processHeaderCell" : "processCell";
-
-    QHBoxLayout *layout = new QHBoxLayout(row);
-    layout->addWidget(makeLabel(process.pid, cellName));
-    layout->addWidget(makeLabel(process.name, cellName));
-    layout->addWidget(makeLabel(process.cpuPercent, cellName));
-
-    if (isHeader)
-        layout->addWidget(makeLabel("CPU bar", cellName));
-    else
-        layout->addWidget(createBar(process.cpuValue));
-
-    layout->addWidget(makeLabel(process.memPercent, cellName));
-
-    if (isHeader)
-        layout->addWidget(makeLabel("Mem bar", cellName));
-    else
-        layout->addWidget(createBar(process.memValue));
-
-    layout->addWidget(makeLabel(process.status, cellName));
-
-
-
-    return row;
-}
 
 void MainWindow::buildStatusBar()
 {
@@ -219,77 +189,7 @@ void MainWindow::buildStatusBar()
     ui->statusbar->addPermanentWidget(makeLabel("v1.0.0", "statusItem"));
 }
 
-QWidget *MainWindow::createProcessTable()
-{
-    QWidget *section = new QWidget;
-    QVBoxLayout *outer = new QVBoxLayout(section);
 
-    outer->addWidget(makeLabel("RUNNING PROCESSES (TOP BY CPU)", "sectionTitle"));
-
-    QWidget *grid = new QWidget;
-    grid->setObjectName("processGrid");
-    QGridLayout *g = new QGridLayout(grid);
-
-    // Header row (row 0) — static column labels, keep as-is.
-    const QStringList headers = { "PID", "Name", "CPU %", "CPU bar", "Mem %", "Mem bar", "Status" };
-    for (int col = 0; col < headers.size(); ++col)
-        g->addWidget(makeLabel(headers[col], "processHeaderCell"), 0, col);
-
-    // TODO: replace this hardcoded vector with the process list from the
-    // server ProcessListPayload. Map each incoming entry to a ProcessInfo;
-    // the fill loop below (labels + createBar) stays unchanged.
-    const QVector<ProcessInfo> processes = {
-        { "1284", "nginx", "18%", "2.1%", "running", 18, 2 },
-        { "3041", "postgres", "12%", "8.4%", "running", 12, 8 },
-        { "887", "python3", "9%", "3.2%", "running", 70, 3 },
-        { "512", "systemd", "0.4%", "0.8%", "running", 1, 1 }
-    };
-
-    // Fill loop: one grid row per process. Column order matches the header above.
-    int row = 1;
-    for (const ProcessInfo &p : processes) {
-        g->addWidget(makeLabel(p.pid, "processPid"), row, 0);
-        g->addWidget(makeLabel(p.name, "processCell"), row, 1);
-        g->addWidget(makeLabel(p.cpuPercent, "processCell"), row, 2);
-        g->addWidget(createBar(p.cpuValue), row, 3);
-        g->addWidget(makeLabel(p.memPercent, "processCell"), row, 4);
-        g->addWidget(createBar(p.memValue), row, 5);
-        g->addWidget(makeLabel(p.status, "processStatus"), row, 6);
-        ++row;
-
-        // Separator line spanning all 7 columns
-        g->addWidget(createSeparator(), row, 0, 1, 7);
-        ++row;
-    }
-
-    // Footer row: hint that more rows exist (static, matches the mockup).
-    g->addWidget(makeLabel("...  more rows", "processFooter"), row, 0, 1, 3);
-    g->addWidget(makeLabel("scroll to load more", "processFooter"), row, 4, 1, 3);
-
-    outer->addWidget(grid);
-    return section;
-}
-
-QWidget *MainWindow::createBar(int value)
-{
-    QProgressBar *bar = new QProgressBar;
-    bar->setObjectName("processBar");
-    bar->setRange(0, 100);
-    bar->setValue(value);
-    bar->setTextVisible(false);
-    bar->setFixedHeight(6);
-    bar->setMaximumWidth(140);
-    bar->setProperty("high", value >= 50);   // ← more when >=50 the color change
-    return bar;
-}
-
-QWidget *MainWindow::createSeparator()
-{
-    QWidget *line = new QWidget;
-    line->setObjectName("processSeparator");
-    line->setFixedHeight(1);
-    return line;
-}
 void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)
 {
     AgentItemWidget *widget = new AgentItemWidget(this);

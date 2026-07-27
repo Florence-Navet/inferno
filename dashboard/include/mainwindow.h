@@ -11,15 +11,6 @@
 class QLabel;
 class LineChartWidget;
 
-struct ProcessInfo {
-    QString pid;
-    QString name;
-    QString cpuPercent;  // display text, e.g. "18%"
-    QString memPercent; // display text, e.g. "2.1%"
-    QString status;
-    int cpuValue = 0;      // 0-100, drives the CPU bar
-    int memValue = 0;      // 0-100, drives the Mem bar
-};
 
 
 
@@ -74,7 +65,7 @@ private:
     void updateMetric(const QString &key, const QString &value);
 
     /// Builds one process table row from a ProcessInfo.
-    QWidget *createProcessRow(const ProcessInfo &process, bool isHeader = false);
+    //QWidget *createProcessRow(const ProcessInfo &process, bool isHeader = false);
 
     /// Builds the RUNNING PROCESSES section (title + header + rows).
     QWidget *createProcessTable();

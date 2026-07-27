@@ -1,4 +1,5 @@
 #include "linechartwidget.h"
+#include "theme.h"
 
 #include <QPainter>
 
@@ -54,7 +55,7 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
 
     QRectF card = rect().adjusted(0, 0, -1, -1);
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(255, 255, 255));
+    painter.setBrush(Theme::CardBackground);
     painter.drawRoundedRect(card, 12, 12);
 
 
@@ -73,7 +74,7 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         titleFont.setBold(true);
         titleFont.setPointSize(titleFont.pointSize() + 1);
         painter.setFont(titleFont);
-        painter.setPen(QColor(90, 90, 90));
+        painter.setPen(Theme::TitleText);
         painter.drawText(QRectF(plotLeft, 16, plotWidth, 18),
                          Qt::AlignLeft | Qt::AlignVCenter,
                          m_title);
@@ -81,7 +82,7 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     }
 
     if (!m_topRight.isEmpty()) {
-        painter.setPen(QColor(120, 120, 120));
+        painter.setPen(Theme::MutedText);
         painter.drawText(QRectF(plotLeft, 16, plotWidth, 18),
                          Qt::AlignRight | Qt::AlignVCenter,
                          m_topRight);
@@ -92,10 +93,10 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         return;
 
     const QVector<QColor> palette = {
-        QColor("#89B6A5"),
-        QColor("#48679c"),
-        QColor("#768eb6"),
-        QColor("#617ba8")
+        Theme::Series0,
+        Theme::Series1,
+        Theme::Series2,
+        Theme::Series3
     };
 
     double legendX = plotLeft;
@@ -105,7 +106,7 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         painter.drawLine(QPointF(legendX, legendY), QPointF(legendX + 14, legendY));
         legendX += 20;
 
-        painter.setPen(QColor(120, 120, 120));
+        painter.setPen(Theme::MutedText);
         QRectF textRect(legendX, legendY - 8, 60, 16);
         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, m_labels[i]);
         legendX += painter.fontMetrics().horizontalAdvance(m_labels[i]) + 16;
@@ -122,18 +123,18 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
     for (int i = 0; i <= 2; ++i) {
         double y = plotTop + (plotHeight / 2) * i;
 
-        painter.setPen(QPen(QColor(229, 229, 229), 1));
+        painter.setPen(QPen(Theme::GridLine, 1));
         painter.drawLine(QPointF(plotLeft, y), QPointF(plotLeft + plotWidth, y));
 
         int percent = 100 - i * 50;
-        painter.setPen(QColor(120, 120, 120));
+        painter.setPen(Theme::MutedText);
         painter.drawText(QRectF(0, y - 8, plotLeft - 4, 16),
                          Qt::AlignRight | Qt::AlignVCenter,
                          QString::number(percent) + "%");
     }
 
     const QStringList xLabels = { "-20s", "-10s", "now" };
-    painter.setPen(QColor(120, 120, 120));
+    painter.setPen(Theme::MutedText);
     for (int i = 0; i < xLabels.size(); ++i) {
         double x = plotLeft + (plotWidth / 2) * i;
         painter.drawText(QRectF(x - 30, plotTop + plotHeight + 4, 60, 16),

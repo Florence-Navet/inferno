@@ -1,19 +1,15 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 #include "processtablewidget.h"
-
 #include "agentitemwidget.h"
 #include "linechartwidget.h"
-
 #include "metriccardswidget.h"
-
 #include "uiutils.h"
 #include "theme.h"
-
 #include <QListWidgetItem>
+
 #include <QVector>
 #include <QGridLayout>
-
 #include <QLabel>
 
 

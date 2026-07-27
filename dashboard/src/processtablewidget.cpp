@@ -1,8 +1,11 @@
 #include "processtablewidget.h"
 #include <QProgressBar>
-#include <QLabel>
+
 #include <QVBoxLayout>
 #include <QGridLayout>
+#include "uiutils.h"
+
+#include <QLabel>
 
 
 ProcessTableWidget::ProcessTableWidget(QWidget *parent)
@@ -62,13 +65,6 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent)
 
 
 
-
-
-
-
-
-
-
 QWidget *ProcessTableWidget::createSeparator()
 {
     QWidget *line = new QWidget;
@@ -78,12 +74,6 @@ QWidget *ProcessTableWidget::createSeparator()
 }
 
 
-QLabel *ProcessTableWidget::makeLabel(const QString &text, const QString &objectName)
-{
-    QLabel *label = new QLabel(text);
-    label->setObjectName(objectName);
-    return label;
-}
 
 QWidget *ProcessTableWidget::createBar(int value)
 {

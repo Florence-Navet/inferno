@@ -7,6 +7,8 @@
 
 #include "metriccardswidget.h"
 
+#include "uiutils.h"
+
 #include <QListWidgetItem>
 #include <QVector>
 #include <QGridLayout>
@@ -117,14 +119,6 @@ void MainWindow::buildContentArea()
 
     ui->contentLayout->insertWidget(0, new MetricCardsWidget(this));
 }
-
-QLabel *MainWindow::makeLabel(const QString &text, const QString &objectName)
-{
-    QLabel *label = new QLabel(text);
-    label->setObjectName(objectName);
-    return label;
-}
-
 
 
 LineChartWidget *MainWindow::createChart(const QString &title,

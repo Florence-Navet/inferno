@@ -8,6 +8,7 @@
 #include "metriccardswidget.h"
 
 #include "uiutils.h"
+#include "theme.h"
 
 #include <QListWidgetItem>
 #include <QVector>
@@ -143,9 +144,11 @@ LineChartWidget *MainWindow::createChart(const QString &title,
 void MainWindow::buildStatusBar()
 {
     ui->statusbar->setStyleSheet(
-        "QStatusBar { background-color: #4C3B4D; }"
+        QString(
+        "QStatusBar { background-color: %1; }"
         "QStatusBar::item { border: none; }"
-        "QLabel#statusItem { color: #b8b2bd; font-size: 12px; padding: 2px 12px; }");
+        "QLabel#statusItem { color: %2; font-size: 12px; padding: 2px 12px; }")
+        .arg(Theme::StatusBarBackground.name(), Theme::StatusBarText.name()));
 
     ui->statusbar->setContentsMargins(280, 0, 16, 0);
     // TODO: replace hardcoded values with live server status

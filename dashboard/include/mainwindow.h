@@ -12,9 +12,6 @@ class QLabel;
 class LineChartWidget;
 
 
-
-
-
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;

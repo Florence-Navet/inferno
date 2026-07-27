@@ -1,4 +1,5 @@
 #include "metriccardswidget.h"
+#include "uiutils.h"
 
 #include <QLabel>
 #include <QFrame>
@@ -17,13 +18,6 @@ MetricCardsWidget::MetricCardsWidget(QWidget *parent)
     row->addWidget(createMetricCard("network", "Network rx", "820 KB/s", "tx 210 KB/s"));
 }
 
-
-QLabel *MetricCardsWidget::makeLabel(const QString &text, const QString &objectName)
-{
-    QLabel *label = new QLabel(text);
-    label->setObjectName(objectName);
-    return label;
-}
 
 void MetricCardsWidget::updateMetric(const QString &key, const QString &value)
 {

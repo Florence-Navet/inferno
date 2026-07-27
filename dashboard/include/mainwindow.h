@@ -54,8 +54,6 @@ private:
                                  const QVector<int> &filled = {},
                                  const QString &topRight = {});
 
-    /// Creates a QLabel with the given text and object name.
-    QLabel *makeLabel(const QString &text, const QString &objectName);
 
     QString m_target;
 

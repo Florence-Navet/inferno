@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QString>
-class QLabel;
+
 
 struct ProcessInfo {
     QString pid;
@@ -23,8 +23,6 @@ public:
     explicit ProcessTableWidget(QWidget *parent = nullptr);
 
 private:
-    /// Creates a QLabel with the given text and object name.
-    QLabel *makeLabel(const QString &text, const QString &objectName);
 
     /// Creates a thin horizontal separator line.
     QWidget *createSeparator();

@@ -19,8 +19,7 @@ public:
 
 
 private:
-    /// Creates a QLabel with the given text and object name.
-    QLabel *makeLabel(const QString &text, const QString &objectName);
+
 
     /// Creates one metric card (title + big value + subtitle).
     QWidget *createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle);

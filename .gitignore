@@ -70,3 +70,5 @@ notes*/
 build.log
 
 .vscode/
+
+queries.sql

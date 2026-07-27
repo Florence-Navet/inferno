@@ -93,7 +93,7 @@ A Qt-based interface providing:
 | Server runtime         | debian:bookworm-20260406-slim                              |
 | Server & agent         | C++17 , CMake 3.20 minimum                                 |
 | Dashboard              | Qt 6.4.2 minimum, 6.10.2 recommended (Widgets + ?? )       |
-| Database               | PostgreSQL                                                 |
+| Database               | PostgreSQL 17 / TimescaleDB 2.28.3                         |
 | Tests                  | Google Test                                                |
 ---
 
@@ -104,11 +104,11 @@ All **server-side and agent-side dependencies** are handled automatically inside
 
 All **dashboard-side dependencies** need to be installed on your host machine (see [How to build dashboard](#how-to-build-dashboard) below).
 
-| Library            | Version            | Where               | Purpose                         |
-|--------------------|--------------------|---------------------|---------------------------------|
-| Google Test / Mock | system             | All (Docker)        | Unit testing framework          |
-| CMake              | CMake 3.20 minimum | Dashboard (host)    | Build system for the Qt client  |
-| libssl-dev         | system             | All (Docker & host) | Secure communication on network |
+| Library            | Version            | Where                  | Purpose                         |
+|--------------------|--------------------|------------------------|---------------------------------|
+| Google Test / Mock | system             | Agent, Server (Docker) | Unit testing framework          |
+| CMake              | CMake 3.20 minimum | Dashboard (host)       | Build system for the Qt client  |
+| libssl-dev         | system             | All (Docker & host)    | Secure communication on network |
 
 
 ## Prerequisites

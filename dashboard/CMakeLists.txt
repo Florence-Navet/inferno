@@ -24,6 +24,8 @@ set(PROJECT_SOURCES
         include/linechartwidget.h
         src/processtablewidget.cpp
         include/processtablewidget.h
+        src/metriccardswidget.cpp
+        include/metriccardswidget.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

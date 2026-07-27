@@ -5,13 +5,14 @@
 #include "agentitemwidget.h"
 #include "linechartwidget.h"
 
+#include "metriccardswidget.h"
+
 #include <QListWidgetItem>
 #include <QVector>
 #include <QGridLayout>
-#include <QFrame>
-#include <QVBoxLayout>
+
 #include <QLabel>
-#include <QProgressBar>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -114,13 +115,7 @@ void MainWindow::buildContentArea()
 
     ui->contentLayout->insertLayout(0, chartsGrid);
 
-    // TODO: build metric cards, process table
-    QHBoxLayout *metricsRow = new QHBoxLayout;
-    metricsRow->addWidget(createMetricCard("cpu", "CPU overall", "34%", "4 cores"));
-    metricsRow->addWidget(createMetricCard("memory", "Memory used", "5.2 GB", "of 16 GB · swap 0.1"));
-    metricsRow->addWidget(createMetricCard("disk", "Disk read", "12 MB/s", "write 4 MB/s"));
-    metricsRow->addWidget(createMetricCard("network", "Network rx", "820 KB/s", "tx 210 KB/s"));
-    ui->contentLayout->insertLayout(0, metricsRow);
+    ui->contentLayout->insertWidget(0, new MetricCardsWidget(this));
 }
 
 QLabel *MainWindow::makeLabel(const QString &text, const QString &objectName)
@@ -130,20 +125,7 @@ QLabel *MainWindow::makeLabel(const QString &text, const QString &objectName)
     return label;
 }
 
-QWidget *MainWindow::createMetricCard(const QString &key, const QString &title, const QString &value, const QString &subtitle)
-{
-    QFrame *card = new QFrame;
-    card->setObjectName("metricCard");
-    QLabel *valueLabel = makeLabel(value, "metricValue");
-    m_metricValues.insert(key, valueLabel);
-    QVBoxLayout *layout = new QVBoxLayout(card);
-    layout->addWidget(makeLabel(title, "metricTitle"));
-    layout->addWidget(valueLabel);
-    layout->addWidget(makeLabel(subtitle, "metricSubtitle"));
 
-
-    return card;
-}
 
 LineChartWidget *MainWindow::createChart(const QString &title,
                                          const QVector<QVector<double>> &series,
@@ -161,12 +143,6 @@ LineChartWidget *MainWindow::createChart(const QString &title,
     chart->setFilled(filled);
     chart->setTopRight(topRight);
     return chart;
-}
-
-void MainWindow::updateMetric(const QString &key, const QString &value)
-{
-    if (m_metricValues.contains(key))
-        m_metricValues[key]->setText(value);
 }
 
 

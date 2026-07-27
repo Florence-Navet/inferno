@@ -73,7 +73,7 @@ services:
         condition: service_completed_successfully
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      dockerfile: Dockerfile.server
     # container_name: inferno-server
     volumes:
       - type: bind

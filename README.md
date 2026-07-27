@@ -114,6 +114,7 @@ All **dashboard-side dependencies** need to be installed on your host machine (s
 ## Prerequisites
 
 - Docker / Docker Desktop or [Podman](https://github.com/containers/podman) installed and running
+- Qt installed (see more on [How to build dashboard](#how-to-build-dashboard))
 
 ## Setup
 

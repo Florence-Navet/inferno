@@ -22,6 +22,8 @@ set(PROJECT_SOURCES
         include/agentitemwidget.h
         src/linechartwidget.cpp
         include/linechartwidget.h
+        src/processtablewidget.cpp
+        include/processtablewidget.h
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

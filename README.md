@@ -274,3 +274,21 @@ export LIBGL_ALWAYS_SOFTWARE=1
 > WSL has no GPU access, so Qt's hardware OpenGL rendering fails. This flag forces software rendering instead.
 
 ---
+
+## How to test db
+
+Get inside inferno-db container 
+```bash
+docker compose --profile db exec timescale-db   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+Or create a `queries.sql` at root project
+
+```bash
+touch queries.sql
+```
+
+Execute command inside container with
+```bash
+docker compose --profile db exec timescale-db   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /queries.sql'
+```

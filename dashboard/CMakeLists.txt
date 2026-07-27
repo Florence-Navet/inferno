@@ -28,6 +28,7 @@ set(PROJECT_SOURCES
         include/metriccardswidget.h
         src/uiutils.cpp
         include/uiutils.h
+        include/theme.h
 
 )
 

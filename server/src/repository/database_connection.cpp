@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <iostream>
 
 #include "env_helper.hpp"
 
@@ -12,14 +13,14 @@ std::string DatabaseConnection::buildConnectionString(std::string_view password,
                                                       std::string_view dbPort) {
   std::ostringstream connStr;
   connStr << "dbname=" << dbName << " user=" << user << " password=" << password
-          << " hostaddr=" << dbHost << " port=" << dbPort;
+          << " host=" << dbHost << " port=" << dbPort;
   return connStr.str();  // ← return the string
 }
 
 DatabaseConnection::DatabaseConnection()
     : DatabaseConnection(EnvHelper::resolveString("POSTGRES_PASSWORD"),
                          EnvHelper::resolveString("POSTGRES_USER"),
-                         "timescaledb", "inferno-db",
+                         EnvHelper::resolveString("POSTGRES_DB"), "inferno-db",
                          EnvHelper::resolveString("DB_PORT")) {}
 
 DatabaseConnection::DatabaseConnection(std::string_view password,
@@ -28,6 +29,8 @@ DatabaseConnection::DatabaseConnection(std::string_view password,
                                        std::string_view dbHost,
                                        std::string_view dbPort)
     : conn_(buildConnectionString(password, user, dbName, dbHost, dbPort)) {
+  std::cout << buildConnectionString(password, user, dbName, dbHost, dbPort)
+            << "\n";
   try {
     // std::string connStr =
     //     buildConnectionString(password, user, dbName, dbHost, dbPort);

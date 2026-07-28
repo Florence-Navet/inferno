@@ -2,15 +2,16 @@
 
 #include <cstdint>
 #include <cstdlib>
-#include <memory>  // for unique_ptr
 #include <string>
 
 #include "agent_dispatcher.hpp"
 #include "agent_loop.hpp"
 #include "env_helper.hpp"
 #include "poller/poller.hpp"
-#include "system_monitor/i_system_monitor.hpp"
+
 #include "system_monitor/system_monitor_factory.hpp"
+#include <memory> // for unique_ptr
+#include "system_monitor/i_system_monitor.hpp"
 
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -29,8 +30,7 @@ int main() {
   AgentDispatcher dispatcher(*monitor);
   bool encryption = EnvHelper::resolveTlsEnabled();
 
-  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs,
-                 encryption);
+  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs, encryption);
 
   loop.run();
   return 0;

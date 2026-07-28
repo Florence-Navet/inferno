@@ -12,7 +12,8 @@ class RepositoryManager {
  public:
  private:
   std::unique_ptr<IDatabaseConnection> db_;
-  
+
+ public:
   RepositoryManager();
   explicit RepositoryManager(std::unique_ptr<IDatabaseConnection> db);
   // IAgentRepository& agents() { return *agents_; }

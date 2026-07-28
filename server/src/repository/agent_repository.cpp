@@ -1,5 +1,6 @@
 #include "repository/agent_repository.hpp"
 
+
 void AgentRepository::save(const RegisterPayload& agent) {
   pqxx::params params;
   params.append(agent.id);
@@ -22,9 +23,22 @@ void AgentRepository::save(const RegisterPayload& agent) {
 
   db_.executeParams(
       "INSERT INTO agents "
-      "  (id, hostname, os_type, arch, os_version, current_username, "
+      "  (id, hostname, os_type, architecture, os_version, current_username, "
       "ip_address, mac_address) "
       "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+      params);
+}
+
+void AgentRepository::setLastSeen(const std::string& id,
+                                  const std::string& timestampIso) {
+  pqxx::params params;
+  params.append(timestampIso);
+  params.append(id);
+
+  db_.executeParams(
+      "UPDATE agents "
+      "SET last_seen = $1 "
+      "WHERE id = $2",
       params);
 }
 
@@ -66,11 +80,12 @@ RegisterPayload AgentRepository::rowToRegisterPayload(const pqxx::row& row) {
   agent.registered_at = row["registered_at"].as<std::string>();
   agent.last_seen = row["last_seen"].as<std::string>();
   agent.system.os_type = static_cast<OSType>(row["os_type"].as<int>());
-  agent.system.arch = static_cast<ArchType>(row["arch"].as<int>());
+  agent.system.arch = static_cast<ArchType>(row["architecture"].as<int>());
   agent.system.hostname = row["hostname"].as<std::string>();
   agent.system.os_version = row["os_version"].as<std::string>();
-  agent.system.current_user = row["current_user"].as<std::string>();
-  agent.system.ip = row["ip"].as<std::string>();
-  agent.system.mac = agent.id;  // MAC address is the agent identity == id
+  agent.system.current_user = row["current_username"].as<std::string>();
+  agent.system.ip = row["ip_address"].as<std::string>();
+  agent.system.mac = row["mac_address"].as<std::string>();
+  // MAC address is the agent identity == id today,but might change later
   return agent;
 }

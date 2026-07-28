@@ -27,12 +27,17 @@ struct CommandPayload {
 };
 
 struct DashboardCommand {
-  std::string target;
+  std::string target = "";
   CommandPayload command;
+  // TODO adapt sent_at type + serializer & parser should create another
+  // struct???
+  std::string sent_at = "";
 
   bool operator==(const DashboardCommand& other) const {
-    return target == other.target && command == other.command;
+    return target == other.target && command == other.command &&
+           sent_at == other.sent_at;
   }
 };
+;
 
 #endif

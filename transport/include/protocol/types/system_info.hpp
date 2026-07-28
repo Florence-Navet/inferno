@@ -47,16 +47,22 @@ struct OsInfoPayload {
   bool operator==(const OsInfoPayload& other) const {
     return os_type == other.os_type && arch == other.arch &&
            hostname == other.hostname && os_version == other.os_version &&
-           current_user == other.current_user && ip == other.ip && mac == other.mac;
+           current_user == other.current_user && ip == other.ip &&
+           mac == other.mac;
   }
 };
 
 struct RegisterPayload {
-  std::string id;
+  std::string id = "";
   OsInfoPayload system;
+  // TODO add serializer + parser for registered_at and last_seen and change to
+  // adapted type
+  std::string registered_at = "";
+  std::string last_seen = "";
 
   bool operator==(const RegisterPayload& other) const {
-    return id == other.id && system == other.system;
+    return id == other.id && system == other.system &&
+           registered_at == other.registered_at && last_seen == other.last_seen;
   }
 };
 

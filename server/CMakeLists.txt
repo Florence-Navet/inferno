@@ -35,6 +35,11 @@ add_library(server_lib STATIC
     src/agent_connection.cpp
     src/poller/epoller.cpp
     src/session_manager.cpp
+    src/db/lptf_database.cpp
+    src/db/lptf_database_agents.cpp
+    src/db/lptf_database_commands.cpp
+    src/db/lptf_database_metrics.cpp
+    src/db/lptf_database_processes.cpp
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )

@@ -361,19 +361,68 @@ char     target[target_len]
 
 ### 5.2 Wire Format (server → dashboard)
 
+### 5.2 wire format on network:
+#### RegisterPayload
 ```
-uint16_t target_len
-char     target[target_len]
+uint16_t    target_len
+uint16_t    registered_at_len
+uint16_t    last_seen_len
+char        target[target_len]
+char        registered_at[registered_at_len]
+char        last_seen[last_seen_len]
 <serialized payload>           // ResponsePayload or DataPayload
 ```
 
-### 5.3 Structures
+#### DashboardCommand 
+Dashboard sends a DashboardCommand with sent_at field empty and commandPayload.id = 0, server will fill these fields. In case dashboard asks for a command history, server sends back a DashboardCommand witrh sent_at field filled
+```
+uint16_t      target_len
+uint16_t      sent_at_len
+char          target[target_len]
+char          sent_at[sent_at_len]
+<serialized   CommandPayload>  // command.id must be 0; server assigns the real id
+```
 
+#### DashboardResponse
+```
+uint16_t      target_len 
+uint16_t      received_at_len
+char          target[target_len]
+char          received_at[received_at_len]
+<serialized   DashboardResponse>
+```
+
+#### DashboardDisconnect & DashboardData
+The other Dashboard <-> server structures on the wire (DashboardDisconnect, DashboardData)
+```
+uint16_t      target_len
+char          target[target_len]
+<serialized payload>           // ResponsePayload or DataPayload
+```
+
+
+### 5.3 Structures
 ```cpp
-// Dashboard sends a command to a specific agent
+// Agent registration info sent to dashboard
+struct RegisterPayload {
+    std::string    id;        // agent MAC address
+    std::string    registered_at;
+    std::string    last_seen;
+    OsInfoPayload  system;
+};
+
+// Dashboard sends command to server OR server sends a command history (sent_at filled)
 struct DashboardCommand {
-    std::string    target;   // agent MAC address
-    CommandPayload command;  // command.id must be 0; server assigns the real id
+  std::string target;
+  CommandPayload command;
+  std::string sent_at;
+}
+
+// Server forwards agent response to dashboard (one per chunk)
+struct DashboardResponse {
+    std::string     target;   // agent MAC address
+     std::string received_at;
+    ResponsePayload response; // chunk forwarded as-is; dashboard reassembles
 };
 
 // Server forwards agent data to dashboard
@@ -382,23 +431,12 @@ struct DashboardData {
     DataPayload data;
 };
 
-// Server forwards agent response to dashboard (one per chunk)
-struct DashboardResponse {
-    std::string     target;   // agent MAC address
-    ResponsePayload response; // chunk forwarded as-is; dashboard reassembles
-};
-
-// Agent registration info sent to dashboard
-struct RegisterPayload {
-    std::string    id;        // agent MAC address
-    OsInfoPayload  system;
-};
-
 // Dashboard ask for an agent to disconnect
 struct DashboardDisconnect {
   std::string target;  // agent MAC address
 
 };
+
 ```
 
 ### 5.4 Rules

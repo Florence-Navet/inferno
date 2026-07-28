@@ -4,11 +4,11 @@
 #include <vector>
 
 #include "builders/frame_builder.hpp"
+#include "builders/os_info_builder.hpp"
 #include "codec/protocol_parser.hpp"
 #include "codec/protocol_serializer.hpp"
 #include "fixtures/protocol.hpp"
 #include "protocol/lptf_protocol.hpp"
-#include "builders/os_info_builder.hpp"
 
 TEST(ProtocolRoundTrip,
      should_preserve_os_info_payload_through_serialize_then_parse) {
@@ -78,6 +78,7 @@ TEST(ProtocolRoundRrip,
      should_preserve_dashboard_command_through_serialize_then_parse) {
   DashboardCommand command;
   command.target = "targetId";
+  command.sent_at = "2026-07-28T14:32:45Z";
   command.command = FrameBuilder::makeCommandPayload();
 
   const std::vector<std::uint8_t> bytes =
@@ -105,20 +106,22 @@ TEST(ProtocolRoundRrip,
 
   const std::vector<std::uint8_t> bytes =
       ProtocolSerializer::serializeDashboardDisconnect(disconnect);
-  const DashboardDisconnect result = ProtocolParser::parseDashboardDisconnect(bytes);
+  const DashboardDisconnect result =
+      ProtocolParser::parseDashboardDisconnect(bytes);
   EXPECT_EQ(result, disconnect);
 }
-
 
 TEST(ProtocolRoundRrip,
      should_preserve_dashboard_response_through_serialize_then_parse) {
   DashboardResponse response;
   response.target = "targetId";
+  response.received_at = "2026-07-28T14:32:45Z";
   response.response = FrameBuilder::makeResponsePayload();
 
   const std::vector<std::uint8_t> bytes =
       ProtocolSerializer::serializeDashboardResponse(response);
-  const DashboardResponse result = ProtocolParser::parseDashboardResponse(bytes);
+  const DashboardResponse result =
+      ProtocolParser::parseDashboardResponse(bytes);
   EXPECT_EQ(result, response);
 }
 
@@ -126,6 +129,8 @@ TEST(ProtocolRoundRrip,
      should_preserve_register_payload_through_serialize_then_parse) {
   RegisterPayload payload;
   payload.id = "whateverId";
+  payload.registered_at = "2026-07-25T14:32:45Z";
+  payload.last_seen = "2026-07-28T14:32:45Z";
   payload.system = OsInfoBuilder::create();
 
   const std::vector<std::uint8_t> bytes =

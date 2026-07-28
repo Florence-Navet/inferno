@@ -17,9 +17,9 @@ int main() {
     return 1;
   }
 
-  const uint16_t serverPort = EnvHelper::resolveServerPort();
+  const uint16_t serverPort = EnvHelper::resolvePort();
   bool encryption = EnvHelper::resolveTlsEnabled();
-   TcpServer server(serverPort, encryption);
+  TcpServer server(serverPort, encryption);
   if (!server.start()) {
     std::cerr << "[server] Failed to bind/listen on port " << serverPort
               << '\n';
@@ -27,7 +27,7 @@ int main() {
   }
 
   server.setNonBlocking();
-  
+
   SessionManager manager;
   ServerDispatcher dispatcher(manager);
   Reactor reactor(server, dispatcher, poller, manager);

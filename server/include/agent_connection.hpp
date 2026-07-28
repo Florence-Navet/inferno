@@ -34,7 +34,7 @@ class AgentConnection : public FrameTransport {
   void setId(std::string_view newId) { id_ = newId; }
 
  private:
-  std::string id_ = "";
+  std::string id_ = "";  // MAC adress, target_id in db
   bool isRegistered_ = false;
 };
 

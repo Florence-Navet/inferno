@@ -7,6 +7,13 @@ find_package(OpenSSL REQUIRED)
 # ── Library ───────────────────────────────────────────────────────────────────
 # STATIC = compiled once into a .a archive, then linked into agent and server.
 # No Dockerfile, no executable — this is purely a library.
+
+# Only one socket implementation is compiled, depending on the platform.
+if(WIN32)
+    set(PLATFORM_SOCKET_SRC src/socket/windows_socket.cpp)
+else()
+    set(PLATFORM_SOCKET_SRC src/socket/linux_socket.cpp)
+endif()
 add_library(transport_lib STATIC
     src/frame_transport.cpp
     src/env_helper.cpp
@@ -18,7 +25,7 @@ add_library(transport_lib STATIC
     src/codec/metrics_serializer.cpp
     src/codec/metrics_parser.cpp
     src/codec/protocol_helper.cpp
-    src/socket/linux_socket.cpp
+    ${PLATFORM_SOCKET_SRC}
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp
     src/socket/tls_socket_factory.cpp

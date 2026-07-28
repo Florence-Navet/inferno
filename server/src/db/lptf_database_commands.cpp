@@ -6,22 +6,23 @@ int LPTF_Database::save(const std::string& agentId, const CommandPayload& cmd) {
   pqxx::work txn(conn_);
   pqxx::result r = txn.exec_params(
       "INSERT INTO command_history (agent_id, command_type, command_data) "
-      "VALUES ($1, $2, $3) RETURNING db_id",
-      agentId, static_cast<std::uint8_t>(cmd.type), cmd.data);
+      "VALUES ($1, $2, $3) RETURNING id",
+      agentId, static_cast<int>(cmd.type), cmd.data);
   txn.commit();
   return r[0][0].as<int>();
 }
 
 void LPTF_Database::saveResponse(int commandDbId, const std::string& agentId,
-                                  const ResponsePayload& response) {
+                                 const ResponsePayload& response) {
   pqxx::work txn(conn_);
   txn.exec_params(
       "INSERT INTO responses "
       "  (command_id, status, total_chunks, chunk_index, data) "
       "VALUES ($1, $2, $3, $4, $5)",
-      commandDbId, static_cast<uint8_t>(response.status),
-      static_cast<uint8_t>(response.total_chunks),
-      static_cast<uint8_t>(response.chunk_index), response.data);
+      commandDbId, static_cast<int>(response.status),
+      static_cast<int>(response.total_chunks),
+      static_cast<int>(response.chunk_index),
+      pqxx::binarystring(response.data.data(), response.data.size()));
   txn.commit();
 }
 
@@ -40,8 +41,8 @@ std::vector<CommandPayload> LPTF_Database::findByAgent(
   for (const auto& row : rows) {
     CommandPayload cmd;
     cmd.id = static_cast<uint32_t>(row["id"].as<long long>());
-    cmd.type = static_cast<uint8_t>(row["command_type"].as<int>());
-    cmd.data = row["command_data"].as<std::string>();
+    cmd.type = static_cast<CommandType>(row["command_type"].as<int>());
+    cmd.data = row["command_data"].as<std::string>(); 
     commands.push_back(std::move(cmd));
   }
   return commands;

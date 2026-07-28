@@ -35,8 +35,9 @@ set(PROJECT_SOURCES
         ../transport/src/codec/protocol_parser.cpp
         ../transport/src/codec/protocol_serializer.cpp
         ../transport/src/codec/convert_endian.cpp
-        include/serverClient.h
-        src/serverClient.cpp
+        ../transport/src/socket/windows_socket.cpp
+        src/serverclient.cpp
+        include/serverclient.h
 
 )
 

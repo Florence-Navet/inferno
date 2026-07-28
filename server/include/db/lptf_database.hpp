@@ -1,6 +1,7 @@
 #ifndef LPTF_DATABASE_HPP
 #define LPTF_DATABASE_HPP
 
+
 #include <optional>
 #include <pqxx/pqxx>
 #include <string>
@@ -8,8 +9,8 @@
 
 #include "db/i_agent_repository.hpp"
 #include "db/i_command_repository.hpp"
-#include "db/i_metrics_repository.hpp"
-#include "db/i_process_repository.hpp"
+// #include "db/i_metrics_repository.hpp"
+// #include "db/i_process_repository.hpp"
 
 // LPTF_Database is the single point of contact with PostgreSQL.
 // The class declaration lives here; each interface's methods are
@@ -21,7 +22,7 @@
 //   password=..."); db.applyMigrations(); ServerDispatcher dispatcher(db, db,
 //   db, db);
 class LPTF_Database : public IAgentRepository,
-                      public ICommandRepository,
+                      public ICommandRepository
                       {
  public:
   explicit LPTF_Database(const std::string& connectionString);
@@ -32,8 +33,7 @@ class LPTF_Database : public IAgentRepository,
 
   // ── IAgentRepository ──────────────────────────────────────
   void save(const RegisterPayload& agent) override;
-  // void setOnline(const std::string& id, bool online) override;
-  void setLastSeen(const std::string& id, bool online) override;
+  // void setLastSeen(const std::string& id, bool online) override;
   std::vector<RegisterPayload> findAll() override;
   std::optional<RegisterPayload> findById(const std::string& id) override;
 
@@ -42,10 +42,10 @@ class LPTF_Database : public IAgentRepository,
   void saveResponse(int commandDbId, const std::string& agentId,
                     const ResponsePayload& response) override;
 
-  // std::vector<CommandPayload> findByAgent(const std::string& agentId,
-  //                                         int limit = 50) override;
-  std::vector<ResponsePayload> findByAgent(const std::string& agentId,
-                                           int limit = 50) override;
+  std::vector<CommandPayload> findByAgent(const std::string& agentId,
+                                          int limit = 50) override;
+  // std::vector<ResponsePayload> findByAgent(const std::string& agentId,
+  //                                          int limit = 50) override;
 
   // ── IMetricsRepository ────────────────────────────────────
   // void save(const std::string& agentId, const MetricsSample& sample) override;

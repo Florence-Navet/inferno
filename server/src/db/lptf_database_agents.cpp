@@ -7,8 +7,8 @@ namespace {
 RegisterPayload rowToRegisterPayload(const pqxx::row& row) {
   RegisterPayload agent;
   agent.id = row["id"].as<std::string>();
-  agent.system.os_type = static_cast<uint8_t>(row["os_type"].as<int>());
-  agent.system.arch = static_cast<uint8_t>(row["arch"].as<int>());
+  agent.system.os_type = static_cast<OSType>(row["os_type"].as<int>());
+  agent.system.arch = static_cast<ArchType>(row["arch"].as<int>());
   agent.system.hostname = row["hostname"].as<std::string>();
   agent.system.os_version = row["os_version"].as<std::string>();
   agent.system.current_user = row["current_user"].as<std::string>();
@@ -32,7 +32,7 @@ void LPTF_Database::save(const RegisterPayload& agent) {
   txn.commit();
 }
 
-// void LPTF_Database::setOnline(const std::string& id, bool online) {
+// void LPTF_Database::setLastSeen(const std::string& id, bool online) {
 //   pqxx::work txn(conn_);
 //   txn.exec_params(
 //       "UPDATE agents SET online = $2, last_seen = now() WHERE id = $1", id,

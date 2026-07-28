@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     # PostgreSQL client (to connect to TimescaleDB)
     libpq-dev \
+    libpqxx-dev \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 

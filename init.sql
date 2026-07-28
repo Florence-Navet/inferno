@@ -3,8 +3,8 @@ CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
 -- Agents table (agent registration info)
 CREATE TABLE IF NOT EXISTS agents (
-    id SERIAL PRIMARY KEY,
-    target_id TEXT NOT NULL UNIQUE,
+    -- id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL, -- right now = mac adress, might change
     hostname TEXT NOT NULL,
     os_type SMALLINT NOT NULL,           -- 0=Windows, 1=Linux, 2=macOS
     architecture SMALLINT NOT NULL,      -- 0=x86, 1=x64, 2=ARM
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS agents (
 -- Metrics table (hypertable for time-series)
 CREATE TABLE IF NOT EXISTS metrics (
     time TIMESTAMPTZ NOT NULL,
-    agent_id INTEGER NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     
     -- CPU
     cpu_total_percent FLOAT8,
@@ -53,7 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_metrics_agent_time ON metrics (agent_id, time DES
 -- Command history (just tracking what was sent)
 CREATE TABLE IF NOT EXISTS command_history (
     id SERIAL PRIMARY KEY,
-    agent_id INTEGER NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
     command_type SMALLINT NOT NULL,      -- 0=OS_INFO, 1=PROCESSES, 2=SHELL, etc.
     command_data TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW()
@@ -73,6 +73,6 @@ CREATE TABLE IF NOT EXISTS responses (
 -- Index to reassemble chunks by command
 CREATE INDEX IF NOT EXISTS idx_responses_command_chunk ON responses(command_id, chunk_index);
 -- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_agents_target ON agents(target_id);
-CREATE INDEX IF NOT EXISTS idx_agents_ip ON agents(ip_address); -- on agents(mac_address) instead?
+-- CREATE INDEX IF NOT EXISTS idx_agents_target ON agents(target_id);
+-- CREATE INDEX IF NOT EXISTS idx_agents_ip ON agents(ip_address); -- on agents(mac_address) instead?
 CREATE INDEX IF NOT EXISTS idx_command_history_agent ON command_history(agent_id, sent_at DESC);

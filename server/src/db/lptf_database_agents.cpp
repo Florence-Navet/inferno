@@ -7,6 +7,8 @@ namespace {
 RegisterPayload rowToRegisterPayload(const pqxx::row& row) {
   RegisterPayload agent;
   agent.id = row["id"].as<std::string>();
+  agent.registered_at = row["registered_at"].as<std::string>();
+  agent.last_seen = row["last_seen"].as<std::string>();
   agent.system.os_type = static_cast<OSType>(row["os_type"].as<int>());
   agent.system.arch = static_cast<ArchType>(row["arch"].as<int>());
   agent.system.hostname = row["hostname"].as<std::string>();
@@ -23,7 +25,7 @@ void LPTF_Database::save(const RegisterPayload& agent) {
   pqxx::work txn(conn_);
   txn.exec_params(
       "INSERT INTO agents "
-      "  (target_id, hostname, os_type, arch, os_version, current_username, "
+      "  (id, hostname, os_type, arch, os_version, current_username, "
       "ip_address, mac_address) "
       "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ",
       agent.id, agent.system.hostname, static_cast<int>(agent.system.os_type),
@@ -43,7 +45,8 @@ void LPTF_Database::save(const RegisterPayload& agent) {
 std::vector<RegisterPayload> LPTF_Database::findAll() {
   pqxx::work txn(conn_);
   pqxx::result rows = txn.exec(
-      "SELECT id, hostname, os_type, arch, os_version, current_username, ip "
+      "SELECT id, registered_at, last_seen, hostname, os_type, arch, "
+      "os_version, current_username, ip "
       "FROM agents ORDER BY hostname");
   txn.commit();
 
@@ -55,10 +58,12 @@ std::vector<RegisterPayload> LPTF_Database::findAll() {
   return agents;
 }
 
-std::optional<RegisterPayload> LPTF_Database::findById(const std::string& id) {
+std::optional<RegisterPayload> LPTF_Database::findById(
+    const std::string& id) {
   pqxx::work txn(conn_);
   pqxx::result rows = txn.exec_params(
-      "SELECT id, hostname, os_type, arch, os_version, current_username, ip "
+      "SELECT registered_at, last_seen, hostname, os_type, arch, "
+      "os_version, current_username, ip "
       "FROM agents WHERE id = $1",
       id);
   txn.commit();

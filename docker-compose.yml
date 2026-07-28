@@ -3,7 +3,7 @@ services:
   # TimescaleDB Database
   # ============================================
   timescale-db:
-    profiles: [db]
+    profiles: [db, server]
     # image: postgres:18.3-bookworm
     image: timescale/timescaledb:2.28.3-pg17
     container_name: inferno-db
@@ -107,7 +107,8 @@ services:
     depends_on:
       server-builder:
         condition: service_completed_successfully
-    #   - inferno-db
+      timescale-db:
+        condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile.backend

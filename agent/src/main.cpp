@@ -2,23 +2,22 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <memory>  // for unique_ptr
 #include <string>
 
 #include "agent_dispatcher.hpp"
 #include "agent_loop.hpp"
 #include "env_helper.hpp"
 #include "poller/poller.hpp"
-
-#include "system_monitor/system_monitor_factory.hpp"
-#include <memory> // for unique_ptr
 #include "system_monitor/i_system_monitor.hpp"
+#include "system_monitor/system_monitor_factory.hpp"
 
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
   std::setvbuf(stderr, nullptr, _IONBF, 0);
 
   const std::string host = EnvHelper::resolveServerHost();
-  const std::uint16_t port = EnvHelper::resolveServerPort();
+  const std::uint16_t port = EnvHelper::resolvePort();
 
   constexpr int kHeartbeatMs = 30'000;  // 30s — HEALTHCHECK cadence
   constexpr int kRetryMs = 5'000;       // 5s  — reconnection cadence
@@ -30,7 +29,8 @@ int main() {
   AgentDispatcher dispatcher(*monitor);
   bool encryption = EnvHelper::resolveTlsEnabled();
 
-  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs, encryption);
+  AgentLoop loop(poller, dispatcher, host, port, kHeartbeatMs, kRetryMs,
+                 encryption);
 
   loop.run();
   return 0;

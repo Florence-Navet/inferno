@@ -1,0 +1,76 @@
+#include "repository/agent_repository.hpp"
+
+void AgentRepository::save(const RegisterPayload& agent) {
+  pqxx::params params;
+  params.append(agent.id);
+  params.append(agent.system.hostname);
+  params.append(static_cast<int>(agent.system.os_type));
+  params.append(static_cast<int>(agent.system.arch));
+  params.append(agent.system.os_version);
+  params.append(agent.system.current_user);
+  params.append(agent.system.ip);
+  params.append(agent.system.mac);
+  // std::vector<std::string> params;
+  // params.push_back(agent.id);
+  // params.push_back(agent.system.hostname);
+  // params.push_back(std::to_string(static_cast<int>(agent.system.os_type)));
+  // params.push_back(std::to_string(static_cast<int>(agent.system.arch)));
+  // params.push_back(agent.system.os_version);
+  // params.push_back(agent.system.current_user);
+  // params.push_back(agent.system.ip);
+  // params.push_back(agent.system.mac);
+
+  db_.executeParams(
+      "INSERT INTO agents "
+      "  (id, hostname, os_type, arch, os_version, current_username, "
+      "ip_address, mac_address) "
+      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+      params);
+}
+
+std::vector<RegisterPayload> AgentRepository::findAll() {
+  pqxx::result rows = db_.execute(
+      "SELECT id, registered_at, last_seen, hostname, os_type, arch, "
+      "os_version, current_username, ip "
+      "FROM agents ORDER BY hostname");
+
+  std::vector<RegisterPayload> agents;
+  agents.reserve(rows.size());
+  for (const auto& row : rows) {
+    agents.push_back(rowToRegisterPayload(row));
+  }
+  return agents;
+}
+
+std::optional<RegisterPayload> AgentRepository::findById(
+    const std::string& id) {
+  pqxx::params params;
+  params.append(id);
+  // std::vector<std::string> params = {id};
+
+  pqxx::result rows = db_.executeParams(
+      "SELECT registered_at, last_seen, hostname, os_type, arch, "
+      "os_version, current_username, ip "
+      "FROM agents WHERE id = $1",
+      params);
+
+  if (rows.empty()) {
+    return std::nullopt;
+  }
+  return rowToRegisterPayload(rows[0]);
+}
+
+RegisterPayload AgentRepository::rowToRegisterPayload(const pqxx::row& row) {
+  RegisterPayload agent;
+  agent.id = row["id"].as<std::string>();
+  agent.registered_at = row["registered_at"].as<std::string>();
+  agent.last_seen = row["last_seen"].as<std::string>();
+  agent.system.os_type = static_cast<OSType>(row["os_type"].as<int>());
+  agent.system.arch = static_cast<ArchType>(row["arch"].as<int>());
+  agent.system.hostname = row["hostname"].as<std::string>();
+  agent.system.os_version = row["os_version"].as<std::string>();
+  agent.system.current_user = row["current_user"].as<std::string>();
+  agent.system.ip = row["ip"].as<std::string>();
+  agent.system.mac = agent.id;  // MAC address is the agent identity == id
+  return agent;
+}

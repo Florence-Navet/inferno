@@ -4,6 +4,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ── OpenSSL ───────────────────────────────────────────────────────────────────
 find_package(OpenSSL REQUIRED)
+find_package(PostgreSQL REQUIRED)
 
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
@@ -35,11 +36,11 @@ add_library(server_lib STATIC
     src/agent_connection.cpp
     src/poller/epoller.cpp
     src/session_manager.cpp
-    src/db/lptf_database.cpp
-    src/db/lptf_database_agents.cpp
-    src/db/lptf_database_commands.cpp
-    src/db/lptf_database_metrics.cpp
-    src/db/lptf_database_processes.cpp
+    src/repository_manager.cpp
+    src/repository/database_connection.cpp
+    src/repository/agent_repository.cpp
+    src/repository/command_repository.cpp
+    src/repository/response_repository.cpp
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )

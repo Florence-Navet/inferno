@@ -5,6 +5,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # ── OpenSSL ───────────────────────────────────────────────────────────────────
 find_package(OpenSSL REQUIRED)
 find_package(PostgreSQL REQUIRED)
+# set(CMAKE_FIND_DEBUG_MODE ON)
+find_package(libpqxx REQUIRED)   
+# set(CMAKE_FIND_DEBUG_MODE OFF)
 
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
@@ -51,6 +54,7 @@ target_include_directories(server_lib PUBLIC
 
 target_link_libraries(server_lib PUBLIC
     transport_lib
+    libpqxx::pqxx
     
 )
 

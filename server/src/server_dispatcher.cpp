@@ -80,9 +80,15 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
        << "\nmac : " << agentInfo.mac;
   Logger::info("server dispatcher", what.str());
 
+  RegisterPayload registerToSent;
+  registerToSent.system = agentInfo;
+  registerToSent.id = agent.getId();
+  repositoryManager_.agents->save(registerToSent);
+
   DataPayload registration;
   registration.subtype = DataType::REGISTRATION;
-  registration.data = ProtocolSerializer::serializeOsInfoPayload(agentInfo);
+  registration.data =
+      ProtocolSerializer::serializeRegisterPayload(registerToSent);
   std::vector<std::uint8_t> registerPayload =
       ProtocolSerializer::serializeDataPayload(registration);
   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, registerPayload),

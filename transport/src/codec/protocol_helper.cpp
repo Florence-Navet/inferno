@@ -105,7 +105,7 @@ void validateOsInfoPayload(const OsInfoPayload& payload) {
   }
   if (payload.arch >= ArchType::UNKNOWN) {
     throw InvalidFieldValue(
-        "arch", std::to_string(static_cast<std::uint8_t>(payload.arch)));
+        "architecture", std::to_string(static_cast<std::uint8_t>(payload.arch)));
   }
   if (payload.hostname.empty()) {
     throw InvalidSize("os info hostname length", "0");
@@ -220,7 +220,7 @@ OSType toOsType(const std::uint8_t value) {
 
 ArchType toArchType(const std::uint8_t value) {
   if (value >= static_cast<std::uint8_t>(ArchType::UNKNOWN)) {
-    throw InvalidFieldValue("arch", std::to_string(value));
+    throw InvalidFieldValue("architecture", std::to_string(value));
   }
   return static_cast<ArchType>(value);
 }

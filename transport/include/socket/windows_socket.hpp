@@ -4,7 +4,10 @@
 // windows.h defines ERROR, min and max as macros, which clash with
 // MessageType::ERROR and ResponseStatus::ERROR. These guards prevent that.
 #define WIN32_LEAN_AND_MEAN
+
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define NOGDI
 
 #include <winsock2.h>

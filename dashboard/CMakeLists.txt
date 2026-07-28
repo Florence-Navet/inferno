@@ -36,8 +36,11 @@ set(PROJECT_SOURCES
         ../transport/src/codec/protocol_serializer.cpp
         ../transport/src/codec/convert_endian.cpp
         ../transport/src/socket/windows_socket.cpp
+        ../transport/src/socket/socket_factory.cpp
         src/serverclient.cpp
         include/serverclient.h
+        src/dashboardsession.cpp
+        include/dashboardsession.h
 
 )
 

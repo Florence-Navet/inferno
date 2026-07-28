@@ -7,6 +7,7 @@
 #include "uiutils.h"
 #include "theme.h"
 #include <QListWidgetItem>
+#include "serverclient.h"
 
 #include <QVector>
 #include <QGridLayout>
@@ -53,6 +54,9 @@ MainWindow::MainWindow(QWidget *parent)
             this, [this](QListWidgetItem *current, QListWidgetItem *) {
                 m_target = current ? current->data(Qt::UserRole).toString() : QString();
             });
+
+    m_client = new ServerClient(this);
+    m_client->connectToServer("localhost", 8888);
 
 }
 

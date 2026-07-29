@@ -35,19 +35,23 @@ if(NOT TARGET transport_lib)
     endif()
 endif()
 
-# ── Server library (all logic, no main) ──────────────────────────────────────
-add_library(server_lib STATIC
-    src/tcp_server.cpp
-    src/server_dispatcher.cpp
-    src/reactor.cpp
-    src/agent_connection.cpp
-    src/poller/epoller.cpp
-    src/session_manager.cpp
+set(REPOSITORY_SOURCES
     src/repository_manager.cpp
     src/repository/database_connection.cpp
     src/repository/agent_repository.cpp
     src/repository/command_repository.cpp
     src/repository/response_repository.cpp
+)
+
+# ── Server library (all logic, no main) ──────────────────────────────────────
+add_library(server_lib STATIC
+    src/tcp_server.cpp
+    src/dispatcher/server_dispatcher.cpp
+    src/reactor.cpp
+    src/agent_connection.cpp
+    src/poller/epoller.cpp
+    src/session_manager.cpp
+    ${REPOSITORY_SOURCES}
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )

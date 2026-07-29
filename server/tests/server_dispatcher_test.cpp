@@ -1,4 +1,4 @@
-#include "server_dispatcher.hpp"
+#include "dispatcher/server_dispatcher.hpp"
 
 #include <gtest/gtest.h>
 
@@ -74,6 +74,7 @@ TEST_F(ServerDispatcherTest, should_register_session_on_register) {
   EXPECT_EQ(agent.getAgentInfo().hostname, Protocol::TEST_HOSTNAME_STR);
 }
 
+// TODO sendError method on frame transport now, not on dispatcher, only called if dashboard exist
 TEST_F(ServerDispatcherTest,
        should_send_error_when_unknown_message_type_received) {
   // Arrange
@@ -93,36 +94,41 @@ TEST_F(ServerDispatcherTest,
   EXPECT_EQ(agentSpy.messageType(), MessageType::INFERNO_ERROR);
 }
 
-TEST_F(ServerDispatcherTest,
-       should_increment_command_id_across_successive_commands) {
-  // Arrange
-  SpySocket agentSpy;
-  AgentConnection& agent = createAgent(101, agentSpy);
-  std::vector<std::uint16_t> ids;
+// TODO now db assign command id, no need for this anymore?
+// TEST_F(ServerDispatcherTest,
+//        should_increment_command_id_across_successive_commands) {
+//   // Arrange
+//   SpySocket agentSpy;
+//   AgentConnection& agent = createAgent(101, agentSpy);
+//   std::vector<std::uint16_t> ids;
 
-  // Act
-  for (int i = 0; i < 3; ++i) {
-    dispatcher->sendCommand(agent, CommandType::OS_INFO, "");
+//   // Act
+//   for (int i = 0; i < 3; ++i) {
+//     CommandPayload command;
+//     command.data = "";
+//     command.id = 1;
+//     command.type = CommandType::OS_INFO;
+//     dispatcher->sendCommand(agent, command);
 
-    // feed sent bytes into receive buffer
-    agent.appendToBuffer(agentSpy.sent);
+//     // feed sent bytes into receive buffer
+//     agent.appendToBuffer(agentSpy.sent);
 
-    // clear spy so each iteration is isolated
-    agentSpy.sent.clear();
+//     // clear spy so each iteration is isolated
+//     agentSpy.sent.clear();
 
-    // extract frames via real RX pipeline
-    while (auto frame = agent.tryExtractFrame()) {
-      CommandPayload cmd = ProtocolParser::parseCommandPayload(frame->payload);
-      ids.push_back(cmd.id);
-    }
-  }
+//     // extract frames via real RX pipeline
+//     while (auto frame = agent.tryExtractFrame()) {
+//       CommandPayload cmd = ProtocolParser::parseCommandPayload(frame->payload);
+//       ids.push_back(cmd.id);
+//     }
+//   }
 
-  // Assert
-  ASSERT_EQ(ids.size(), 3);
-  EXPECT_EQ(ids[0], 1);
-  EXPECT_EQ(ids[1], 2);
-  EXPECT_EQ(ids[2], 3);
-}
+//   // Assert
+//   ASSERT_EQ(ids.size(), 3);
+//   EXPECT_EQ(ids[0], 1);
+//   EXPECT_EQ(ids[1], 2);
+//   EXPECT_EQ(ids[2], 3);
+// }
 
 // ════════════════════════════════════════════════════════════════════════════
 // Dashboard Registration Tests

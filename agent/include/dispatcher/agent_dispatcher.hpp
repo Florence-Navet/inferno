@@ -8,11 +8,12 @@
 
 #include "agent_session.hpp"
 #include "dispatcher/dispatcher.hpp"
+#include "dispatcher/i_agent_dispatcher.hpp"
 #include "metrics/metrics_controller.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "system_monitor/i_system_monitor.hpp"
 
-class AgentDispatcher : public Dispatcher {
+class AgentDispatcher : public IAgentDispatcher {
  public:
   explicit AgentDispatcher(ISystemMonitor& monitor);
 
@@ -22,8 +23,9 @@ class AgentDispatcher : public Dispatcher {
 
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
 
-  void sendRegister(AgentSession& session);
-  void setMetricsController(std::shared_ptr<MetricsController> controller);
+  void sendRegister(AgentSession& session) override;
+  void setMetricsController(
+      std::shared_ptr<MetricsController> controller) override;
 
  private:
   ISystemMonitor& monitor_;  // injected -used to read OS info for REGISTER

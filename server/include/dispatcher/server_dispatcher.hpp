@@ -6,13 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "agent_connection.hpp"
-#include "dispatcher/dispatcher.hpp"
-#include "protocol/lptf_protocol.hpp"
+#include "dispatcher/i_server_dispatcher.hpp"
 #include "repository_manager.hpp"
 #include "session_manager.hpp"
 
-class ServerDispatcher : public Dispatcher {
+class ServerDispatcher : public IServerDispatcher {
  public:
   explicit ServerDispatcher(SessionManager& sessionManager,
                             RepositoryManager& repositoryManager)
@@ -23,9 +21,10 @@ class ServerDispatcher : public Dispatcher {
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
 
   void handleFrame(FrameTransport& agent, const Frame& frame) override;
-  void sendCommand(AgentConnection& agent, CommandType type,
-                   const std::string& data = "");
-  SessionManager& getSessionManager() { return sessionManager_; }
+  void sendCommand(AgentConnection& agent,
+                   const CommandPayload& Command) override;
+  SessionManager& getSessionManager() override { return sessionManager_; }
+  void onAgentDisconnect(AgentConnection& agent) override;
 
  private:
   SessionManager& sessionManager_;
@@ -56,9 +55,8 @@ class ServerDispatcher : public Dispatcher {
   void registerDashboard(AgentConnection& dashboard,
                          const OsInfoPayload& dashboardInfo);
 
-
-void registerAgent(AgentConnection& agent,
-                                     const OsInfoPayload& agentInfo, RegisterPayload& registerToSent);
+  void registerAgent(AgentConnection& agent, const OsInfoPayload& agentInfo,
+                     RegisterPayload& registerToSent);
 };
 
 #endif

@@ -31,16 +31,23 @@ if(NOT TARGET transport_lib)
 endif()
 
 # ── Agent library (all logic, no main) ───────────────────────────────────────
-add_library(agent_lib STATIC
-    src/agent_dispatcher.cpp
-    src/agent_session.cpp
-    src/agent_loop.cpp
+set(METRICS_SOURCES
     src/metrics/linux_metrics_scrapper.cpp
     src/metrics/metrics_controller.cpp
     src/metrics/metrics_scrapper_factory.cpp
+)
+
+set(SYSTEM_MONITOR_SOURCES
     src/system_monitor/linux_system_monitor.cpp
     src/system_monitor/system_monitor_factory.cpp
-    # src/socket/SocketLinux.cpp    ← add as you create files
+)
+
+add_library(agent_lib STATIC
+    src/dispatcher/agent_dispatcher.cpp
+    src/agent_session.cpp
+    src/agent_loop.cpp
+    ${METRICS_SOURCES}
+    ${SYSTEM_MONITOR_SOURCES}
 )
 
 # PRIVATE here because nothing links agent_lib downstream.

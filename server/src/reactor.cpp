@@ -84,8 +84,10 @@ void Reactor::onAgentReady(int fileDescriptor) {
         std::string("on agent ready before if in while loop, bool value:") +
             std::string(canHandleFrame ? "true" : "false"));
     if (canHandleFrame) {
-      dispatcher_.sendError(session, ErrorType::INVALID_FORMAT,
-                            "First message must be REGISTER");
+      if (sessionManager_.isDashboard()) {
+        sessionManager_.getDashboard().sendError(
+            ErrorType::INVALID_FORMAT, "First message must be REGISTER");
+      }
     } else {
       dispatcher_.handleFrame(session, frame.value());
     }
@@ -98,6 +100,7 @@ void Reactor::onAgentDisconnected(int fileDescriptor) {
   if (fileDescriptor == sessionManager_.getDashboardFd()) {
     sessionManager_.resetDashboard();
   } else {
+    dispatcher_.onAgentDisconnect(sessionManager_.getAgent(fileDescriptor));
     sessionManager_.removeAgent(fileDescriptor);
   }
 }

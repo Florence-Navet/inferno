@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "agent_dispatcher.hpp"
 #include "agent_session.hpp"
+#include "dispatcher/agent_dispatcher.hpp"
 #include "metrics/metrics_controller.hpp"
 #include "poller/i_poller.hpp"
 

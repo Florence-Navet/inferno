@@ -1,4 +1,4 @@
-#include "agent_dispatcher.hpp"
+#include "dispatcher/agent_dispatcher.hpp"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -151,10 +151,10 @@ TEST_F(AgentDispatcherTest,
   EXPECT_FALSE(controller->isActive());
 }
 
-
-TEST_F(AgentDispatcherTest, should_send_multiple_frames_when_response_exceeds_chunk_size) {
+TEST_F(AgentDispatcherTest,
+       should_send_multiple_frames_when_response_exceeds_chunk_size) {
   //------- Arrange
-  monitor.processCount = 2340; // enough to exceed one chunk
+  monitor.processCount = 2340;  // enough to exceed one chunk
 
   const std::vector<std::uint8_t> payload = FrameBuilder::makeRawCommandPayload(
       1, static_cast<std::uint8_t>(CommandType::RUNNING_PROCESSES), {});
@@ -183,7 +183,6 @@ TEST_F(AgentDispatcherTest, should_send_multiple_frames_when_response_exceeds_ch
   }
 }
 
-
 TEST_F(AgentDispatcherTest, should_execute_shell_command_when_requested) {
   //------- Arrange
   const std::string command = "echo hello";
@@ -210,4 +209,3 @@ TEST_F(AgentDispatcherTest, should_execute_shell_command_when_requested) {
   EXPECT_EQ(response, expected);
   EXPECT_EQ(monitor.lastShellCommand, command);
 }
-

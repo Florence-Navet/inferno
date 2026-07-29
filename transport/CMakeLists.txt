@@ -38,7 +38,7 @@ add_library(transport_lib STATIC
     ${PLATFORM_SOCKET_SRC}
     src/env_helper.cpp
     src/logger.cpp
-    src/dispatcher/dispatcher.cpp
+    # src/dispatcher/dispatcher.cpp
 )
 target_link_libraries(transport_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 

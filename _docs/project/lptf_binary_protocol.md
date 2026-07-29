@@ -456,6 +456,9 @@ struct DashboardDisconnect {
 - When a new agent registers, server **SHOULD** push a `DATA / REGISTRATION` frame to dashboard containing a single `RegisterPayload` through a `DataPayload`.
 - When dashboard registers, server **SHOULD** send a `DATA / AGENTS` frame containing all currently connected agents as a list of `RegisterPayload` through a `DashboardData`.
 - DISCONNECT from dashboard **MUST** carry a `DashboardDisconnect` payload; DISCONNECT from agent or server **SHOULD NOT** carry a payload.
+- On a regular agent disconnection, server **MUST*** send a `DashboardDisconnect` with the agent id so dashboard can update GUI.
+- On any error, server **MUST** inform sender
+
 ---
 
 ## 6. Stream Parsing

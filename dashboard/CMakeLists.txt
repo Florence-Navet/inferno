@@ -10,8 +10,8 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Network)
 
 set(PROJECT_SOURCES
         src/main.cpp
@@ -29,6 +29,18 @@ set(PROJECT_SOURCES
         src/uiutils.cpp
         include/uiutils.h
         include/theme.h
+        ../transport/src/frame_transport.cpp
+        ../transport/src/logger.cpp
+        ../transport/src/codec/protocol_helper.cpp
+        ../transport/src/codec/protocol_parser.cpp
+        ../transport/src/codec/protocol_serializer.cpp
+        ../transport/src/codec/convert_endian.cpp
+        ../transport/src/socket/windows_socket.cpp
+        ../transport/src/socket/socket_factory.cpp
+        src/serverclient.cpp
+        include/serverclient.h
+        src/dashboardsession.cpp
+        include/dashboardsession.h
 
 )
 
@@ -55,8 +67,8 @@ else()
     endif()
 endif()
 
-target_link_libraries(dashboard PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
-target_include_directories(dashboard PRIVATE include)
+target_link_libraries(dashboard PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Network)
+target_include_directories(dashboard PRIVATE include ../transport/include)
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an

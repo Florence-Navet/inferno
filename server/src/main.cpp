@@ -7,6 +7,7 @@
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
 #include "tcp_server.hpp"
+#include "repository_manager.hpp"
 
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -17,9 +18,9 @@ int main() {
     return 1;
   }
 
-  const uint16_t serverPort = EnvHelper::resolveServerPort();
+  const uint16_t serverPort = EnvHelper::resolvePort();
   bool encryption = EnvHelper::resolveTlsEnabled();
-   TcpServer server(serverPort, encryption);
+  TcpServer server(serverPort, encryption);
   if (!server.start()) {
     std::cerr << "[server] Failed to bind/listen on port " << serverPort
               << '\n';
@@ -27,10 +28,11 @@ int main() {
   }
 
   server.setNonBlocking();
-  
-  SessionManager manager;
-  ServerDispatcher dispatcher(manager);
-  Reactor reactor(server, dispatcher, poller, manager);
+
+  SessionManager sessionManager;
+  RepositoryManager repositoryManager;
+  ServerDispatcher dispatcher(sessionManager, repositoryManager);
+  Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;
 }

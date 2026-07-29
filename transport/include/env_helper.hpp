@@ -12,8 +12,8 @@ class EnvHelper {
   EnvHelper(const EnvHelper&) = delete;
   EnvHelper& operator=(const EnvHelper&) = delete;
 
-  static std::uint16_t resolveServerPort();
-
+  static std::uint16_t resolvePort(const std::string& portName = "SERVER_PORT");
+  static std::string resolveString(const std::string& variableName);
   static std::string resolveServerHost();
 
   static const std::uint16_t SERVER_PORT = 8888;

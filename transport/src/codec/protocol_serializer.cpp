@@ -1,7 +1,7 @@
+#include "codec/protocol_serializer.hpp"
+
 #include <cstddef>
 #include <string>
-
-#include "codec/protocol_serializer.hpp"
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
@@ -112,12 +112,14 @@ std::vector<std::uint8_t> serializeResponsePayload(
   std::size_t offset{0};
   // ConvertEndian::writeU16BE(payloadInByte, offset, payload.id);
   ConvertEndian::writeU32BE(payloadInByte, offset, payload.id);
+
   payloadInByte[offset] = static_cast<std::uint8_t>(payload.status);
   offset++;
   payloadInByte[offset] = payload.total_chunks;
   offset++;
   payloadInByte[offset] = payload.chunk_index;
   offset++;
+
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
   // copyString(payloadInByte, RESPONSE_FIXED_BYTES, payload.data);
@@ -199,17 +201,26 @@ std::vector<std::uint8_t> serializeProcessInfoList(
 std::vector<std::uint8_t> serializeDashboardCommand(
     const DashboardCommand& command) {
   std::uint16_t target_len = command.target.size();
+  std::uint16_t sent_at_len = command.sent_at.size();
+
   std::vector<uint8_t> commandPayload =
       serializeCommandPayload(command.command);
 
-  std::size_t totalSize{sizeof(std::uint16_t) + target_len +
+  std::size_t totalSize{2 * sizeof(std::uint16_t) + target_len + sent_at_len +
                         commandPayload.size()};
+
   std::vector<uint8_t> payload(totalSize);
   std::size_t offset{0};
   ConvertEndian::writeU16BE(payload, offset, target_len);
+  ConvertEndian::writeU16BE(payload, offset, sent_at_len);
   std::copy(command.target.begin(), command.target.end(),
             payload.begin() + offset);
   offset += target_len;
+
+  std::copy(command.sent_at.begin(), command.sent_at.end(),
+            payload.begin() + offset);
+  offset += sent_at_len;
+
   std::copy(commandPayload.begin(), commandPayload.end(),
             payload.begin() + offset);
   return payload;
@@ -235,18 +246,27 @@ std::vector<std::uint8_t> serializeDashboardData(const DashboardData& data) {
 std::vector<std::uint8_t> serializeDashboardResponse(
     const DashboardResponse& response) {
   std::uint16_t target_len = response.target.size();
+  std::uint16_t received_at_len = response.received_at.size();
+
   std::vector<uint8_t> responsePayload =
       serializeResponsePayload(response.response);
 
-  std::size_t totalSize{sizeof(std::uint16_t) + target_len +
-                        responsePayload.size()};
+  std::size_t totalSize{2 * sizeof(std::uint16_t) + target_len +
+                        received_at_len + responsePayload.size()};
   std::vector<std::uint8_t> payload(totalSize);
   std::size_t offset{0};
 
   ConvertEndian::writeU16BE(payload, offset, target_len);
+  ConvertEndian::writeU16BE(payload, offset, received_at_len);
+
   std::copy(response.target.begin(), response.target.end(),
             payload.begin() + offset);
   offset += target_len;
+
+  std::copy(response.received_at.begin(), response.received_at.end(),
+            payload.begin() + offset);
+  offset += received_at_len;
+
   std::copy(responsePayload.begin(), responsePayload.end(),
             payload.begin() + offset);
 
@@ -256,16 +276,33 @@ std::vector<std::uint8_t> serializeDashboardResponse(
 std::vector<std::uint8_t> serializeRegisterPayload(
     const RegisterPayload& payload) {
   std::uint16_t idLen = payload.id.size();
+  std::uint16_t registeredAtLen = payload.registered_at.size();
+  std::uint16_t lastSeenLen = payload.last_seen.size();
+
   std::vector<uint8_t> registerPayload = serializeOsInfoPayload(payload.system);
 
-  std::size_t totalSize{sizeof(std::uint16_t) + idLen + registerPayload.size()};
+  std::size_t totalSize{3 * sizeof(std::uint16_t) + idLen + registeredAtLen +
+                        lastSeenLen + registerPayload.size()};
+
   std::vector<std::uint8_t> finalPayload(totalSize);
   std::size_t offset{0};
 
   ConvertEndian::writeU16BE(finalPayload, offset, idLen);
+  ConvertEndian::writeU16BE(finalPayload, offset, registeredAtLen);
+  ConvertEndian::writeU16BE(finalPayload, offset, lastSeenLen);
+
   std::copy(payload.id.begin(), payload.id.end(),
             finalPayload.begin() + offset);
   offset += idLen;
+
+  std::copy(payload.registered_at.begin(), payload.registered_at.end(),
+            finalPayload.begin() + offset);
+  offset += registeredAtLen;
+
+  std::copy(payload.last_seen.begin(), payload.last_seen.end(),
+            finalPayload.begin() + offset);
+  offset += lastSeenLen;
+
   std::copy(registerPayload.begin(), registerPayload.end(),
             finalPayload.begin() + offset);
 

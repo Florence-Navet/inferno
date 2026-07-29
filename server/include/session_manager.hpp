@@ -8,6 +8,7 @@
 #include "agent_connection.hpp"
 
 class SessionManager {
+  // TODO add constructor and destructor
  private:
   std::unordered_map<int, AgentConnection> agents_;
   int dashboardFd_ = -1;

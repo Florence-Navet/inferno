@@ -4,6 +4,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # ── OpenSSL ───────────────────────────────────────────────────────────────────
 find_package(OpenSSL REQUIRED)
+find_package(PostgreSQL REQUIRED)
+# set(CMAKE_FIND_DEBUG_MODE ON)
+find_package(libpqxx REQUIRED)   
+# set(CMAKE_FIND_DEBUG_MODE OFF)
 
 # ── Pull in shared — makes this file self-sufficient ─────────────────────────
 # When built via root CMakeLists, shared is already defined and this is skipped.
@@ -35,6 +39,11 @@ add_library(server_lib STATIC
     src/agent_connection.cpp
     src/poller/epoller.cpp
     src/session_manager.cpp
+    src/repository_manager.cpp
+    src/repository/database_connection.cpp
+    src/repository/agent_repository.cpp
+    src/repository/command_repository.cpp
+    src/repository/response_repository.cpp
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )
@@ -45,6 +54,7 @@ target_include_directories(server_lib PUBLIC
 
 target_link_libraries(server_lib PUBLIC
     transport_lib
+    libpqxx::pqxx
     
 )
 

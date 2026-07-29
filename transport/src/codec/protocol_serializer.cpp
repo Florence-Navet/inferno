@@ -309,6 +309,63 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   return finalPayload;
 }
 
+std::vector<std::uint8_t> serializeRegisterPayloadList(
+    const std::vector<RegisterPayload>& registrations) {
+  // std::size_t totalSize = sizeof(std::uint16_t);  // registerCount
+
+  //   // First pass: serialize each payload to know exact sizes
+  //   std::vector<std::vector<std::uint8_t>> serializedPayloads;
+  //   for (const RegisterPayload& registerPayload : registrations) {
+  //     auto serialized = serializeRegisterPayload(registerPayload);
+  //     totalSize += serialized.size();
+  //     serializedPayloads.push_back(serialized);
+  //   }
+
+  //   std::vector<std::uint8_t> finalList(totalSize);
+  //   std::size_t offset{0};
+  //   std::uint16_t registrationCount =
+  //       static_cast<std::uint16_t>(registrations.size());
+
+  //   ConvertEndian::writeU16BE(finalList, offset, registrationCount);
+
+  //   // Second pass: copy all serialized payloads
+  //   for (const auto& registration : serializedPayloads) {
+  //     std::copy(registration.begin(), registration.end(),
+  //               finalList.begin() + offset);
+  //     offset += registration.size();
+  //   }
+
+  //   return finalList;
+  std::size_t totalSize = sizeof(std::uint16_t);  // registerCount
+
+  for (const RegisterPayload& payload : registrations) {
+    totalSize +=
+        (3 * sizeof(std::uint16_t) +  // id, registered_at, last_seen lengths
+         payload.id.size() + payload.registered_at.size() +
+         payload.last_seen.size() +
+         OS_INFO_FIXED_BYTES +  // OsInfo fixed fields
+         payload.system.hostname.size() + payload.system.os_version.size() +
+         payload.system.current_user.size() + payload.system.ip.size() +
+         payload.system.mac.size());
+  }
+
+  std::vector<std::uint8_t> finalList(totalSize);
+  std::size_t offset{0};
+  std::uint16_t registrationCount =
+      static_cast<std::uint16_t>(registrations.size());
+
+  ConvertEndian::writeU16BE(finalList, offset, registrationCount);
+
+  for (const RegisterPayload& payload : registrations) {
+    std::vector<uint8_t> registration = serializeRegisterPayload(payload);
+    std::copy(registration.begin(), registration.end(),
+              finalList.begin() + offset);
+    offset += registration.size();
+  }
+
+  return finalList;
+}
+
 std::vector<std::uint8_t> serializeDashboardDisconnect(
     const DashboardDisconnect& payload) {
   std::uint16_t targetLen = payload.target.size();

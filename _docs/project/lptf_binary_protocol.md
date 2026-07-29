@@ -372,6 +372,12 @@ char        registered_at[registered_at_len]
 char        last_seen[last_seen_len]
 <serialized payload>           // ResponsePayload or DataPayload
 ```
+DATA / REGISRATION data =
+```
+uint16_t registration_count
+RegisterPayload[registration_count]
+```
+
 
 #### DashboardCommand 
 Dashboard sends a DashboardCommand with sent_at field empty and commandPayload.id = 0, server will fill these fields. In case dashboard asks for a command history, server sends back a DashboardCommand witrh sent_at field filled

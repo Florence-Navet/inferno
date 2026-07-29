@@ -13,9 +13,12 @@ constexpr std::uint16_t MAX_VALUE_INT16 =
 constexpr std::size_t OS_INFO_FIXED_BYTES =
     5 * sizeof(std::uint16_t) +
     2 * sizeof(std::uint8_t);  // hostname_len + os_version_len +
-                               // current_user_len + ip_len + os_type + arch
+                               // current_user_len + ip_len + os_type + arch + mac len
 constexpr std::size_t REGISTER_MAX_HOSTNAME_LEN =
     MAX_VALUE_INT16 - OS_INFO_FIXED_BYTES;
+
+constexpr std::size_t REGISTER_FIXED_SIZE =
+    3 * sizeof(std::uint16_t) + OS_INFO_FIXED_BYTES;
 
 constexpr std::size_t PROCESS_INFO_FIXED_SIZE =
     sizeof(std::uint32_t) + sizeof(float) + sizeof(std::uint64_t) +

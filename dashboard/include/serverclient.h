@@ -22,6 +22,9 @@ public:
     /// Connects to the server and starts listening for frames.
     bool connectToServer(const QString &host, quint16 port);
 
+signals:
+     void agentReceived(const QString &id, const QString &name, const QString &details);
+
 private:
     std::unique_ptr<DashboardSession> m_session;
     QSocketNotifier *m_notifier = nullptr;

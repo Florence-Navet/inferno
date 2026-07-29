@@ -11,6 +11,26 @@
 #include <QDebug>
 #include <QHostInfo>
 
+static QString osTypeToString(OSType type)
+{
+    switch (type) {
+    case OSType::WINDOWS: return "Windows";
+    case OSType::LINUX:   return "Linux";
+    case OSType::MAC:     return "macOS";
+    default:              return "Unknown";
+    }
+}
+
+static QString archToString(ArchType arch)
+{
+    switch (arch) {
+    case ArchType::X86: return "x86";
+    case ArchType::X64: return "x64";
+    case ArchType::ARM: return "ARM";
+    default:            return "Unknown";
+    }
+}
+
 ServerClient::ServerClient(QObject *parent)
     : QObject{parent}
 {
@@ -116,11 +136,24 @@ void ServerClient::handleData(const std::vector<std::uint8_t> &payload)
 
     switch (data.subtype) {
     case DataType::AGENTS:
-        qDebug() << "AGENTS list," << data.data.size() << "bytes";
+    case DataType::REGISTRATION:{
+        if (data.data.empty())
+            break;  // no agent connected yet
+
+        const RegisterPayload agent = ProtocolParser::parseRegisterPayload(data.data);
+        qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
+                 << QString::fromStdString(agent.system.ip)
+                 << "id:" << QString::fromStdString(agent.id);
+        const QString details = QString("%1 · %2 · %3")
+                                    .arg(osTypeToString(agent.system.os_type),
+                                         archToString(agent.system.arch),
+                                         QString::fromStdString(agent.system.ip));
+
+        emit agentReceived(QString::fromStdString(agent.id),
+                           QString::fromStdString(agent.system.hostname),
+                           details);
         break;
-    case DataType::REGISTRATION:
-        qDebug() << "one agent registered," << data.data.size() << "bytes";
-        break;
+    }
     case DataType::METRICS_SAMPLE:
         qDebug() << "metrics sample";
         break;

@@ -43,7 +43,7 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       break;
 
       // onDisconnect(connection);
-    case MessageType::ERROR:
+    case MessageType::INFERNO_ERROR:
       onError(frame.payload);
       break;
     case MessageType::COMMAND: {

@@ -18,7 +18,7 @@ void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       return onCommand(session, frame.payload);
     case MessageType::DISCONNECT:
       return onDisconnect(session);
-    case MessageType::ERROR: {
+    case MessageType::INFERNO_ERROR: {
       return onError(frame.payload);
     }
     default:
@@ -71,17 +71,16 @@ void AgentDispatcher::processesList(AgentSession& session,
 }
 
 void AgentDispatcher::shellCommand(AgentSession& session,
-                                      const CommandPayload& command) {
+                                   const CommandPayload& command) {
+  std::ostringstream what;
+  what << "received COMMAND SHELL id=" << command.id;
+  Logger::info("agent dispatcher", what.str());
 
-    std::ostringstream what;
-    what << "received COMMAND SHELL id=" << command.id;
-    Logger::info("agent dispatcher", what.str());
+  const std::string output = monitor_.executeShell(command.data);
 
-    const std::string output = monitor_.executeShell(command.data);
-
-    return send(session, command.id, ResponseStatus::OK, {output.begin(), output.end()});
-  }
-
+  return send(session, command.id, ResponseStatus::OK,
+              {output.begin(), output.end()});
+}
 
 void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
   std::ostringstream what;
@@ -145,7 +144,7 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   }
   // session.setAgentInfo(payload);
   session.setRegistered_(RegisterState::SENT);
-  
+
   Logger::info("agent dispatcher", what.str());
   send(session, command.id, ResponseStatus::OK,
        ProtocolSerializer::serializeOsInfoPayload(session.getAgentInfo()),
@@ -154,7 +153,6 @@ void AgentDispatcher::sendRegister(AgentSession& session) {
   // send(session, command.id, ResponseStatus::OK,
   //      ProtocolSerializer::serializeOsInfoPayload(session.getAgentInfo()),
   //      MessageType::DASHBOARD_REGISTER);
-
 }
 
 void AgentDispatcher::setMetricsController(
@@ -179,8 +177,8 @@ void AgentDispatcher::send(AgentSession& session, std::uint16_t id,
     // DEBUG ONLY
     // case MessageType::DASHBOARD_REGISTER: {
     //   Frame frame = {
-    //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, data),
-    //       data};
+    //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER,
+    //       data), data};
     //   session.sendFrame(frame);
     //   return;
     // }

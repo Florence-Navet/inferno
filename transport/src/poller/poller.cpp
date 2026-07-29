@@ -1,6 +1,6 @@
 #include "poller/poller.hpp"
 
-#include <poll.h>
+// #include <poll.h>
 
 // ─── indexOf
 // ──────────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ short Poller::toNativeEvents(WatchFlags flags) {
   short result = 0;
   if (flags & WatchFlags::READ) result |= POLLIN;
   if (flags & WatchFlags::WRITE) result |= POLLOUT;
-  if (flags & WatchFlags::ERROR) result |= POLLERR;
+  if (flags & WatchFlags::INFERNO_ERROR) result |= POLLERR;
   return result;
 }
 
@@ -165,7 +165,7 @@ int Poller::wait(std::vector<ReadyEvent>& readyEvents, int timeoutMs) {
 
 int Poller::poll(int timeoutMs) {
 #ifdef _WIN32
-  if (fds_.empty()) {
+  if (fileDescriptors_.empty()) {
     if (timeoutMs > 0) {
       ::Sleep(static_cast<DWORD>(timeoutMs));
     }

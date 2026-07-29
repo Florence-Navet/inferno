@@ -5,23 +5,33 @@ project(InfernoTransport LANGUAGES CXX)
 find_package(OpenSSL REQUIRED)
 
 # ── Library ───────────────────────────────────────────────────────────────────
-# STATIC = compiled once into a .a archive, then linked into agent and server.
-# No Dockerfile, no executable — this is purely a library.
-add_library(transport_lib STATIC
-    src/frame_transport.cpp
-    src/env_helper.cpp
-    src/logger.cpp
-    src/dispatcher/dispatcher.cpp
+set(SOCKET_SOURCES
+    src/socket/linux_socket.cpp
+    src/socket/socket_factory.cpp
+    src/socket/tls_socket.cpp
+    src/socket/tls_socket_factory.cpp
+)
+
+set(CODEC_SOURCES
     src/codec/convert_endian.cpp
     src/codec/protocol_parser.cpp
     src/codec/protocol_serializer.cpp
     src/codec/metrics_serializer.cpp
     src/codec/metrics_parser.cpp
     src/codec/protocol_helper.cpp
-    src/socket/linux_socket.cpp
-    src/socket/socket_factory.cpp
-    src/socket/tls_socket.cpp
-    src/socket/tls_socket_factory.cpp
+    src/codec/system_info_parser.cpp
+    src/codec/system_info_serializer.cpp
+)
+
+# STATIC = compiled once into a .a archive, then linked into agent and server.
+# No Dockerfile, no executable — this is purely a library.
+add_library(transport_lib STATIC
+    src/frame_transport.cpp
+    ${CODEC_SOURCES}
+    ${SOCKET_SOURCES}
+    src/env_helper.cpp
+    src/logger.cpp
+    src/dispatcher/dispatcher.cpp
     src/poller/poller.cpp
 )
 

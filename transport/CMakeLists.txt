@@ -5,11 +5,17 @@ project(InfernoTransport LANGUAGES CXX)
 find_package(OpenSSL REQUIRED)
 
 # ── Library ───────────────────────────────────────────────────────────────────
+if(WIN32)
+    set(PLATFORM_SOCKET_SRC src/socket/windows_socket.cpp)
+else()
+    set(PLATFORM_SOCKET_SRC src/socket/linux_socket.cpp)
+endif()
+
 set(SOCKET_SOURCES
-    src/socket/linux_socket.cpp
     src/socket/socket_factory.cpp
     src/socket/tls_socket.cpp
     src/socket/tls_socket_factory.cpp
+    src/poller/poller.cpp
 )
 
 set(CODEC_SOURCES
@@ -29,12 +35,11 @@ add_library(transport_lib STATIC
     src/frame_transport.cpp
     ${CODEC_SOURCES}
     ${SOCKET_SOURCES}
+    ${PLATFORM_SOCKET_SRC}
     src/env_helper.cpp
     src/logger.cpp
     src/dispatcher/dispatcher.cpp
-    src/poller/poller.cpp
 )
-
 target_link_libraries(transport_lib PUBLIC OpenSSL::SSL OpenSSL::Crypto)
 
 # PUBLIC = these include dirs are inherited by any target that links transport_lib.

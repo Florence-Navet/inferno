@@ -10,6 +10,7 @@
 
 class QLabel;
 class LineChartWidget;
+class ServerClient;
 
 
 QT_BEGIN_NAMESPACE
@@ -28,12 +29,15 @@ public:
     ~MainWindow();
 
 private:
+    ServerClient *m_client = nullptr;
+
     Ui::MainWindow *ui;
     /// Fills the agent list. TODO: replace hardcoded data with server AGENTS payload.
     void populateAgents();
 
     /// Adds one rich agent row to the list.
-    void addAgentItem(const QString &name, const QString &details, bool online);
+    void addAgentItem(const QString &id, const QString &name,
+                      const QString &details, bool online);
 
     /// Displays command output. TODO: feed with DashboardResponse data.
     void showOutput(const QString &text);
@@ -74,4 +78,5 @@ private:
     /// Fills the bottom status bar. TODO: feed with live server status.
     void buildStatusBar();
 };
+
 #endif // MAINWINDOW_H

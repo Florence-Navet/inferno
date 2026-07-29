@@ -17,7 +17,7 @@ const char* messageTypeToString(MessageType type) noexcept {
       return "RESPONSE";
     case MessageType::DISCONNECT:
       return "DISCONNECT";
-    case MessageType::ERROR:
+    case MessageType::INFERNO_ERROR:
       return "ERROR";
     default:
       return "UNKNOWN";
@@ -105,7 +105,8 @@ void validateOsInfoPayload(const OsInfoPayload& payload) {
   }
   if (payload.arch >= ArchType::UNKNOWN) {
     throw InvalidFieldValue(
-        "architecture", std::to_string(static_cast<std::uint8_t>(payload.arch)));
+        "architecture",
+        std::to_string(static_cast<std::uint8_t>(payload.arch)));
   }
   if (payload.hostname.empty()) {
     throw InvalidSize("os info hostname length", "0");
@@ -258,7 +259,7 @@ ErrorType toErrorType(const std::uint8_t value) {
 }
 
 MessageType toMessageType(const std::uint8_t value) {
-  if (value > static_cast<std::uint8_t>(MessageType::ERROR)) {
+  if (value > static_cast<std::uint8_t>(MessageType::INFERNO_ERROR)) {
     throw InvalidType(std::to_string(static_cast<std::uint8_t>(value)));
   }
   return static_cast<MessageType>(value);

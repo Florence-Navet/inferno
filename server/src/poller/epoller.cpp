@@ -67,6 +67,6 @@ std::uint32_t Epoller::toEpollEvents(WatchFlags events) {
   std::uint32_t result = 0;
   if (events & WatchFlags::READ) result |= EPOLLIN;
   if (events & WatchFlags::WRITE) result |= EPOLLOUT;
-  if (events & WatchFlags::ERROR) result |= EPOLLERR;
+  if (events & WatchFlags::INFERNO_ERROR) result |= EPOLLERR;
   return result;
 }

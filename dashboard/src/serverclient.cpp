@@ -1,217 +1,207 @@
 #include "serverclient.h"
-#include "dashboardsession.h"
-#include "codec/protocol_helper.hpp"
-#include "codec/protocol_serializer.hpp"
-#include "codec/protocol_parser.hpp"
-
-
-#include "socket/socket_factory.hpp"
-#include <QSocketNotifier>
 
 #include <QDebug>
 #include <QHostInfo>
+#include <QSocketNotifier>
 
-static QString osTypeToString(OSType type)
-{
-    switch (type) {
-    case OSType::WINDOWS: return "Windows";
-    case OSType::LINUX:   return "Linux";
-    case OSType::MAC:     return "macOS";
-    default:              return "Unknown";
-    }
+#include "codec/protocol_helper.hpp"
+#include "codec/protocol_parser.hpp"
+#include "codec/protocol_serializer.hpp"
+#include "dashboardsession.h"
+#include "socket/socket_factory.hpp"
+
+static QString osTypeToString(OSType type) {
+  switch (type) {
+    case OSType::WINDOWS:
+      return "Windows";
+    case OSType::LINUX:
+      return "Linux";
+    case OSType::MAC:
+      return "macOS";
+    default:
+      return "Unknown";
+  }
 }
 
-static QString archToString(ArchType arch)
-{
-    switch (arch) {
-    case ArchType::X86: return "x86";
-    case ArchType::X64: return "x64";
-    case ArchType::ARM: return "ARM";
-    default:            return "Unknown";
-    }
+static QString archToString(ArchType arch) {
+  switch (arch) {
+    case ArchType::X86:
+      return "x86";
+    case ArchType::X64:
+      return "x64";
+    case ArchType::ARM:
+      return "ARM";
+    default:
+      return "Unknown";
+  }
 }
 
-ServerClient::ServerClient(QObject *parent)
-    : QObject{parent}
-{
-}
+ServerClient::ServerClient(QObject* parent) : QObject{parent} {}
 
 ServerClient::~ServerClient() = default;
 
-bool ServerClient::connectToServer(const QString &host, quint16 port)
-{
-    std::unique_ptr<ISocket> socket = SocketFactory::createTCP();
+bool ServerClient::connectToServer(const QString& host, quint16 port) {
+  std::unique_ptr<ISocket> socket = SocketFactory::createTCP();
 
-    if (!socket->connect(host.toStdString(), port)) {
-        qDebug() << "connection failed";
-        return false;
-    }
+  if (!socket->connect(host.toStdString(), port)) {
+    qDebug() << "connection failed";
+    return false;
+  }
 
-    socket->setNonBlocking(true);
-    m_session = std::make_unique<DashboardSession>(std::move(socket));
+  socket->setNonBlocking(true);
+  m_session = std::make_unique<DashboardSession>(std::move(socket));
 
-    qDebug() << "connected to server";
-    m_notifier = new QSocketNotifier(m_session->getFd(), QSocketNotifier::Read, this);
-    connect(m_notifier, &QSocketNotifier::activated, this, &ServerClient::onReadyRead);
+  qDebug() << "connected to server";
+  m_notifier =
+      new QSocketNotifier(m_session->getFd(), QSocketNotifier::Read, this);
+  connect(m_notifier, &QSocketNotifier::activated, this,
+          &ServerClient::onReadyRead);
 
-    sendRegister();
-    return true;
+  sendRegister();
+  return true;
 }
 
-void ServerClient::onReadyRead()
-{
-   // qDebug() << "data available";
-    const SocketResult result = m_session->receiveIntoBuffer();
+void ServerClient::onReadyRead() {
+  // qDebug() << "data available";
+  const SocketResult result = m_session->receiveIntoBuffer();
 
+  // nothing to read for this moment
+  if (!result.ok() && !result.wouldBlock()) {
+    qDebug() << "receive error";
+    return;
+  }
 
-    //nothing to read for this moment
-   if (!result.ok() && !result.wouldBlock()) {
-       qDebug() << "receive error";
-       return;
-   }
+  // TODO: result.ok() with 0 bytes means the server closed the connection.
 
-   // TODO: result.ok() with 0 bytes means the server closed the connection.
-
-   while (std::optional<Frame> frame = m_session->tryExtractFrame()) {
-       handleFrame(*frame);
-   }
+  while (std::optional<Frame> frame = m_session->tryExtractFrame()) {
+    handleFrame(*frame);
+  }
 }
 
+void ServerClient::sendRegister() {
+  OsInfoPayload info;
+  info.os_type = OSType::WINDOWS;
+  info.arch = ArchType::X64;
+  info.hostname = QHostInfo::localHostName().toStdString();
+  info.current_user = qgetenv("USERNAME").toStdString();
+  info.os_version = "Windows";
+  // TODO: use the real local IP (QNetworkInterface).
+  info.ip = "127.0.0.1";
+  // The server uses this field as our id (setId(mac)).
+  // TODO: replace with the real MAC address.
+  info.mac = "dashboard";
 
-
-void ServerClient::sendRegister()
-{
-    OsInfoPayload info;
-    info.os_type = OSType::WINDOWS;
-    info.arch = ArchType::X64;
-    info.hostname = QHostInfo::localHostName().toStdString();
-    info.current_user = qgetenv("USERNAME").toStdString();
-    info.os_version = "Windows";
-        // TODO: use the real local IP (QNetworkInterface).
-    info.ip = "127.0.0.1";
-    // The server uses this field as our id (setId(mac)).
-    // TODO: replace with the real MAC address.
-    info.mac = "dashboard";
-
-    try
-    {
-          const std::vector<std::uint8_t> payload =
+  try {
+    const std::vector<std::uint8_t> payload =
         ProtocolSerializer::serializeOsInfoPayload(info);
 
-            const Frame frame{
-                      ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, payload),
-                      payload};
-                
-             m_session->sendFrame(frame);
-    }
-    catch(const std::exception& e)
-    {
-        // std::cerr << e.what() << '\n';
-        qDebug() << "register failed:" << e.what();
-    }
-    
+    const Frame frame{
+        ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, payload),
+        payload};
+
+    m_session->sendFrame(frame);
+  } catch (const std::exception& e) {
+    // std::cerr << e.what() << '\n';
+    qDebug() << "register failed:" << e.what();
+  }
 }
 
-void ServerClient::handleFrame(const Frame &frame)
-{
-    switch (frame.header.type) {
+void ServerClient::handleFrame(const Frame& frame) {
+  switch (frame.header.type) {
     case MessageType::DATA:
-        //qDebug() << "DATA received," << frame.payload.size() << "bytes";
-        handleData(frame.payload);
-        break;
+      // qDebug() << "DATA received," << frame.payload.size() << "bytes";
+      handleData(frame.payload);
+      break;
     case MessageType::RESPONSE: {
-        const DashboardResponse response =
-            ProtocolParser::parseDashboardResponse(frame.payload);
+      const DashboardResponse response =
+          ProtocolParser::parseDashboardResponse(frame.payload);
 
-        qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
-                 << "id" << response.response.id
-                 << "status" << static_cast<int>(response.response.status)
-                 << "chunk" << response.response.chunk_index
-                 << "/" << response.response.total_chunks
-                 << "size" << response.response.data.size();
-        break;
+      qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
+               << "id" << response.response.id << "status"
+               << static_cast<int>(response.response.status) << "chunk"
+               << response.response.chunk_index << "/"
+               << response.response.total_chunks << "size"
+               << response.response.data.size();
+      break;
     }
-    case MessageType::ERROR: {
-        const ErrorPayload error = ProtocolParser::parseErrorPayload(frame.payload);
-        qDebug() << "ERROR" << static_cast<int>(error.code)
-                 << QString::fromStdString(error.message);
-        break;
+    case MessageType::INFERNO_ERROR: {
+      const ErrorPayload error =
+          ProtocolParser::parseErrorPayload(frame.payload);
+      qDebug() << "ERROR" << static_cast<int>(error.code)
+               << QString::fromStdString(error.message);
+      break;
     }
     default:
-        qDebug() << "unhandled type" << static_cast<int>(frame.header.type);
-    }
+      qDebug() << "unhandled type" << static_cast<int>(frame.header.type);
+  }
 }
 
-void ServerClient::handleData(const std::vector<std::uint8_t> &payload)
-{
-    const DataPayload data = ProtocolParser::parseDataPayload(payload);
+void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
+  const DataPayload data = ProtocolParser::parseDataPayload(payload);
 
-    switch (data.subtype) {
+  switch (data.subtype) {
     case DataType::AGENTS:
-    case DataType::REGISTRATION:{
-        if (data.data.empty())
-            break;  // no agent connected yet
+    case DataType::REGISTRATION: {
+      if (data.data.empty()) break;  // no agent connected yet
 
-        const RegisterPayload agent = ProtocolParser::parseRegisterPayload(data.data);
-        qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
-                 << QString::fromStdString(agent.system.ip)
-                 << "id:" << QString::fromStdString(agent.id);
+      const RegisterPayload agent =
+          ProtocolParser::parseRegisterPayload(data.data);
+      qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
+               << QString::fromStdString(agent.system.ip)
+               << "id:" << QString::fromStdString(agent.id);
 
-         const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
+      const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
 
-        const QString details = QString("%1 · %2 · %3")
-                                    .arg(osTypeToString(agent.system.os_type),
-                                         archToString(agent.system.arch),
-                                         QString::fromStdString(agent.system.ip));
+      const QString details = QString("%1 · %2 · %3")
+                                  .arg(osTypeToString(agent.system.os_type),
+                                       archToString(agent.system.arch),
+                                       QString::fromStdString(agent.system.ip));
 
-        emit agentReceived(QString::fromStdString(id),
-                           QString::fromStdString(agent.system.hostname),
-                           details);
-        break;
+      emit agentReceived(QString::fromStdString(id),
+                         QString::fromStdString(agent.system.hostname),
+                         details);
+      break;
     }
     case DataType::METRICS_SAMPLE:
-        qDebug() << "metrics sample";
-        break;
+      qDebug() << "metrics sample";
+      break;
     default:
-        qDebug() << "unhandled subtype" << static_cast<int>(data.subtype);
-    }
+      qDebug() << "unhandled subtype" << static_cast<int>(data.subtype);
+  }
 }
 
-void ServerClient::sendCommand(const QString &target, CommandType type, const QString &data)
-{
-    if (!m_session || target.isEmpty()) {
-        qDebug() << "no agent selected";
-        return;
-    }
+void ServerClient::sendCommand(const QString& target, CommandType type,
+                               const QString& data) {
+  if (!m_session || target.isEmpty()) {
+    qDebug() << "no agent selected";
+    return;
+  }
 
-    if (type == CommandType::SHELL && data.isEmpty()) {
-        qDebug() << "empty shell command";
-        return;
-    }
+  if (type == CommandType::SHELL && data.isEmpty()) {
+    qDebug() << "empty shell command";
+    return;
+  }
 
-    CommandPayload command;
-    command.id = ++m_nextCommandId;
-    command.type = type;
-    command.data = data.toStdString();
+  CommandPayload command;
+  command.id = ++m_nextCommandId;
+  command.type = type;
+  command.data = data.toStdString();
 
-    DashboardCommand dashCommand;
-    dashCommand.target = target.toStdString();
-    dashCommand.command = command;
+  DashboardCommand dashCommand;
+  dashCommand.target = target.toStdString();
+  dashCommand.command = command;
 
-    try {
-        const std::vector<std::uint8_t> payload =
-            ProtocolSerializer::serializeDashboardCommand(dashCommand);
+  try {
+    const std::vector<std::uint8_t> payload =
+        ProtocolSerializer::serializeDashboardCommand(dashCommand);
 
-        const Frame frame{
-                          ProtocolHelper::createHeader(MessageType::COMMAND, payload),
-                          payload};
+    const Frame frame{
+        ProtocolHelper::createHeader(MessageType::COMMAND, payload), payload};
 
-        m_session->sendFrame(frame);
-        m_pendingCommands.insert(command.id, type);
-        qDebug() << "sent command id" << command.id << "to" << target;
-    } catch (const std::exception &e) {
-        qDebug() << "send command failed:" << e.what();
-    }
+    m_session->sendFrame(frame);
+    m_pendingCommands.insert(command.id, type);
+    qDebug() << "sent command id" << command.id << "to" << target;
+  } catch (const std::exception& e) {
+    qDebug() << "send command failed:" << e.what();
+  }
 }
-
-

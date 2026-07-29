@@ -90,7 +90,7 @@ TEST_F(ServerDispatcherTest,
 
   // Assert
   ASSERT_GE(agentSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
-  EXPECT_EQ(agentSpy.messageType(), MessageType::ERROR);
+  EXPECT_EQ(agentSpy.messageType(), MessageType::INFERNO_ERROR);
 }
 
 TEST_F(ServerDispatcherTest,
@@ -317,7 +317,7 @@ TEST_F(ServerDispatcherTest,
   // Assert: Dashboard got error
   ASSERT_GE(dashboardSpy.sent.size(),
             static_cast<std::size_t>(LPTF_HEADER_SIZE));
-  EXPECT_EQ(dashboardSpy.messageType(), MessageType::ERROR);
+  EXPECT_EQ(dashboardSpy.messageType(), MessageType::INFERNO_ERROR);
 }
 
 // test response flow

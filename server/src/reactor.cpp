@@ -3,11 +3,12 @@
 #include <sstream>
 
 void Reactor::run() {
-  if (!poller_.add(server_.getFd(), WatchFlags::READ | WatchFlags::ERROR)) {
+  if (!poller_.add(server_.getFd(),
+                   WatchFlags::READ | WatchFlags::INFERNO_ERROR)) {
     Logger::error("reactor", "failed to add server fd");
     return;
   }
-  // poller_.add(server_.getFd(), WatchFlags::READ | WatchFlags::ERROR);
+  // poller_.add(server_.getFd(), WatchFlags::READ | WatchFlags::INFERNO_ERROR);
   running_ = true;
 
   std::vector<ReadyEvent> events;
@@ -42,7 +43,7 @@ void Reactor::onNewConnection() {
 
   std::ostringstream what;
   const int fd = incoming->getFd();
-  if (!poller_.add(fd, WatchFlags::READ | WatchFlags::ERROR)) {
+  if (!poller_.add(fd, WatchFlags::READ | WatchFlags::INFERNO_ERROR)) {
     Logger::error("reactor", "Failed to watch fd " + std::to_string(fd));
     return;
   }
@@ -80,9 +81,8 @@ void Reactor::onAgentReady(int fileDescriptor) {
 
     Logger::info(
         "reactor",
-        std::string("on agent ready before if in while loop, bool value:") + std::string(canHandleFrame
-            ? "true"
-            : "false"));
+        std::string("on agent ready before if in while loop, bool value:") +
+            std::string(canHandleFrame ? "true" : "false"));
     if (canHandleFrame) {
       dispatcher_.sendError(session, ErrorType::INVALID_FORMAT,
                             "First message must be REGISTER");

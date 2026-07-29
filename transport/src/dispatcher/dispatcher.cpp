@@ -21,8 +21,9 @@ void Dispatcher::sendError(FrameTransport& agent, ErrorType code,
   error.message = msg;
   const std::vector<std::uint8_t> payload =
       ProtocolSerializer::serializeErrorPayload(error);
-  Frame frame = {ProtocolHelper::createHeader(MessageType::ERROR, payload),
-                 payload};
-  // sendRaw(agent, MessageType::ERROR, payload);
+  Frame frame = {
+      ProtocolHelper::createHeader(MessageType::INFERNO_ERROR, payload),
+      payload};
+  // sendRaw(agent, MessageType::INFERNO_ERROR, payload);
   agent.sendFrame(frame);
 }

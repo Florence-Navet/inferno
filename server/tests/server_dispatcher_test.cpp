@@ -17,8 +17,8 @@ class ServerDispatcherTest : public ::testing::Test {
  protected:
   SessionManager manager;
   FakeDatabaseConnection fakeDb;
-  FakeAgentRepository fakeAgents{fakeDb};
-  FakeCommandRepository fakeCommands{fakeDb};
+  //   FakeAgentRepository fakeAgents{fakeDb};
+  //   FakeCommandRepository fakeCommands{fakeDb};
 
   //   RepositoryManager repositoryManager;
 
@@ -28,12 +28,10 @@ class ServerDispatcherTest : public ::testing::Test {
   std::optional<ServerDispatcher> dispatcher;
 
   void SetUp() override {
-    repositoryManager.emplace(
-        std::make_unique<FakeDatabaseConnection>(fakeDb),
-        std::make_unique<FakeAgentRepository>(fakeAgents),
-        std::make_unique<FakeCommandRepository>(fakeCommands));
+    repositoryManager.emplace(std::make_unique<FakeDatabaseConnection>(fakeDb),
+                              std::make_unique<FakeAgentRepository>(fakeDb),
+                              std::make_unique<FakeCommandRepository>(fakeDb));
 
-    // dispatcher = ServerDispatcher(manager, repositoryManager);
     dispatcher.emplace(manager, *repositoryManager);
   }
 
@@ -42,6 +40,7 @@ class ServerDispatcherTest : public ::testing::Test {
   AgentConnection& createAgent(int fd, SpySocket& spy) {
     spy.setFd(fd);
     manager.addAgent(fd, spy.makeUnique());
+
     return manager.getAgent(fd);
   }
 
@@ -91,7 +90,7 @@ TEST_F(ServerDispatcherTest,
 
   // Assert
   ASSERT_GE(agentSpy.sent.size(), static_cast<std::size_t>(LPTF_HEADER_SIZE));
-  EXPECT_EQ(agentSpy.messageType(), MessageType::ERROR);
+  EXPECT_EQ(agentSpy.messageType(), MessageType::INFERNO_ERROR);
 }
 
 TEST_F(ServerDispatcherTest,
@@ -164,7 +163,10 @@ TEST_F(ServerDispatcherTest,
   const DataPayload data =
       ProtocolParser::parseDataPayload(dashboardSpy.payload());
   EXPECT_EQ(data.subtype, DataType::AGENTS);
-  EXPECT_EQ(data.data.size(), 0);  // No agents connected
+  EXPECT_EQ(data.data.size(), 2);  // No agents connected
+
+  uint16_t agentCount = (data.data[0] << 8) | data.data[1];
+  EXPECT_EQ(agentCount, 0);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -315,7 +317,7 @@ TEST_F(ServerDispatcherTest,
   // Assert: Dashboard got error
   ASSERT_GE(dashboardSpy.sent.size(),
             static_cast<std::size_t>(LPTF_HEADER_SIZE));
-  EXPECT_EQ(dashboardSpy.messageType(), MessageType::ERROR);
+  EXPECT_EQ(dashboardSpy.messageType(), MessageType::INFERNO_ERROR);
 }
 
 // test response flow

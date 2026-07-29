@@ -141,9 +141,6 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   std::copy(registerPayload.begin(), registerPayload.end(),
             finalPayload.begin() + offset);
 
-  std::cout << "\033[0;31mexpected = " << finalPayload.size()
-            << " written = " << offset + registerPayload.size() << '\033[0m\n';
-
   return finalPayload;
 }
 
@@ -161,8 +158,6 @@ std::vector<std::uint8_t> serializeRegisterPayloadList(
          payload.system.hostname.size() + payload.system.os_version.size() +
          payload.system.current_user.size() + payload.system.ip.size() +
          payload.system.mac.size());
-    std::cout << "\t \033[1;33m serialize size = " << registerPayloadSize
-              << "\033[0m\n";
     totalSize += registerPayloadSize;
   }
 

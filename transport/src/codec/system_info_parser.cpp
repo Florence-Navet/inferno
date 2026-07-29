@@ -11,8 +11,7 @@ namespace ProtocolParser {
 
 OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input,
                                  std::size_t& offset) {
-  std::cout << "\033[0;32m offset begin of parseOsInfoPayload " << input.size()
-            << "\033[0m\n";
+
   if (offset + OS_INFO_FIXED_BYTES > input.size()) {
     throw InvalidSize("os info payload", std::to_string(input.size()));
   }
@@ -20,11 +19,6 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input,
   payload.os_type = ProtocolHelper::EnumConversion::toOsType(input[offset++]);
   payload.arch = ProtocolHelper::EnumConversion::toArchType(input[offset++]);
 
-  // offset += (sizeof(std::uint8_t) * 2);
-  // std::size_t offset{2};
-  std::cout
-      << "\033[0;32m osInfoPayload before read string length (hostnameLen) "
-      << input.size() << "\033[0m\n";
   const std::uint16_t hostnameLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t osVersionLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, offset)};
@@ -95,8 +89,6 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input,
   payload.mac.assign(reinterpret_cast<const char*>(input.data() + offset),
                      macLen);
   offset += macLen;
-  std::cout << "\033[0;32m offset before exiting ParseOsInfoPayload "
-            << input.size() << "\033[0m\n";
   return payload;
 }
 
@@ -156,21 +148,12 @@ std::vector<ProcessInfo> parseProcessInfoList(
 RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input,
                                      std::size_t& offset) {
   RegisterPayload payload;
-  // size_t offset = 0;
-
-  std::cout << "\033[0;32m offset before online" << offset << "\033[0m\n";
   payload.online = static_cast<bool>(input.at(offset++));
-  // offset += sizeof(std::uint8_t);
-  std::cout << "\033[0;32m offset after online" << offset << "\033[0m\n";
 
   std::uint16_t idLen = ConvertEndian::readU16BE(input, offset);
   std::uint16_t registeredAtLen = ConvertEndian::readU16BE(input, offset);
   std::uint16_t lastSeenLen = ConvertEndian::readU16BE(input, offset);
 
-  std::cout
-      << "\033[0;32m value of offset + idLen + registeredAtLen + lastSeenLen"
-      << offset + idLen + registeredAtLen + lastSeenLen << "\033[0m\n";
-  std::cout << "\033[0;32m input.size()" << input.size() << "\033[0m\n";
 
   if (offset + idLen + registeredAtLen + lastSeenLen > input.size()) {
     throw InvalidSize("va bien te faire voir id", std::to_string(idLen));

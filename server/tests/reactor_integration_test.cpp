@@ -137,7 +137,7 @@ TEST_F(ReactorIntegrationTest,
   session.receiveIntoBuffer();
   std::optional<Frame> frame = session.tryExtractFrame();
   ASSERT_TRUE(frame.has_value());
-  EXPECT_EQ(frame->header.type, MessageType::ERROR);
+  EXPECT_EQ(frame->header.type, MessageType::INFERNO_ERROR);
 
   reactor.stop();
   session.close();

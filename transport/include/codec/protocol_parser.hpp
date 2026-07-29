@@ -27,6 +27,8 @@ DashboardData parseDashboardData(const std::vector<std::uint8_t>& input);
 DashboardResponse parseDashboardResponse(
     const std::vector<std::uint8_t>& input);
 RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input);
+std::vector<RegisterPayload> parseRegisterPayloadList(const std::vector<std::uint8_t>& input);
+
 DashboardDisconnect parseDashboardDisconnect(
     const std::vector<std::uint8_t>& input);
     

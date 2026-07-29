@@ -58,13 +58,6 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   ProtocolHelper::validateNotNullLength(ipLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(macLen, maxFieldLen);
 
-  const std::size_t expectedSize{OS_INFO_FIXED_BYTES + hostnameLen +
-                                 osVersionLen + currentUserLen + ipLen +
-                                 macLen};
-  ProtocolHelper::validateExpectedLength(input, expectedSize);
-  // validateStringLength(hostnameLen, input, maxHostnameLength, expectedSize);
-  // TODO validateStringLength needs to check each string or all payload
-
   OsInfoPayload payload;
   payload.os_type = ProtocolHelper::EnumConversion::toOsType(input[0]);
   payload.arch = ProtocolHelper::EnumConversion::toArchType(input[1]);
@@ -246,10 +239,8 @@ std::vector<ProcessInfo> parseProcessInfoList(
 
   return processInfoList;
 }
-}  // namespace ProtocolParser
 
-DashboardCommand ProtocolParser::parseDashboardCommand(
-    const std::vector<std::uint8_t>& input) {
+DashboardCommand parseDashboardCommand(const std::vector<std::uint8_t>& input) {
   //       if (input.size() < PROCESS_INFO_FIXED_SIZE) {
   //   throw InvalidSize("process info payload", std::to_string(input.size()));
   // }
@@ -279,8 +270,7 @@ DashboardCommand ProtocolParser::parseDashboardCommand(
   return command;
 }
 
-DashboardData ProtocolParser::parseDashboardData(
-    const std::vector<std::uint8_t>& input) {
+DashboardData parseDashboardData(const std::vector<std::uint8_t>& input) {
   DashboardData data;
   size_t offset = 0;
 
@@ -299,7 +289,7 @@ DashboardData ProtocolParser::parseDashboardData(
   return data;
 }
 
-DashboardResponse ProtocolParser::parseDashboardResponse(
+DashboardResponse parseDashboardResponse(
     const std::vector<std::uint8_t>& input) {
   DashboardResponse response;
   size_t offset = 0;
@@ -326,8 +316,7 @@ DashboardResponse ProtocolParser::parseDashboardResponse(
   return response;
 }
 
-RegisterPayload ProtocolParser::parseRegisterPayload(
-    const std::vector<std::uint8_t>& input) {
+RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input) {
   RegisterPayload payload;
   size_t offset = 0;
 
@@ -352,7 +341,50 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
   return payload;
 }
 
-DashboardDisconnect ProtocolParser::parseDashboardDisconnect(
+std::vector<RegisterPayload> parseRegisterPayloadList(
+    const std::vector<std::uint8_t>& input) {
+  // std::vector<RegisterPayload> registerPayloadList;
+  // std::size_t offset{0};
+  // std::uint16_t registerCount = ConvertEndian::readU16BE(input, offset);
+
+  // for (size_t i{0}; i < registerCount; ++i) {
+  //   if (offset + REGISTER_FIXED_SIZE > input.size()) {
+  //     throw InvalidSize("process info at index " + std::to_string(i),
+  //                       "insufficient bytes");
+  //   }
+  //   RegisterPayload registerPayload = parseRegisterPayload(
+  //       std::vector<uint8_t>(input.begin() + offset, input.end()));
+  //   registerPayloadList.push_back(registerPayload);
+  //   offset += REGISTER_FIXED_SIZE + registerPayload.id.size() +
+  //             registerPayload.registered_at.size() +
+  //             registerPayload.last_seen.size();
+  // }
+
+  // return registerPayloadList;
+  std::vector<RegisterPayload> registerPayloadList;
+  std::size_t offset{0};
+  std::uint16_t registerCount = ConvertEndian::readU16BE(input, offset);
+
+  for (size_t i{0}; i < registerCount; ++i) {
+    RegisterPayload registerPayload = parseRegisterPayload(
+        std::vector<uint8_t>(input.begin() + offset, input.end()));
+    registerPayloadList.push_back(registerPayload);
+
+    // Offset calculation mirrors serialization
+    offset +=
+        (3 * sizeof(std::uint16_t) + registerPayload.id.size() +
+         registerPayload.registered_at.size() +
+         registerPayload.last_seen.size() + OS_INFO_FIXED_BYTES +
+         registerPayload.system.hostname.size() +
+         registerPayload.system.os_version.size() +
+         registerPayload.system.current_user.size() +
+         registerPayload.system.ip.size() + registerPayload.system.mac.size());
+  }
+
+  return registerPayloadList;
+}
+
+DashboardDisconnect parseDashboardDisconnect(
     const std::vector<std::uint8_t>& input) {
   DashboardDisconnect disconnect;
   size_t offset = 0;
@@ -369,3 +401,4 @@ DashboardDisconnect ProtocolParser::parseDashboardDisconnect(
 
   return disconnect;
 }
+}  // namespace ProtocolParser

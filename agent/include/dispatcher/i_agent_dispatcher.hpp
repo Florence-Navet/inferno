@@ -7,7 +7,6 @@
 #include <vector>
 
 #include "agent_session.hpp"
-#include "dispatcher/dispatcher.hpp"
 #include "metrics/metrics_controller.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "system_monitor/i_system_monitor.hpp"

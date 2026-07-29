@@ -33,6 +33,9 @@ std::vector<std::uint8_t> serializeDashboardResponse(
 std::vector<std::uint8_t> serializeRegisterPayload(
     const RegisterPayload& payload);
 
+std::vector<std::uint8_t> serializeRegisterPayloadList(
+    const std::vector<RegisterPayload>& registrations);
+
 std::vector<std::uint8_t> serializeDashboardDisconnect(
     const DashboardDisconnect& payload);
 

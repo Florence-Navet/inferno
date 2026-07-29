@@ -21,7 +21,7 @@ enum class MessageType : std::uint8_t {
   COMMAND = 3,
   RESPONSE = 4,
   DISCONNECT = 5,  // target name
-  ERROR = 6,
+  INFERNO_ERROR = 6,
   UNKNOWN  // must always be the last !!
 };
 

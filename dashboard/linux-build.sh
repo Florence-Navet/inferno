@@ -61,7 +61,31 @@ elif command -v qmake &> /dev/null; then
     success "[OK] Qt found: $(qmake --version | grep 'Qt version')"
 fi
 
+# echo "Checking OpenSSL development libraries..."
+
+# if ! pkg-config --exists openssl 2>/dev/null; then
+#     failure "[ERROR] OpenSSL development libraries not found!"
+#     echo ""
+#     echo "Install with:"
+    
+#     # Detect distro and suggest correct command
+#     if [ -f /etc/debian_version ]; then
+#         echo "  sudo apt install libssl-dev"
+#     elif [ -f /etc/arch-release ]; then
+#         echo "  sudo pacman -S openssl"
+#     elif [ -f /etc/fedora-release ]; then
+#         echo "  sudo dnf install openssl-devel"
+#     else
+#         echo "  (Please install OpenSSL development libraries for your distro)"
+#     fi
+#     exit 1
+# fi
+
+# OPENSSL_VERSION=$(pkg-config --modversion openssl)
+# success "[OK] OpenSSL found: $OPENSSL_VERSION"
+
 echo ""
+
 
 # Verify CMakeLists.txt exists
 if [ ! -f "CMakeLists.txt" ]; then

@@ -194,12 +194,47 @@ set "PATH=%MINGW_BIN%;%QT_BIN_DIR%;%PATH%"
 echo [INFO] PATH updated (temporary - only for this build)
 echo.
 
+@REM TODO : BEGIN OF OPENSSL HANDLING
+echo.
+echo Checking for OpenSSL...
+echo.
+
+REM Check common vcpkg locations
+set "VCPKG_ROOT="
+if exist "%USERPROFILE%\vcpkg" (
+    set "VCPKG_ROOT=%USERPROFILE%\vcpkg"
+) else if exist "C:\vcpkg" (
+    set "VCPKG_ROOT=C:\vcpkg"
+)
+
+if defined VCPKG_ROOT (
+    echo [INFO] vcpkg found at: %VCPKG_ROOT%
+    set "OPENSSL_PATH=%VCPKG_ROOT%\installed\x64-windows"
+    echo [INFO] Using OpenSSL from: !OPENSSL_PATH!
+) else (
+    echo [WARNING] vcpkg not found at common locations
+    echo Please install: vcpkg install openssl:x64-windows
+    set "OPENSSL_PATH="
+)
+
+echo.
+
 REM Configure with CMake using explicit tool paths
 cmake .. -G "MinGW Makefiles" ^
     -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
     -DCMAKE_CXX_COMPILER="%QT_GPP%" ^
     -DCMAKE_MAKE_PROGRAM="%QT_MAKE%" ^
-    -DCMAKE_PREFIX_PATH="%QT_BIN_DIR%\.."
+    -DCMAKE_PREFIX_PATH="!OPENSSL_PATH!;%QT_BIN_DIR%\.."
+
+@REM TODO : END OF OPENSSL HANDLING
+
+REM Configure with CMake using explicit tool paths
+cmake .. -G "MinGW Makefiles" ^
+    -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
+    -DCMAKE_CXX_COMPILER="%QT_GPP%" ^
+    -DCMAKE_MAKE_PROGRAM="%QT_MAKE%" ^
+    -DCMAKE_PREFIX_PATH="%QT_BIN_DIR%\.." ^
+    -DCMAKE_PREFIX_PATH="!OPENSSL_PATH!;%QT_BIN_DIR%\.."
 
 echo CMake returned %ERRORLEVEL%
 

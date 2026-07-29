@@ -11,7 +11,7 @@ constexpr std::size_t RESPONSE_FIXED_BYTES =
 
 enum class ResponseStatus : std::uint8_t {
   OK = 0,
-  ERROR = 1,
+  INFERNO_ERROR = 1,
   UNKNOWN  // must be the last one
 };
 

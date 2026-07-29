@@ -9,13 +9,15 @@
 #include "agent_connection.hpp"
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
+#include "repository_manager.hpp"
 #include "session_manager.hpp"
-#include "repository_manager.hpp"   
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher(SessionManager& sessionManager, RepositoryManager& repositoryManager)
-      : sessionManager_(sessionManager), repositoryManager_(repositoryManager) {};
+  explicit ServerDispatcher(SessionManager& sessionManager,
+                            RepositoryManager& repositoryManager)
+      : sessionManager_(sessionManager),
+        repositoryManager_(repositoryManager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -50,6 +52,13 @@ class ServerDispatcher : public Dispatcher {
   std::map<std::uint32_t, std::string> commandTargets_;
 
   std::uint32_t nextCmdId_ = 0;
+
+  void registerDashboard(AgentConnection& dashboard,
+                         const OsInfoPayload& dashboardInfo);
+
+
+void registerAgent(AgentConnection& agent,
+                                     const OsInfoPayload& agentInfo, RegisterPayload& registerToSent);
 };
 
 #endif

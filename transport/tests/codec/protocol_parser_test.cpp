@@ -83,9 +83,9 @@ TEST(ProtocolParser, should_throw_invalidType_when_wrong_type_is_provided) {
       'L',
       'P',
       'T',
-      'F',                                                // identifier
-      LPTF_VERSION,                                       // version
-      static_cast<std::uint8_t>(MessageType::ERROR) + 1,  // type
+      'F',                                                        // identifier
+      LPTF_VERSION,                                               // version
+      static_cast<std::uint8_t>(MessageType::INFERNO_ERROR) + 1,  // type
       0x00,
       0x00  // size (0 in little-endian)
   };

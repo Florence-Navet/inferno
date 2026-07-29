@@ -46,6 +46,7 @@ TEST(ProtocolRoundRrip,
   payload.id = "whateverId";
   payload.registered_at = "2026-07-25T14:32:45Z";
   payload.last_seen = "2026-07-28T14:32:45Z";
+  payload.online = true;
   payload.system = OsInfoBuilder::create();
 
   const std::vector<std::uint8_t> bytes =
@@ -63,6 +64,7 @@ TEST(ProtocolRoundTrip,
     payload.id = "whateverId";
     payload.registered_at = "2026-07-25T14:32:45Z";
     payload.last_seen = "2026-07-28T14:32:45Z";
+    payload.online = true;
     payload.system = OsInfoBuilder::create();
     registerPayloads.push_back(payload);
   }

@@ -364,6 +364,7 @@ char     target[target_len]
 ### 5.2 wire format on network:
 #### RegisterPayload
 ```
+uint8_t     online 
 uint16_t    target_len
 uint16_t    registered_at_len
 uint16_t    last_seen_len
@@ -412,6 +413,7 @@ char          target[target_len]
 // Agent registration info sent to dashboard
 struct RegisterPayload {
     std::string    id;        // agent MAC address
+    bool           online 
     std::string    registered_at;
     std::string    last_seen;
     OsInfoPayload  system;
@@ -427,7 +429,7 @@ struct DashboardCommand {
 // Server forwards agent response to dashboard (one per chunk)
 struct DashboardResponse {
     std::string     target;   // agent MAC address
-     std::string received_at;
+    std::string received_at;
     ResponsePayload response; // chunk forwarded as-is; dashboard reassembles
 };
 

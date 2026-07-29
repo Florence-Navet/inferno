@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <iostream>
 #include <string>
 
 #include "codec/convert_endian.hpp"
@@ -105,6 +106,7 @@ std::vector<std::uint8_t> serializeProcessInfoList(
 
 std::vector<std::uint8_t> serializeRegisterPayload(
     const RegisterPayload& payload) {
+  std::uint8_t isOnline = static_cast<std::uint8_t>(payload.online);
   std::uint16_t idLen = payload.id.size();
   std::uint16_t registeredAtLen = payload.registered_at.size();
   std::uint16_t lastSeenLen = payload.last_seen.size();
@@ -112,10 +114,13 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   std::vector<uint8_t> registerPayload = serializeOsInfoPayload(payload.system);
 
   std::size_t totalSize{3 * sizeof(std::uint16_t) + idLen + registeredAtLen +
-                        lastSeenLen + registerPayload.size()};
+                        lastSeenLen + sizeof(std::uint8_t) + registerPayload.size()};
 
   std::vector<std::uint8_t> finalPayload(totalSize);
   std::size_t offset{0};
+
+  finalPayload.at(offset) = isOnline;
+  offset += sizeof(std::uint8_t);
 
   ConvertEndian::writeU16BE(finalPayload, offset, idLen);
   ConvertEndian::writeU16BE(finalPayload, offset, registeredAtLen);
@@ -136,6 +141,9 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   std::copy(registerPayload.begin(), registerPayload.end(),
             finalPayload.begin() + offset);
 
+  std::cout << "\033[0;31mexpected = " << finalPayload.size()
+            << " written = " << offset + registerPayload.size() << '\033[0m\n';
+
   return finalPayload;
 }
 
@@ -144,14 +152,18 @@ std::vector<std::uint8_t> serializeRegisterPayloadList(
   std::size_t totalSize = sizeof(std::uint16_t);  // registerCount
 
   for (const RegisterPayload& payload : registrations) {
-    totalSize +=
-        (3 * sizeof(std::uint16_t) +  // id, registered_at, last_seen lengths
+    std::size_t registerPayloadSize =
+        (REGISTER_FIXED_SIZE +
+         // 3 * sizeof(std::uint16_t) +  // id, registered_at, last_seen lengths
          payload.id.size() + payload.registered_at.size() +
          payload.last_seen.size() +
          OS_INFO_FIXED_BYTES +  // OsInfo fixed fields
          payload.system.hostname.size() + payload.system.os_version.size() +
          payload.system.current_user.size() + payload.system.ip.size() +
          payload.system.mac.size());
+    std::cout << "\t \033[1;33m serialize size = " << registerPayloadSize
+              << "\033[0m\n";
+    totalSize += registerPayloadSize;
   }
 
   std::vector<std::uint8_t> finalList(totalSize);

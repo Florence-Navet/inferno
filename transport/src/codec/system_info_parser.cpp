@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iostream>
 #include <string>
 
 #include "codec/convert_endian.hpp"
@@ -8,12 +9,22 @@
 
 namespace ProtocolParser {
 
-OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
-  if (input.size() < OS_INFO_FIXED_BYTES) {
+OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input,
+                                 std::size_t& offset) {
+  std::cout << "\033[0;32m offset begin of parseOsInfoPayload " << input.size()
+            << "\033[0m\n";
+  if (offset + OS_INFO_FIXED_BYTES > input.size()) {
     throw InvalidSize("os info payload", std::to_string(input.size()));
   }
+  OsInfoPayload payload;
+  payload.os_type = ProtocolHelper::EnumConversion::toOsType(input[offset++]);
+  payload.arch = ProtocolHelper::EnumConversion::toArchType(input[offset++]);
 
-  std::size_t offset{2};
+  // offset += (sizeof(std::uint8_t) * 2);
+  // std::size_t offset{2};
+  std::cout
+      << "\033[0;32m osInfoPayload before read string length (hostnameLen) "
+      << input.size() << "\033[0m\n";
   const std::uint16_t hostnameLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t osVersionLen{ConvertEndian::readU16BE(input, offset)};
   const std::uint16_t currentUserLen{ConvertEndian::readU16BE(input, offset)};
@@ -28,34 +39,71 @@ OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
   ProtocolHelper::validateNotNullLength(ipLen, maxFieldLen);
   ProtocolHelper::validateNotNullLength(macLen, maxFieldLen);
 
-  OsInfoPayload payload;
-  payload.os_type = ProtocolHelper::EnumConversion::toOsType(input[0]);
-  payload.arch = ProtocolHelper::EnumConversion::toArchType(input[1]);
-  payload.hostname.assign(
-      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES),
-      hostnameLen);
+  // payload.hostname.assign(
+  //     reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES),
+  //     hostnameLen);
+  if (offset + hostnameLen > input.size()) {
+    throw InvalidSize("os info payload hostname", "0");
+  }
+
+  payload.hostname.assign(reinterpret_cast<const char*>(input.data() + offset),
+                          hostnameLen);
+  offset += hostnameLen;
+  // payload.os_version.assign(
+  //     reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
+  //                                   hostnameLen),
+  //     osVersionLen);
+  if (offset + osVersionLen > input.size()) {
+    throw InvalidSize("os info payload os version", "0");
+  }
 
   payload.os_version.assign(
-      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
-                                    hostnameLen),
-      osVersionLen);
+      reinterpret_cast<const char*>(input.data() + offset), osVersionLen);
+  offset += osVersionLen;
+  if (offset + currentUserLen > input.size()) {
+    throw InvalidSize("os info payload current user", "0");
+  }
 
+  // payload.current_user.assign(
+  //     reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
+  //                                   hostnameLen + osVersionLen),
+  //     currentUserLen);
   payload.current_user.assign(
-      reinterpret_cast<const char*>(input.data() + OS_INFO_FIXED_BYTES +
-                                    hostnameLen + osVersionLen),
-      currentUserLen);
+      reinterpret_cast<const char*>(input.data() + offset), currentUserLen);
+  offset += currentUserLen;
 
-  payload.ip.assign(reinterpret_cast<const char*>(
-                        input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
-                        osVersionLen + currentUserLen),
+  if (offset + ipLen > input.size()) {
+    throw InvalidSize("os info payload ip address", "0");
+  }
+
+  // payload.ip.assign(reinterpret_cast<const char*>(
+  //                       input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
+  //                       osVersionLen + currentUserLen),
+  //                   ipLen);
+  payload.ip.assign(reinterpret_cast<const char*>(input.data() + offset),
                     ipLen);
+  offset += ipLen;
 
-  payload.mac.assign(reinterpret_cast<const char*>(
-                         input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
-                         osVersionLen + currentUserLen + ipLen),
+  if (offset + macLen > input.size()) {
+    throw InvalidSize("os info payload mac address", "0");
+  }
+
+  // payload.mac.assign(reinterpret_cast<const char*>(
+  //                        input.data() + OS_INFO_FIXED_BYTES + hostnameLen +
+  //                        osVersionLen + currentUserLen + ipLen),
+  //                    macLen);
+  payload.mac.assign(reinterpret_cast<const char*>(input.data() + offset),
                      macLen);
+  offset += macLen;
+  std::cout << "\033[0;32m offset before exiting ParseOsInfoPayload "
+            << input.size() << "\033[0m\n";
   return payload;
 }
+
+OsInfoPayload parseOsInfoPayload(const std::vector<std::uint8_t>& input) {
+  std::size_t offset{0};
+  return parseOsInfoPayload(input, offset);
+};
 
 ProcessInfo parseProcessInfo(const std::vector<std::uint8_t>& input) {
   if (input.size() < PROCESS_INFO_FIXED_SIZE) {
@@ -105,16 +153,27 @@ std::vector<ProcessInfo> parseProcessInfoList(
   return processInfoList;
 }
 
-RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input) {
+RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input,
+                                     std::size_t& offset) {
   RegisterPayload payload;
-  size_t offset = 0;
+  // size_t offset = 0;
+
+  std::cout << "\033[0;32m offset before online" << offset << "\033[0m\n";
+  payload.online = static_cast<bool>(input.at(offset++));
+  // offset += sizeof(std::uint8_t);
+  std::cout << "\033[0;32m offset after online" << offset << "\033[0m\n";
 
   std::uint16_t idLen = ConvertEndian::readU16BE(input, offset);
   std::uint16_t registeredAtLen = ConvertEndian::readU16BE(input, offset);
   std::uint16_t lastSeenLen = ConvertEndian::readU16BE(input, offset);
 
+  std::cout
+      << "\033[0;32m value of offset + idLen + registeredAtLen + lastSeenLen"
+      << offset + idLen + registeredAtLen + lastSeenLen << "\033[0m\n";
+  std::cout << "\033[0;32m input.size()" << input.size() << "\033[0m\n";
+
   if (offset + idLen + registeredAtLen + lastSeenLen > input.size()) {
-    throw InvalidSize("id", std::to_string(idLen));
+    throw InvalidSize("va bien te faire voir id", std::to_string(idLen));
   }
 
   payload.id = ConvertEndian::getString(input, offset, idLen);
@@ -125,10 +184,20 @@ RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input) {
   if (offset >= input.size()) {
     throw InvalidSize("register payload id", "0");
   }
-  payload.system = parseOsInfoPayload(
-      std::vector<std::uint8_t>(input.begin() + offset, input.end()));
+
+  payload.system = parseOsInfoPayload(input, offset);
+
+  // payload.system = parseOsInfoPayload(
+  //     std::vector<std::uint8_t>(input.begin() + offset, input.end()),
+  //     offset);
+
   return payload;
 }
+
+RegisterPayload parseRegisterPayload(const std::vector<std::uint8_t>& input) {
+  std::size_t offset{0};
+  return parseRegisterPayload(input, offset);
+};
 
 std::vector<RegisterPayload> parseRegisterPayloadList(
     const std::vector<std::uint8_t>& input) {
@@ -137,19 +206,8 @@ std::vector<RegisterPayload> parseRegisterPayloadList(
   std::uint16_t registerCount = ConvertEndian::readU16BE(input, offset);
 
   for (size_t i{0}; i < registerCount; ++i) {
-    RegisterPayload registerPayload = parseRegisterPayload(
-        std::vector<uint8_t>(input.begin() + offset, input.end()));
+    RegisterPayload registerPayload = parseRegisterPayload(input, offset);
     registerPayloadList.push_back(registerPayload);
-
-    // Offset calculation mirrors serialization
-    offset +=
-        (3 * sizeof(std::uint16_t) + registerPayload.id.size() +
-         registerPayload.registered_at.size() +
-         registerPayload.last_seen.size() + OS_INFO_FIXED_BYTES +
-         registerPayload.system.hostname.size() +
-         registerPayload.system.os_version.size() +
-         registerPayload.system.current_user.size() +
-         registerPayload.system.ip.size() + registerPayload.system.mac.size());
   }
 
   return registerPayloadList;

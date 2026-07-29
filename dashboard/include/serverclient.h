@@ -1,7 +1,7 @@
 #ifndef SERVERCLIENT_H
 #define SERVERCLIENT_H
 #include "protocol/lptf_protocol.hpp"
-
+#include <QHash>
 
 #include <QObject>
 #include <memory>
@@ -21,6 +21,7 @@ public:
 
     /// Connects to the server and starts listening for frames.
     bool connectToServer(const QString &host, quint16 port);
+    void sendCommand(const QString &target, CommandType type, const QString &data);
 
 signals:
      void agentReceived(const QString &id, const QString &name, const QString &details);
@@ -28,6 +29,8 @@ signals:
 private:
     std::unique_ptr<DashboardSession> m_session;
     QSocketNotifier *m_notifier = nullptr;
+    std::uint32_t m_nextCommandId = 0;
+    QHash<std::uint32_t, CommandType> m_pendingCommands;
     void onReadyRead();
     void sendRegister();
     void handleFrame(const Frame &frame);

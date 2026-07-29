@@ -119,12 +119,24 @@ void ServerClient::handleFrame(const Frame &frame)
         //qDebug() << "DATA received," << frame.payload.size() << "bytes";
         handleData(frame.payload);
         break;
-    case MessageType::RESPONSE:
-        qDebug() << "RESPONSE received";
+    case MessageType::RESPONSE: {
+        const DashboardResponse response =
+            ProtocolParser::parseDashboardResponse(frame.payload);
+
+        qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
+                 << "id" << response.response.id
+                 << "status" << static_cast<int>(response.response.status)
+                 << "chunk" << response.response.chunk_index
+                 << "/" << response.response.total_chunks
+                 << "size" << response.response.data.size();
         break;
-    case MessageType::ERROR:
-        qDebug() << "ERROR received";
+    }
+    case MessageType::ERROR: {
+        const ErrorPayload error = ProtocolParser::parseErrorPayload(frame.payload);
+        qDebug() << "ERROR" << static_cast<int>(error.code)
+                 << QString::fromStdString(error.message);
         break;
+    }
     default:
         qDebug() << "unhandled type" << static_cast<int>(frame.header.type);
     }
@@ -144,12 +156,15 @@ void ServerClient::handleData(const std::vector<std::uint8_t> &payload)
         qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
                  << QString::fromStdString(agent.system.ip)
                  << "id:" << QString::fromStdString(agent.id);
+
+         const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
+
         const QString details = QString("%1 · %2 · %3")
                                     .arg(osTypeToString(agent.system.os_type),
                                          archToString(agent.system.arch),
                                          QString::fromStdString(agent.system.ip));
 
-        emit agentReceived(QString::fromStdString(agent.id),
+        emit agentReceived(QString::fromStdString(id),
                            QString::fromStdString(agent.system.hostname),
                            details);
         break;
@@ -162,5 +177,41 @@ void ServerClient::handleData(const std::vector<std::uint8_t> &payload)
     }
 }
 
+void ServerClient::sendCommand(const QString &target, CommandType type, const QString &data)
+{
+    if (!m_session || target.isEmpty()) {
+        qDebug() << "no agent selected";
+        return;
+    }
+
+    if (type == CommandType::SHELL && data.isEmpty()) {
+        qDebug() << "empty shell command";
+        return;
+    }
+
+    CommandPayload command;
+    command.id = ++m_nextCommandId;
+    command.type = type;
+    command.data = data.toStdString();
+
+    DashboardCommand dashCommand;
+    dashCommand.target = target.toStdString();
+    dashCommand.command = command;
+
+    try {
+        const std::vector<std::uint8_t> payload =
+            ProtocolSerializer::serializeDashboardCommand(dashCommand);
+
+        const Frame frame{
+                          ProtocolHelper::createHeader(MessageType::COMMAND, payload),
+                          payload};
+
+        m_session->sendFrame(frame);
+        m_pendingCommands.insert(command.id, type);
+        qDebug() << "sent command id" << command.id << "to" << target;
+    } catch (const std::exception &e) {
+        qDebug() << "send command failed:" << e.what();
+    }
+}
 
 

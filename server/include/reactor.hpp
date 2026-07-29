@@ -7,7 +7,7 @@
 
 // #include "agent_session.hpp"
 #include "agent_connection.hpp"
-#include "dispatcher/i_dispatcher.hpp"
+#include "dispatcher/i_server_dispatcher.hpp"
 #include "dispatcher/server_dispatcher.hpp"
 #include "logger.hpp"
 #include "poller/i_poller.hpp"

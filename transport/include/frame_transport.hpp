@@ -30,6 +30,8 @@ class FrameTransport {
   void close();
   int getFd() const;
   void sendFrame(const Frame& frame);
+  void onError(const std::vector<std::uint8_t>& payload);
+  void sendError(ErrorType code, const std::string& msg);
 
   // ===== Register payload related methods =====
   virtual const OsInfoPayload& getAgentInfo() const = 0;

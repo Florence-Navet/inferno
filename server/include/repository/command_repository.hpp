@@ -11,7 +11,7 @@ class ICommandRepository {
  public:
   virtual ~ICommandRepository() = default;
 
-  virtual int save(const DashboardCommand& cmd) = 0;
+  virtual std::uint32_t save(const DashboardCommand& cmd) = 0;
 
   // Latest N commands for one agent (dashboard history panel).
   virtual std::vector<DashboardCommand> findByAgentId(
@@ -28,8 +28,8 @@ class CommandRepository : public ICommandRepository {
  public:
   explicit CommandRepository(IDatabaseConnection& db) : db_(db) {}
 
-  int save(const DashboardCommand& cmd) override;
-  
+  std::uint32_t save(const DashboardCommand& cmd) override;
+
   // TODO findAll too?
   std::vector<DashboardCommand> findByAgentId(const std::string& agentId,
                                               int limit = 50) override;

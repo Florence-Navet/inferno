@@ -1,6 +1,6 @@
 #include "repository/command_repository.hpp"
 
-int CommandRepository::save(const DashboardCommand& cmd) {
+std::uint32_t CommandRepository::save(const DashboardCommand& cmd) {
   pqxx::params params;
   params.append(cmd.target);
   params.append(static_cast<int>(cmd.command.type));
@@ -11,7 +11,7 @@ int CommandRepository::save(const DashboardCommand& cmd) {
       "command_data) VALUES ($1, $2, $3) RETURNING id",
       params);
 
-  return result[0][0].as<int>();
+  return static_cast<std::uint32_t>(result[0][0].as<int>());
 }
 
 std::vector<DashboardCommand> CommandRepository::findByAgentId(

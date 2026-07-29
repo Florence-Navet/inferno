@@ -12,7 +12,7 @@ class FakeCommandRepository : public ICommandRepository {
  public:
   explicit FakeCommandRepository(IDatabaseConnection& db) : db_(db) {}
 
-  int save(const DashboardCommand& cmd) override {
+  std::uint32_t save(const DashboardCommand& cmd) override {
     commands_.push_back(cmd);
     return nextId_++;  // Return auto-incremented ID
   };
@@ -37,7 +37,7 @@ class FakeCommandRepository : public ICommandRepository {
   const std::vector<DashboardCommand>& getStoredCommands() const {
     return commands_;
   };
-  
+
   // Test-only: clear state between tests
   void clear() {
     commands_.clear();

@@ -1,15 +1,16 @@
-#include "agent_dispatcher.hpp"
+#include "dispatcher/agent_dispatcher.hpp"
 
 #include <sstream>
 
 #include "codec/protocol_helper.hpp"
 #include "codec/protocol_parser.hpp"
 #include "codec/protocol_serializer.hpp"
+#include "exception/lptf_exception.hpp"
 #include "logger.hpp"
 #include "socket/i_socket.hpp"
 
 AgentDispatcher::AgentDispatcher(ISystemMonitor& monitor)
-    : Dispatcher(), monitor_(monitor) {}
+    : IAgentDispatcher(), monitor_(monitor) {}
 
 void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
   AgentSession& session = static_cast<AgentSession&>(agent);
@@ -22,8 +23,8 @@ void AgentDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       return onError(frame.payload);
     }
     default:
-      return sendError(session, ErrorType::UNKNOWN_TYPE,
-                       "Unexpected received message type for agent");
+      return agent.sendError(ErrorType::UNKNOWN_TYPE,
+                             "Unexpected received message type for agent");
   }
 }
 
@@ -117,16 +118,16 @@ void AgentDispatcher::onCommand(AgentSession& session,
       case CommandType::STOP_METRICS:
         return stopMetrics(session, cmd);
       default:
-        return sendError(session, ErrorType::UNKNOWN_COMMAND,
-                         "Command not implemented in minimal agent");
+        return session.sendError(ErrorType::UNKNOWN_COMMAND,
+                                 "Command not implemented in minimal agent");
     }
 
   } catch (const std::exception& ex) {
     std::ostringstream what;
     what << "invalid COMMAND payload: " << ex.what();
     Logger::error("agent dispatcher", what.str());
-    return sendError(session, ErrorType::INVALID_FORMAT,
-                     "Invalid COMMAND payload");
+    return session.sendError(ErrorType::INVALID_FORMAT,
+                             "Invalid COMMAND payload");
   }
 }
 

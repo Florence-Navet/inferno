@@ -107,3 +107,28 @@ void FrameTransport::sendFrame(const Frame& frame) {
        << ProtocolHelper::messageTypeToString(frame.header.type);
   Logger::info("frame transport", what.str());
 }
+
+
+void FrameTransport::onError(const std::vector<std::uint8_t>& payload) {
+  const ErrorPayload error = ProtocolParser::parseErrorPayload(payload);
+  std::ostringstream what;
+  what << "code=" << static_cast<int>(error.code) << "  msg=" << error.message;
+  Logger::error("frame transport", what.str());
+  // std::cerr << "[← ERROR] code=" << static_cast<int>(error.code)
+  //           << "  msg=" << error.message << "\n";
+  //   running = false;
+}
+
+void FrameTransport::sendError(ErrorType code,
+                           const std::string& msg) {
+  ErrorPayload error;
+  error.code = code;
+  error.message = msg;
+  const std::vector<std::uint8_t> payload =
+      ProtocolSerializer::serializeErrorPayload(error);
+  Frame frame = {
+      ProtocolHelper::createHeader(MessageType::INFERNO_ERROR, payload),
+      payload};
+  // sendRaw(agent, MessageType::INFERNO_ERROR, payload);
+  sendFrame(frame);
+}

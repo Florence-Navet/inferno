@@ -29,12 +29,7 @@ DatabaseConnection::DatabaseConnection(std::string_view password,
                                        std::string_view dbHost,
                                        std::string_view dbPort)
     : conn_(buildConnectionString(password, user, dbName, dbHost, dbPort)) {
-  std::cout << buildConnectionString(password, user, dbName, dbHost, dbPort)
-            << "\n";
   try {
-    // std::string connStr =
-    //     buildConnectionString(password, user, dbName, dbHost, dbPort);
-    // conn_ = std::make_unique<pqxx::connection>(connStr);
     if (!conn_.is_open()) {
       throw std::runtime_error("Failed to open database connection");
     }

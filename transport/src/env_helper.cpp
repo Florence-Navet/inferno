@@ -37,7 +37,7 @@ std::string EnvHelper::resolveString(const std::string& variableName) {
   const char* envVariable = std::getenv(variableName.c_str());
   if (envVariable && envVariable[0] != '\0') {
     std::cout << "Resolved " << variableName
-              << " from environment: " << envVariable << '\n';
+              << " from environment.\n";
     return std::string(envVariable);
   }
   return "";

@@ -10,12 +10,16 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "fixtures/ports.hpp"
-#include "protocol/lptf_protocol.hpp"
 #include "poller/epoller.hpp"
+#include "protocol/lptf_protocol.hpp"
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
 #include "session_manager.hpp"
 #include "socket/socket_factory.hpp"
+#include "stubs/fake_agent_repository.hpp"
+#include "stubs/fake_command_repository.hpp"
+#include "stubs/fake_database_connection.hpp"
+#include "stubs/spy_socket.hpp"
 #include "tcp_server.hpp"
 
 #if !defined(__linux__)
@@ -37,7 +41,27 @@ class ReactorIntegrationTest : public ::testing::Test {
  protected:
   Epoller epoller;
   SessionManager manager;
-  ServerDispatcher dispatcher{manager};
+  FakeDatabaseConnection fakeDb;
+  FakeAgentRepository fakeAgents{fakeDb};
+  FakeCommandRepository fakeCommands{fakeDb};
+
+  // RepositoryManager repositoryManager;
+
+  // ServerDispatcher dispatcher;
+  // Lazy-initialized via SetUp()
+  std::optional<RepositoryManager> repositoryManager;
+  std::optional<ServerDispatcher> dispatcher;
+
+  void SetUp() override {
+    repositoryManager.emplace(
+        std::make_unique<FakeDatabaseConnection>(fakeDb),
+        std::make_unique<FakeAgentRepository>(fakeAgents),
+        std::make_unique<FakeCommandRepository>(fakeCommands));
+
+    // dispatcher = ServerDispatcher(manager, repositoryManager);
+    dispatcher.emplace(manager, *repositoryManager);
+  }
+
   // Reactor reactor;
 
   std::thread startReactorThread(TcpServer& server, Reactor& reactor,
@@ -60,7 +84,8 @@ class ReactorIntegrationTest : public ::testing::Test {
 
   //   Frame frame;
   //   frame.header =
-  //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER, payload);
+  //       ProtocolHelper::createHeader(MessageType::DASHBOARD_REGISTER,
+  //       payload);
   //   frame.payload = payload;
   //   std::vector<std::uint8_t> finalPayload =
   //       ProtocolSerializer::serializeFrame(frame);
@@ -74,7 +99,7 @@ class ReactorIntegrationTest : public ::testing::Test {
 TEST_F(ReactorIntegrationTest, should_accept_register_without_error) {
   const std::uint16_t port = Ports::Reactor::HAPPY_PATH_PORT;
   TcpServer server(port);
-  Reactor reactor(server, dispatcher, epoller, manager);
+  Reactor reactor(server, *dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);
@@ -96,7 +121,7 @@ TEST_F(ReactorIntegrationTest,
        should_send_error_when_first_message_is_not_register) {
   const std::uint16_t port = Ports::Reactor::INVALID_FIRST_MESSAGE_PORT;
   TcpServer server(port);
-  Reactor reactor(server, dispatcher, epoller, manager);
+  Reactor reactor(server, *dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);
@@ -127,7 +152,7 @@ TEST_F(ReactorIntegrationTest,
        should_keep_serving_after_first_agent_disconnects) {
   const std::uint16_t port = Ports::Reactor::DISCONNECT_PORT;
   TcpServer server(port);
-  Reactor reactor(server, dispatcher, epoller, manager);
+  Reactor reactor(server, *dispatcher, epoller, manager);
 
   std::promise<void> reactorReady;
   auto reactorThread = startReactorThread(server, reactor, reactorReady);

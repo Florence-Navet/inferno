@@ -11,7 +11,8 @@
 - [How to build dashboard](how-to-build-dashboard)
   - [Windows](#dashboard-on-windows)
   - [Linux](#dashboard-on-linux)
---- 
+
+---
 
 ## Project description
 
@@ -84,19 +85,18 @@ A Qt-based interface providing:
 - Agent reconnection resilience
 - Background daemon/service deployment
 
-
 ## Tech Stack
 
-| Layer                  | Technology                                                 |
-|------------------------|------------------------------------------------------------|
-| Containerization       | Docker & Docker Compose  (Agent & Server build)            |
-| Server runtime         | debian:bookworm-20260406-slim                              |
-| Server & agent         | C++17 , CMake 3.20 minimum                                 |
-| Dashboard              | Qt 6.4.2 minimum, 6.10.2 recommended (Widgets + ?? )       |
-| Database               | PostgreSQL 17 / TimescaleDB 2.28.3                         |
-| Tests                  | Google Test                                                |
----
+| Layer            | Technology                                           |
+| ---------------- | ---------------------------------------------------- |
+| Containerization | Docker & Docker Compose (Agent & Server build)       |
+| Server runtime   | debian:bookworm-20260406-slim                        |
+| Server & agent   | C++17 , CMake 3.20 minimum                           |
+| Dashboard        | Qt 6.4.2 minimum, 6.10.2 recommended (Widgets + ?? ) |
+| Database         | PostgreSQL 17 / TimescaleDB 2.28.3                   |
+| Tests            | Google Test                                          |
 
+---
 
 ## Dependencies
 
@@ -105,11 +105,13 @@ All **server-side and agent-side dependencies** are handled automatically inside
 All **dashboard-side dependencies** need to be installed on your host machine (see [How to build dashboard](#how-to-build-dashboard) below).
 
 | Library            | Version            | Where                  | Purpose                         |
-|--------------------|--------------------|------------------------|---------------------------------|
-| Google Test / Mock | system             | Agent, Server (Docker) | Unit testing framework          |
-| CMake              | CMake 3.20 minimum | Dashboard (host)       | Build system for the Qt client  |
-| libssl-dev         | system             | All (Docker & host)    | Secure communication on network |
-
+| ------------------ | ------------------ | ---------------------- | ------------------------------- |
+| Google Test / Mock | 1.15.2-4           | Agent, Server (Docker) | Unit testing framework          |
+| CMake              | 3.31.11 (3.20 min) | Dashboard (host)       | Build system for the Qt client  |
+| openssl-devel      | 3.5.7-2            | All (Docker & host)    | Secure communication on network |
+| libpq              | 18.0-3             | Server (Docker)        |                                 |
+| libpqxx            | 7.10.5-1           | Server (Docker)        |                                 |
+| postgresql         | 18.3-2             | Server (Docker)        |                                 |
 
 ## Prerequisites
 
@@ -165,6 +167,7 @@ docker compose down
 > add the `-v` flag to remove build volumes and start from scratch
 
 ---
+
 ## How are agent and server built
 
 This project uses a **multi-stage container build pipeline** orchestrated through Docker Compose-compatible services. The pipeline has been tested with both Docker and Podman.
@@ -187,6 +190,7 @@ The following diagram illustrates the pipeline:
 ![pipeline](./_docs/project/build_pipeline_&_artifact_flow.png)
 
 ## How to build dashboard
+
 ### Dashboard on Windows
 
 First, check if you already have the required tools:
@@ -221,11 +225,13 @@ C:\Qt\6.x.x\mingw_64\bin
 **Build the dashboard:**
 
 From **PowerShell**:
+
 ```powershell
 ./dashboard/windows-build.bat
 ```
 
 From **Git Bash**:
+
 ```bash
 powershell.exe -NoProfile -Command "& '$(cygpath -w ./dashboard/windows-build.bat)'"
 ```
@@ -235,7 +241,9 @@ powershell.exe -NoProfile -Command "& '$(cygpath -w ./dashboard/windows-build.ba
 ```bash
 ./dashboard/build/dashboard.exe
 ```
+
 > **WSL:** if you get EGL/MESA errors, add `export LIBGL_ALWAYS_SOFTWARE=1` to your `~/.bashrc`
+
 ---
 
 ### Dashboard on Linux
@@ -269,18 +277,21 @@ Build then run:
 ```
 
 **WSL only:** if you get EGL/MESA rendering errors, add this to your `~/.bashrc` and restart your terminal:
+
 ```bash
 export LIBGL_ALWAYS_SOFTWARE=1
 ```
+
 > WSL has no GPU access, so Qt's hardware OpenGL rendering fails. This flag forces software rendering instead.
 
 ---
 
 ## How to test db
 
-Get inside inferno-db container 
+Get inside inferno-db container
+
 ```bash
-docker compose --profile db exec timescale-db   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+docker compose --profile db exec inferno-db   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
 Or create a `queries.sql` at root project
@@ -290,6 +301,8 @@ touch queries.sql
 ```
 
 Execute command inside container with
+
 ```bash
-docker compose --profile db exec timescale-db   sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /queries.sql'
+docker compose --profile db exec inferno-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /queries.sql'
 ```
+

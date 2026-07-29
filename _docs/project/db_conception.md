@@ -5,10 +5,9 @@
 18.3
 
 ```mermaid
-
 erDiagram
     agents {
-        text     id           PK  "hostname:ip — identifiant stable" TODO: switch
+        text     id           PK  "hostname:ip — identifiant stable TODO: switch"
         smallint os_type          "enum OSType"
         smallint arch             "enum ArchType"
         text     hostname
@@ -17,12 +16,12 @@ erDiagram
         text     current_user
         timestamp first_seen
         timestamp last_seen
-        boolean  is_online        "mis à jour par le reactor" TODO: remove?
+        boolean  is_online        "mis à jour par le reactor TODO: remove?"
     }
 
     commands {
         serial    id            PK
-        int?      id_runtime    UNIQUE   TODO: decider id db ou runtime pour commands
+        int      id_runtime    UNIQUE   NOTNULL "TODO: decider id db ou runtime pour commands"
         text      agent_id      FK
         text      dashboard_id  UNIQUE NULLABLE
         smallint  type            "enum CommandType"

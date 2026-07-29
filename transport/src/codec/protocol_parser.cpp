@@ -1,9 +1,10 @@
+#include "codec/protocol_parser.hpp"
+
 #include <cstring>
 #include <string>
 
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
-#include "codec/protocol_parser.hpp"
 #include "exception/lptf_exception.hpp"
 
 namespace ProtocolParser {
@@ -257,8 +258,9 @@ DashboardCommand ProtocolParser::parseDashboardCommand(
   size_t offset = 0;
 
   std::uint16_t targetLen = ConvertEndian::readU16BE(input, offset);
+  std::uint16_t sentAtLen = ConvertEndian::readU16BE(input, offset);
 
-  if (offset + targetLen > input.size()) {
+  if (offset + targetLen + sentAtLen > input.size()) {
     throw InvalidSize("target name", std::to_string(targetLen));
   }
 
@@ -266,6 +268,12 @@ DashboardCommand ProtocolParser::parseDashboardCommand(
   if (offset >= input.size()) {
     throw InvalidSize("dashboard command payload", "0");
   }
+
+  command.sent_at = ConvertEndian::getString(input, offset, sentAtLen);
+  if (offset >= input.size()) {
+    throw InvalidSize("dashboard command payload", "0");
+  }
+
   command.command = parseCommandPayload(
       std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return command;
@@ -297,8 +305,9 @@ DashboardResponse ProtocolParser::parseDashboardResponse(
   size_t offset = 0;
 
   std::uint16_t targetLen = ConvertEndian::readU16BE(input, offset);
+  std::uint16_t receivedAtlen = ConvertEndian::readU16BE(input, offset);
 
-  if (offset + targetLen > input.size()) {
+  if (offset + targetLen + receivedAtlen > input.size()) {
     throw InvalidSize("target name", std::to_string(targetLen));
   }
 
@@ -306,6 +315,12 @@ DashboardResponse ProtocolParser::parseDashboardResponse(
   if (offset >= input.size()) {
     throw InvalidSize("dashboard command payload", "0");
   }
+
+  response.received_at = ConvertEndian::getString(input, offset, receivedAtlen);
+  if (offset >= input.size()) {
+    throw InvalidSize("dashboard command payload", "0");
+  }
+
   response.response = parseResponsePayload(
       std::vector<std::uint8_t>(input.begin() + offset, input.end()));
   return response;
@@ -317,12 +332,18 @@ RegisterPayload ProtocolParser::parseRegisterPayload(
   size_t offset = 0;
 
   std::uint16_t idLen = ConvertEndian::readU16BE(input, offset);
+  std::uint16_t registeredAtLen = ConvertEndian::readU16BE(input, offset);
+  std::uint16_t lastSeenLen = ConvertEndian::readU16BE(input, offset);
 
-  if (offset + idLen > input.size()) {
+  if (offset + idLen + registeredAtLen + lastSeenLen > input.size()) {
     throw InvalidSize("id", std::to_string(idLen));
   }
 
   payload.id = ConvertEndian::getString(input, offset, idLen);
+  payload.registered_at =
+      ConvertEndian::getString(input, offset, registeredAtLen);
+  payload.last_seen = ConvertEndian::getString(input, offset, lastSeenLen);
+
   if (offset >= input.size()) {
     throw InvalidSize("register payload id", "0");
   }

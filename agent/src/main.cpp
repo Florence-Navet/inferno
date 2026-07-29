@@ -18,7 +18,7 @@ int main() {
   std::setvbuf(stderr, nullptr, _IONBF, 0);
 
   const std::string host = EnvHelper::resolveServerHost();
-  const std::uint16_t port = EnvHelper::resolveServerPort();
+  const std::uint16_t port = EnvHelper::resolvePort();
 
   constexpr int kHeartbeatMs = 30'000;  // 30s — HEALTHCHECK cadence
   constexpr int kRetryMs = 5'000;       // 5s  — reconnection cadence

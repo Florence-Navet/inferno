@@ -10,11 +10,12 @@
 #include "dispatcher/dispatcher.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "session_manager.hpp"
+#include "repository_manager.hpp"   
 
 class ServerDispatcher : public Dispatcher {
  public:
-  explicit ServerDispatcher(SessionManager& manager)
-      : sessionManager_(manager) {};
+  explicit ServerDispatcher(SessionManager& sessionManager, RepositoryManager& repositoryManager)
+      : sessionManager_(sessionManager), repositoryManager_(repositoryManager) {};
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -26,6 +27,7 @@ class ServerDispatcher : public Dispatcher {
 
  private:
   SessionManager& sessionManager_;
+  RepositoryManager& repositoryManager_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);

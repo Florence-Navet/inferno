@@ -6,8 +6,8 @@
 constexpr int MAC_SIZE = 17;
 
 constexpr std::size_t RESPONSE_FIXED_BYTES =
-    sizeof(std::uint32_t) + sizeof(std::uint16_t) + sizeof(std::uint8_t) * 3 +
-    MAC_SIZE;  // id + data_len + status + total_chunks + chunk_index
+    sizeof(std::uint32_t) + 2 * sizeof(std::uint16_t) + sizeof(std::uint8_t) * 3 +
+    MAC_SIZE;  // id + data_len + received at len + status + total_chunks + chunk_index
 
 enum class ResponseStatus : std::uint8_t {
   OK = 0,
@@ -30,11 +30,14 @@ struct ResponsePayload {
 };
 
 struct DashboardResponse {
-  std::string target;  // which agent sent this response
+  std::string target = "";  // which agent sent this response
   ResponsePayload response;
+  // TODO adapt received_at type + serializer & parser
+  std::string received_at = "";
 
   bool operator==(const DashboardResponse& other) const {
-    return target == other.target && response == other.response;
+    return target == other.target && response == other.response &&
+           received_at == other.received_at;
   }
 };
 

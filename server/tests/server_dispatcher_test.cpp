@@ -6,13 +6,36 @@
 #include "builders/frame_builder.hpp"
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
+#include "repository_manager.hpp"
 #include "session_manager.hpp"
+#include "stubs/fake_agent_repository.hpp"
+#include "stubs/fake_command_repository.hpp"
+#include "stubs/fake_database_connection.hpp"
 #include "stubs/spy_socket.hpp"
 
 class ServerDispatcherTest : public ::testing::Test {
  protected:
   SessionManager manager;
-  ServerDispatcher dispatcher{manager};
+  FakeDatabaseConnection fakeDb;
+  FakeAgentRepository fakeAgents{fakeDb};
+  FakeCommandRepository fakeCommands{fakeDb};
+
+  //   RepositoryManager repositoryManager;
+
+  //   ServerDispatcher dispatcher;
+  // Lazy-initialized via SetUp()
+  std::optional<RepositoryManager> repositoryManager;
+  std::optional<ServerDispatcher> dispatcher;
+
+  void SetUp() override {
+    repositoryManager.emplace(
+        std::make_unique<FakeDatabaseConnection>(fakeDb),
+        std::make_unique<FakeAgentRepository>(fakeAgents),
+        std::make_unique<FakeCommandRepository>(fakeCommands));
+
+    // dispatcher = ServerDispatcher(manager, repositoryManager);
+    dispatcher.emplace(manager, *repositoryManager);
+  }
 
   // Helper: Create an agent through the manager (mirrors
   // Reactor::onNewConnection)
@@ -43,7 +66,7 @@ TEST_F(ServerDispatcherTest, should_register_session_on_register) {
   AgentConnection& agent = createAgent(101, agentSpy);
 
   // Act
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       agent, FrameBuilder::makeFrame(MessageType::REGISTER,
                                      FrameBuilder::makeRawOsInfoPayload()));
 
@@ -60,7 +83,7 @@ TEST_F(ServerDispatcherTest,
 
   // Act
   // COMMAND is server→agent — receiving it is a protocol violation
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       agent,
       FrameBuilder::makeFrame(
           MessageType::COMMAND));  // if an agent sends a command, it should
@@ -80,7 +103,7 @@ TEST_F(ServerDispatcherTest,
 
   // Act
   for (int i = 0; i < 3; ++i) {
-    dispatcher.sendCommand(agent, CommandType::OS_INFO, "");
+    dispatcher->sendCommand(agent, CommandType::OS_INFO, "");
 
     // feed sent bytes into receive buffer
     agent.appendToBuffer(agentSpy.sent);
@@ -112,7 +135,7 @@ TEST_F(ServerDispatcherTest, should_register_dashboard_on_dashboard_register) {
   AgentConnection& dashboard = createDashboard(100, dashboardSpy);
 
   // Act
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::DASHBOARD_REGISTER,
                                          FrameBuilder::makeRawOsInfoPayload()));
 
@@ -128,7 +151,7 @@ TEST_F(ServerDispatcherTest,
   AgentConnection& dashboard = createDashboard(100, dashboardSpy);
 
   // Act - Dashboard registers with no agents connected
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::DASHBOARD_REGISTER,
                                          FrameBuilder::makeRawOsInfoPayload()));
 
@@ -161,7 +184,7 @@ TEST_F(ServerDispatcherTest,
   SpySocket agentSpy;
   AgentConnection& agent = createAgent(101, agentSpy);
 
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       agent, FrameBuilder::makeFrame(MessageType::REGISTER,
                                      FrameBuilder::makeRawOsInfoPayload()));
 
@@ -183,7 +206,7 @@ TEST_F(ServerDispatcherTest,
   AgentConnection& agent = createAgent(101, agentSpy);
 
   // Act - Agent registers with no dashboard connected
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       agent, FrameBuilder::makeFrame(MessageType::REGISTER,
                                      FrameBuilder::makeRawOsInfoPayload()));
 
@@ -212,7 +235,7 @@ TEST_F(ServerDispatcherTest,
   SpySocket dashboardSpy;
   AgentConnection& dashboard = createDashboard(100, dashboardSpy);
 
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::DASHBOARD_REGISTER,
                                          FrameBuilder::makeRawOsInfoPayload()));
 
@@ -255,7 +278,7 @@ TEST_F(ServerDispatcherTest, should_route_dashboard_command_to_agent) {
 
   std::vector<std::uint8_t> payload =
       ProtocolSerializer::serializeDashboardCommand(cmd);
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
 
   // Assert: Agent received command with generated ID
@@ -286,7 +309,7 @@ TEST_F(ServerDispatcherTest,
 
   std::vector<std::uint8_t> payload =
       ProtocolSerializer::serializeDashboardCommand(cmd);
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::COMMAND, payload));
 
   // Assert: Dashboard got error
@@ -320,7 +343,7 @@ TEST_F(ServerDispatcherTest, should_forward_agent_response_to_dashboard) {
 
   std::vector<std::uint8_t> cmdPayload =
       ProtocolSerializer::serializeDashboardCommand(cmd);
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       dashboard, FrameBuilder::makeFrame(MessageType::COMMAND, cmdPayload));
 
   // Capture the command ID that was generated by server
@@ -345,7 +368,7 @@ TEST_F(ServerDispatcherTest, should_forward_agent_response_to_dashboard) {
 
   std::vector<std::uint8_t> responsePayload =
       ProtocolSerializer::serializeResponsePayload(response);
-  dispatcher.handleFrame(
+  dispatcher->handleFrame(
       agent, FrameBuilder::makeFrame(MessageType::RESPONSE, responsePayload));
 
   // Assert: Dashboard received a RESPONSE frame

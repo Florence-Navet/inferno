@@ -56,6 +56,11 @@ MainWindow::MainWindow(QWidget *parent)
             });
 
     m_client = new ServerClient(this);
+    connect(m_client, &ServerClient::agentReceived, this,
+            [this](const QString &id, const QString &name, const QString &details) {
+                addAgentItem(id, name, details, true);
+            });
+
     m_client->connectToServer("localhost", 8888);
 
 }
@@ -68,11 +73,11 @@ MainWindow::~MainWindow()
 void MainWindow::populateAgents()
 {
     // TODO: replace with RegisterPayload list from DataType::AGENTS
-    addAgentItem("agent1-desktop", "Windows · x64 · 192.168.1.10", true);
-    addAgentItem("agent2-srv", "Linux · x64 · 192.168.1.42", true);
-    addAgentItem("agent3-lab", "Windows · x86 · 192.168.1.55", true);
-    addAgentItem("agent4-pi", "Linux · ARM · 192.168.1.80", true);
-    addAgentItem("agent5-mac", "macOS · x64 · offline", false);
+    //addAgentItem("agent1-desktop", "Windows · x64 · 192.168.1.10", true);
+    //addAgentItem("agent2-srv", "Linux · x64 · 192.168.1.42", true);
+    //addAgentItem("agent3-lab", "Windows · x86 · 192.168.1.55", true);
+   //addAgentItem("agent4-pi", "Linux · ARM · 192.168.1.80", true);
+   // addAgentItem("agent5-mac", "macOS · x64 · offline", false);
 
     ui->agentList->setCurrentRow(-1);
 }
@@ -163,13 +168,14 @@ void MainWindow::buildStatusBar()
 }
 
 
-void MainWindow::addAgentItem(const QString &name, const QString &details, bool online)
+void MainWindow::addAgentItem(const QString &id, const QString &name,
+                              const QString &details, bool online)
 {
     AgentItemWidget *widget = new AgentItemWidget(this);
     widget->setAgent(name, details, online);
 
     QListWidgetItem *item = new QListWidgetItem(ui->agentList);
-    item->setData(Qt::UserRole, name);
+    item->setData(Qt::UserRole, id);
     item->setSizeHint(widget->sizeHint());
     ui->agentList->setItemWidget(item, widget);
 }

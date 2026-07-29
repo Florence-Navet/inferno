@@ -10,32 +10,33 @@
 #include "protocol/lptf_protocol.hpp"
 #include "socket/i_socket.hpp"
 
-class AgentConnection : public FrameTransport {
- public:
-  explicit AgentConnection() {};
-  explicit AgentConnection(std::unique_ptr<ISocket> sock)
-      : FrameTransport(std::move(sock)) {}
-  AgentConnection(std::nullptr_t) = delete;
+class AgentConnection : public FrameTransport
+{
+public:
+    explicit AgentConnection() {};
+    explicit AgentConnection(std::unique_ptr<ISocket> sock)
+        : FrameTransport(std::move(sock)) {}
+    AgentConnection(std::nullptr_t) = delete;
 
-  AgentConnection(const AgentConnection&) = delete;
-  AgentConnection& operator=(const AgentConnection&) = delete;
-  AgentConnection(AgentConnection&&) = default;
+    AgentConnection(const AgentConnection &) = delete;
+    AgentConnection &operator=(const AgentConnection &) = delete;
+    AgentConnection(AgentConnection &&) = default;
 
-  // ===== Register payload related methods =====
-  const OsInfoPayload& getAgentInfo() const override;
-  void setAgentInfo(const OsInfoPayload& info) override;
-  void setIsRegisered(bool registered = true) { isRegistered_ = registered; }
+    // ===== Register payload related methods =====
+    const OsInfoPayload &getAgentInfo() const override;
+    void setAgentInfo(const OsInfoPayload &info) override;
+    void setIsRegisered(bool registered = true) { isRegistered_ = registered; }
 
-  // ===== Register and registration state related method =====
-  bool getIsRegistered() const { return isRegistered_; }
+    // ===== Register and registration state related method =====
+    bool getIsRegistered() const { return isRegistered_; }
 
-  // ===== Buffer related methods =====
-  std::string getId() { return id_; }
-  void setId(std::string_view newId) { id_ = newId; }
+    // ===== Buffer related methods =====
+    std::string getId() const { return id_; }
+    void setId(std::string_view newId) { id_ = newId; }
 
- private:
-  std::string id_ = "";
-  bool isRegistered_ = false;
+private:
+    std::string id_ = "";
+    bool isRegistered_ = false;
 };
 
 #endif

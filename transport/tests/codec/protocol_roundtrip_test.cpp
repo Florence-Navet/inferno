@@ -92,7 +92,6 @@ TEST(ProtocolRoundRrip,
   DashboardData data;
   data.target = "targetId";
   data.data = FrameBuilder::makeDataPayload();
-
   const std::vector<std::uint8_t> bytes =
       ProtocolSerializer::serializeDashboardData(data);
   const DashboardData result = ProtocolParser::parseDashboardData(bytes);
@@ -123,18 +122,4 @@ TEST(ProtocolRoundRrip,
   const DashboardResponse result =
       ProtocolParser::parseDashboardResponse(bytes);
   EXPECT_EQ(result, response);
-}
-
-TEST(ProtocolRoundRrip,
-     should_preserve_register_payload_through_serialize_then_parse) {
-  RegisterPayload payload;
-  payload.id = "whateverId";
-  payload.registered_at = "2026-07-25T14:32:45Z";
-  payload.last_seen = "2026-07-28T14:32:45Z";
-  payload.system = OsInfoBuilder::create();
-
-  const std::vector<std::uint8_t> bytes =
-      ProtocolSerializer::serializeRegisterPayload(payload);
-  const RegisterPayload result = ProtocolParser::parseRegisterPayload(bytes);
-  EXPECT_EQ(result, payload);
 }

@@ -8,12 +8,6 @@ void ResponseRepository::save(const ResponsePayload& response) {
   params.append(static_cast<int>(response.chunk_index));
   params.append(pqxx::binarystring(response.data.data(),
   response.data.size()));
-  // std::vector<std::string> params;
-  // params.push_back(response.id);
-  // params.push_back(static_cast<int>(response.status));
-  // params.push_back(static_cast<int>(response.total_chunks));
-  // params.push_back(static_cast<int>(response.chunk_index));
-  // params.push_back(response.data);
 
   db_.executeParams(
       "INSERT INTO responses "

@@ -7,6 +7,7 @@
 #include "reactor.hpp"
 #include "server_dispatcher.hpp"
 #include "tcp_server.hpp"
+#include "repository_manager.hpp"
 
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -28,9 +29,10 @@ int main() {
 
   server.setNonBlocking();
 
-  SessionManager manager;
-  ServerDispatcher dispatcher(manager);
-  Reactor reactor(server, dispatcher, poller, manager);
+  SessionManager sessionManager;
+  RepositoryManager repositoryManager;
+  ServerDispatcher dispatcher(sessionManager, repositoryManager);
+  Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;
 }

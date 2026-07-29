@@ -83,7 +83,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   RegisterPayload registerToSent;
   registerToSent.system = agentInfo;
   registerToSent.id = agent.getId();
-  repositoryManager_.agents->save(registerToSent);
+  repositoryManager_.agents().save(registerToSent);
 
   DataPayload registration;
   registration.subtype = DataType::REGISTRATION;
@@ -136,6 +136,7 @@ void ServerDispatcher::onDashboardRegister(
     // registration.id = agent.getId();
     registration.system = agent.getAgentInfo();
 
+    // TODO serializer and parser for registerPayloadList
     std::vector<std::uint8_t> registerPayload =
         ProtocolSerializer::serializeRegisterPayload(registration);
     dataPayload.insert(dataPayload.end(), registerPayload.begin(),

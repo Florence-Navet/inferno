@@ -6,11 +6,6 @@ int CommandRepository::save(const DashboardCommand& cmd) {
   params.append(static_cast<int>(cmd.command.type));
   params.append(cmd.command.data);
 
-  // std::vector<std::string> params;
-  // params.push_back(cmd.target);
-  // params.push_back(std::to_string(cmd.type));
-  // params.push_back(cmd.data);
-
   pqxx::result result = db_.executeParams(
       "INSERT INTO command_history (agent_id, command_type, "
       "command_data) VALUES ($1, $2, $3) RETURNING id",
@@ -24,10 +19,6 @@ std::vector<DashboardCommand> CommandRepository::findByAgentId(
   pqxx::params params;
   params.append(agentId);
   params.append(limit);
-
-  // std::vector<std::string> params;
-  // params.push_back(agentId);
-  // params.push_back(std::to_string(limit));
 
   pqxx::result rows = db_.executeParams(
       "SELECT id, command_type, command_data, sent_at FROM command_history"

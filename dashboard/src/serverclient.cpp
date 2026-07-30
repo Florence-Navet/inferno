@@ -134,12 +134,12 @@ void ServerClient::handleFrame(const Frame& frame) {
       const DashboardResponse response =
           ProtocolParser::parseDashboardResponse(frame.payload);
 
-      qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
-               << "id" << response.response.id << "status"
-               << static_cast<int>(response.response.status) << "chunk"
-               << response.response.chunk_index << "/"
-               << response.response.total_chunks << "size"
-               << response.response.data.size();
+      // qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
+      //          << "id" << response.response.id << "status"
+      //          << static_cast<int>(response.response.status) << "chunk"
+      //          << response.response.chunk_index << "/"
+      //          << response.response.total_chunks << "size"
+      //          << response.response.data.size();
 
       const QString target = QString::fromStdString(response.target);
       const CommandType type =
@@ -206,11 +206,11 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
     case DataType::METRICS_SAMPLE: {
         const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
 
-        qDebug() << "CPU" << sample.cpu.total_percent << "%"
-                 << "cores" << sample.cpu.per_core.size()
-                 << "mem" << sample.mem.phys_used << "/" << sample.mem.phys_total
-                 << "disks" << sample.disks.size()
-                 << "ifaces" << sample.interfaces.size();
+        // qDebug() << "CPU" << sample.cpu.total_percent << "%"
+        //          << "cores" << sample.cpu.per_core.size()
+        //          << "mem" << sample.mem.phys_used << "/" << sample.mem.phys_total
+        //          << "disks" << sample.disks.size()
+                 // << "ifaces" << sample.interfaces.size();
         break;
     }
     default:

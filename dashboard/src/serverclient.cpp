@@ -85,7 +85,8 @@ void ServerClient::sendRegister() {
   info.os_type = OSType::WINDOWS;
   info.arch = ArchType::X64;
   info.hostname = QHostInfo::localHostName().toStdString();
-  info.current_user = qgetenv("USERNAME").toStdString();
+  // info.current_user = qgetenv("USERNAME").toStdString();
+  info.current_user = qgetenv("USER").toStdString();  // For Arch. not USERNAME
   info.os_version = "Windows";
   // TODO: use the real local IP (QNetworkInterface).
   info.ip = "127.0.0.1";

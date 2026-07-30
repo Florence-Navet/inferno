@@ -46,6 +46,7 @@ set(REPOSITORY_SOURCES
 set(SERVICE_SOURCES
     src/service/agent_service.cpp
     src/service/command_service.cpp
+    src/service/response_service.cpp
 )
 
 

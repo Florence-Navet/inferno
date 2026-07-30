@@ -100,8 +100,8 @@ void ServerClient::sendRegister() {
 
   info.arch = ArchType::X64;
   info.hostname = QHostInfo::localHostName().toStdString();
-  info.current_user = qgetenv("USERNAME").toStdString();
-  info.os_version = "Windows";
+  info.current_user = user.toStdString();
+  //info.os_version = "Windows";
   // TODO: use the real local IP (QNetworkInterface).
   info.ip = "127.0.0.1";
   // The server uses this field as our id (setId(mac)).
@@ -139,9 +139,20 @@ void ServerClient::handleFrame(const Frame& frame) {
                << response.response.chunk_index << "/"
                << response.response.total_chunks << "size"
                << response.response.data.size();
-      emit responseReceived(
-          QString::fromStdString(response.target),
-          QString::fromStdString(ProtocolParser::toString(response.response.data)));
+
+      const QString target = QString::fromStdString(response.target);
+      const CommandType type =
+          m_lastCommandByTarget.value(target, CommandType::UNKNOWN);
+
+      if (type == CommandType::RUNNING_PROCESSES) {
+          const std::vector<ProcessInfo> processes =
+              ProtocolParser::parseProcessInfoList(response.response.data);
+          qDebug() << "process list:" << processes.size() << "entries";
+      } else {
+          emit responseReceived(
+              target,
+              QString::fromStdString(ProtocolParser::toString(response.response.data)));
+      }
       break;
     }
     case MessageType::INFERNO_ERROR: {
@@ -227,7 +238,7 @@ void ServerClient::sendCommand(const QString& target, CommandType type,
         ProtocolHelper::createHeader(MessageType::COMMAND, payload), payload};
 
     m_session->sendFrame(frame);
-    m_pendingCommands.insert(command.id, type);
+    m_lastCommandByTarget.insert(target, type);
     qDebug() << "sent command id" << command.id << "to" << target;
   } catch (const std::exception& e) {
     qDebug() << "send command failed:" << e.what();

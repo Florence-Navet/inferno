@@ -7,10 +7,14 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "repository_manager.hpp"
+#include "service/agent_service.hpp"
+#include "service/command_service.hpp"
+#include "service/metrics_service.hpp"
 #include "session_manager.hpp"
 #include "stubs/fake_agent_repository.hpp"
 #include "stubs/fake_command_repository.hpp"
 #include "stubs/fake_database_connection.hpp"
+#include "stubs/fake_metrics_repository.hpp"
 #include "stubs/spy_socket.hpp"
 
 class ServerDispatcherTest : public ::testing::Test {
@@ -30,6 +34,12 @@ class ServerDispatcherTest : public ::testing::Test {
   ICommandService* commandService = nullptr;
 
   // Response
+
+  // Metrics
+  std::unique_ptr<FakeMetricsRepository> metricsRepoUnique;
+  std::unique_ptr<MetricsService> metricsServiceUnique;
+  FakeMetricsRepository* fakeMetricsRepo = nullptr;
+  IMetricsService* metricsService = nullptr;
 
   std::optional<ServerDispatcher> dispatcher;
 
@@ -53,8 +63,15 @@ class ServerDispatcherTest : public ::testing::Test {
     // Response
 
     // Metrics
+    metricsRepoUnique = std::make_unique<FakeMetricsRepository>();
+    fakeMetricsRepo = metricsRepoUnique.get();
 
-    dispatcher.emplace(manager, *agentService, *commandService);
+    metricsServiceUnique =
+        std::make_unique<MetricsService>(*fakeMetricsRepo, manager);
+    metricsService = metricsServiceUnique.get();
+
+    dispatcher.emplace(manager, *agentService, *commandService,
+                       *metricsService);
   }
 
   // Helper: Create an agent through the manager (mirrors

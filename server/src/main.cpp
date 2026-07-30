@@ -6,9 +6,13 @@
 #include "env_helper.hpp"
 #include "poller/epoller.hpp"
 #include "reactor.hpp"
+#include "repository/command_repository.hpp"
 #include "repository/database_connection.hpp"
+#include "repository/metrics_repository.hpp"
 #include "repository_manager.hpp"
 #include "service/agent_service.hpp"
+#include "service/command_service.hpp"
+#include "service/metrics_service.hpp"
 #include "tcp_server.hpp"
 
 int main() {
@@ -40,8 +44,11 @@ int main() {
   CommandRepository commandRepository(db);
   CommandService commandService(commandRepository, sessionManager);
 
+  MetricsRepository metricsRepository(db);
+  MetricsService metricsService(metricsRepository, sessionManager);
   // RepositoryManager repositoryManager;
-  ServerDispatcher dispatcher(sessionManager, agentService, commandService);
+  ServerDispatcher dispatcher(sessionManager, agentService, commandService,
+                              metricsService);
   Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;

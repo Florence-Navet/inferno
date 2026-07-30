@@ -17,22 +17,44 @@ class ServerDispatcherTest : public ::testing::Test {
  protected:
   SessionManager manager;
   FakeDatabaseConnection fakeDb;
-  //   FakeAgentRepository fakeAgents{fakeDb};
-  //   FakeCommandRepository fakeCommands{fakeDb};
+  // Agent
+  std::unique_ptr<FakeAgentRepository> agentRepoUnique;
+  std::unique_ptr<AgentService> agentServiceUnique;
+  FakeAgentRepository* fakeAgentRepo = nullptr;
+  IAgentService* agentService = nullptr;
 
-  //   RepositoryManager repositoryManager;
+  // Command
+  std::unique_ptr<FakeCommandRepository> commandRepoUnique;
+  std::unique_ptr<CommandService> commandServiceUnique;
+  FakeCommandRepository* fakeCommandRepo = nullptr;
+  ICommandService* commandService = nullptr;
 
-  //   ServerDispatcher dispatcher;
-  // Lazy-initialized via SetUp()
-  std::optional<RepositoryManager> repositoryManager;
+  // Response
+
   std::optional<ServerDispatcher> dispatcher;
 
   void SetUp() override {
-    repositoryManager.emplace(std::make_unique<FakeDatabaseConnection>(fakeDb),
-                              std::make_unique<FakeAgentRepository>(fakeDb),
-                              std::make_unique<FakeCommandRepository>(fakeDb));
+    // Agent
+    agentRepoUnique = std::make_unique<FakeAgentRepository>(fakeDb);
+    fakeAgentRepo = agentRepoUnique.get();
 
-    dispatcher.emplace(manager, *repositoryManager);
+    agentServiceUnique =
+        std::make_unique<AgentService>(*fakeAgentRepo, manager);
+    agentService = agentServiceUnique.get();
+
+    // Command
+    commandRepoUnique = std::make_unique<FakeCommandRepository>(fakeDb);
+    fakeCommandRepo = commandRepoUnique.get();
+
+    commandServiceUnique =
+        std::make_unique<CommandService>(*fakeCommandRepo, manager);
+    commandService = commandServiceUnique.get();
+
+    // Response
+
+    // Metrics
+
+    dispatcher.emplace(manager, *agentService, *commandService);
   }
 
   // Helper: Create an agent through the manager (mirrors
@@ -74,7 +96,8 @@ TEST_F(ServerDispatcherTest, should_register_session_on_register) {
   EXPECT_EQ(agent.getAgentInfo().hostname, Protocol::TEST_HOSTNAME_STR);
 }
 
-// TODO sendError method on frame transport now, not on dispatcher, only called if dashboard exist
+// TODO sendError method on frame transport now, not on dispatcher, only called
+// if dashboard exist
 TEST_F(ServerDispatcherTest,
        should_send_error_when_unknown_message_type_received) {
   // Arrange
@@ -118,7 +141,8 @@ TEST_F(ServerDispatcherTest,
 
 //     // extract frames via real RX pipeline
 //     while (auto frame = agent.tryExtractFrame()) {
-//       CommandPayload cmd = ProtocolParser::parseCommandPayload(frame->payload);
+//       CommandPayload cmd =
+//       ProtocolParser::parseCommandPayload(frame->payload);
 //       ids.push_back(cmd.id);
 //     }
 //   }

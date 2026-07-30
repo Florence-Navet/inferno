@@ -137,25 +137,50 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
   const ResponsePayload response =
       ProtocolParser::parseResponsePayload(payload);
 
+  // responseService_.save() resolves the target via the command id,
+  // persists the response to the DB, and (on the last chunk) cleans up
+  // the command->target mapping. An unknown/expired command id throws.
   DashboardResponse dashResponse;
-  dashResponse.target = commandService_.getTarget(response.id);
-  dashResponse.response = response;
 
+  try {
+    dashResponse = responseService_.save(response);
+  } catch (const std::exception& e) {
+    Logger::error("server dispatcher",
+                 "Failed to save/route response id=" +
+                     std::to_string(response.id) + ": " + e.what());
+    return;
+  }
+ 
   std::vector<std::uint8_t> dashPayload =
       ProtocolSerializer::serializeDashboardResponse(dashResponse);
   Frame frame = {
       ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
       dashPayload};
-
+ 
   if (sessionManager_.isDashboard()) {
     sessionManager_.getDashboard().sendFrame(frame);
   }
 
-  // Clean up when last chunk received
-  if (response.chunk_index + 1 == response.total_chunks) {
-    // commandTargets_.erase(commandId);
-    commandService_.deleteTarget(response.id);
-  }
+
+  // BEFORE response_service.cpp was added, the dispatcher did the following:
+  // dashResponse.target = commandService_.getTarget(response.id);
+  // dashResponse.response = response;
+
+  // std::vector<std::uint8_t> dashPayload =
+  //     ProtocolSerializer::serializeDashboardResponse(dashResponse);
+  // Frame frame = {
+  //     ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
+  //     dashPayload};
+
+  // if (sessionManager_.isDashboard()) {
+  //   sessionManager_.getDashboard().sendFrame(frame);
+  // }
+
+  // // Clean up when last chunk received
+  // if (response.chunk_index + 1 == response.total_chunks) {
+  //   // commandTargets_.erase(commandId);
+  //   commandService_.deleteTarget(response.id);
+  // }
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND

@@ -44,11 +44,14 @@ int main() {
   CommandRepository commandRepository(db);
   CommandService commandService(commandRepository, sessionManager);
 
+  ResponseRepository responseRepository(db);
+  ResponseService responseService(responseRepository, commandService);
+
   MetricsRepository metricsRepository(db);
   MetricsService metricsService(metricsRepository, sessionManager);
   // RepositoryManager repositoryManager;
   ServerDispatcher dispatcher(sessionManager, agentService, commandService,
-                              metricsService);
+                              responseService, metricsService);
   Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;

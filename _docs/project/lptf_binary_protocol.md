@@ -263,10 +263,12 @@ struct NetSample {
 };
 
 struct MetricsSample {
-    CpuSample cpu;
-    MemSample mem;
-    uint8_t   disk_count;
-    uint8_t   interface_count;
+    CpuSample  cpu;
+    MemSample  mem;
+    uint16_t   timestamp_len;
+    uint8_t    disk_count;
+    uint8_t    interface_count;
+    char       timestamp[timestamp_len];
     DiskSample disks[disk_count];
     NetSample  interfaces[interface_count];
 };

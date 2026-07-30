@@ -20,7 +20,9 @@ constexpr std::size_t NET_SAMPLE_FIXED_SIZE =
 
 // METRICS top-level: 2 × uint8_t for disk_count + interface_count
 // (CpuSample and MemSample are inlined, variable themselves)
-constexpr std::size_t METRICS_SAMPLE_FIXED_SIZE = sizeof(std::uint8_t) * 2;
+constexpr std::size_t METRICS_SAMPLE_FIXED_SIZE =
+    sizeof(std::uint8_t) * 2 +
+    sizeof(std::uint16_t);  // vector size + string length for timestamp
 
 constexpr int METRICS_INTERVAL_MS = 1000;
 
@@ -71,13 +73,15 @@ struct NetSample {
 };
 
 struct MetricsSample {
+  std::string timestamp = "";
   CpuSample cpu;
   MemSample mem;
   std::vector<DiskSample> disks;
   std::vector<NetSample> interfaces;
 
   bool operator==(const MetricsSample& other) const {
-    return cpu == other.cpu && mem == other.mem && disks == other.disks &&
+    return timestamp == other.timestamp && cpu == other.cpu &&
+           mem == other.mem && disks == other.disks &&
            interfaces == other.interfaces;
   }
 };

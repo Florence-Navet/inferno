@@ -41,11 +41,13 @@ set(REPOSITORY_SOURCES
     src/repository/agent_repository.cpp
     src/repository/command_repository.cpp
     src/repository/response_repository.cpp
+    src/repository/metrics_repository.cpp
 )
 
 set(SERVICE_SOURCES
     src/service/agent_service.cpp
     src/service/command_service.cpp
+    src/service/metrics_service.cpp
 )
 
 

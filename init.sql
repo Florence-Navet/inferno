@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS agents (
     last_seen TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Metrics table (hypertable for time-series)
+-- Base metrics (CPU + Memory only — singular per sample)
 CREATE TABLE IF NOT EXISTS metrics (
     time TIMESTAMPTZ NOT NULL,
     agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
@@ -24,31 +24,45 @@ CREATE TABLE IF NOT EXISTS metrics (
     -- CPU
     cpu_total_percent FLOAT8,
     cpu_core_count SMALLINT,
-    cpu_per_core FLOAT8[],  -- array of per-core percentages
+    cpu_per_core FLOAT8[],
     
     -- Memory
     mem_phys_total BIGINT,
     mem_phys_used BIGINT,
     mem_phys_available BIGINT,
     mem_swap_total BIGINT,
-    mem_swap_used BIGINT,
-    
-    -- Disk I/O
-    disk_read_bytes_per_sec FLOAT8,
-    disk_write_bytes_per_sec FLOAT8,
-    disk_device TEXT,
-    
-    -- Network I/O
-    net_rx_bytes_per_sec FLOAT8,
-    net_tx_bytes_per_sec FLOAT8,
-    net_iface TEXT
+    mem_swap_used BIGINT
 );
 
--- Convert metrics to hypertable (optimized for time-series queries)
 SELECT create_hypertable('metrics', 'time', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_metrics_agent_time 
+    ON metrics (agent_id, time DESC);
 
--- Index for fast agent lookups
-CREATE INDEX IF NOT EXISTS idx_metrics_agent_time ON metrics (agent_id, time DESC);
+-- Disk metrics (one row per disk per sample)
+CREATE TABLE IF NOT EXISTS metrics_disk (
+    time TIMESTAMPTZ NOT NULL,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    device TEXT NOT NULL,
+    read_bytes_per_sec FLOAT8,
+    write_bytes_per_sec FLOAT8
+);
+
+SELECT create_hypertable('metrics_disk', 'time', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_metrics_disk_agent_device_time 
+    ON metrics_disk (agent_id, device, time DESC);
+
+-- Network metrics (one row per interface per sample)
+CREATE TABLE IF NOT EXISTS metrics_net (
+    time TIMESTAMPTZ NOT NULL,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    iface TEXT NOT NULL,
+    rx_bytes_per_sec FLOAT8,
+    tx_bytes_per_sec FLOAT8
+);
+
+SELECT create_hypertable('metrics_net', 'time', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_metrics_net_agent_iface_time 
+    ON metrics_net (agent_id, iface, time DESC);
 
 -- Command history (just tracking what was sent)
 CREATE TABLE IF NOT EXISTS command_history (

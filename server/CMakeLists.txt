@@ -41,6 +41,7 @@ set(REPOSITORY_SOURCES
     src/repository/agent_repository.cpp
     src/repository/command_repository.cpp
     src/repository/response_repository.cpp
+    src/repository/metric_repository.cpp
 )
 
 set(SERVICE_SOURCES

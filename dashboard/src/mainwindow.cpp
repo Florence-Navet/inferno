@@ -62,6 +62,11 @@ MainWindow::MainWindow(QWidget *parent)
                 addAgentItem(id, name, details, true);
             });
 
+    connect(m_client, &ServerClient::responseReceived, this,
+            [this](const QString &target, const QString &text) {
+                showOutput(text);
+            });
+
     // m_client->connectToServer("localhost", EnvHelper::resolvePort());
     m_client->connectToServer("localhost", 8888);
 

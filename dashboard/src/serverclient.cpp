@@ -139,6 +139,9 @@ void ServerClient::handleFrame(const Frame& frame) {
                << response.response.chunk_index << "/"
                << response.response.total_chunks << "size"
                << response.response.data.size();
+      emit responseReceived(
+          QString::fromStdString(response.target),
+          QString::fromStdString(ProtocolParser::toString(response.response.data)));
       break;
     }
     case MessageType::INFERNO_ERROR: {

@@ -67,9 +67,15 @@ MainWindow::MainWindow(QWidget *parent)
                 showOutput(text);
             });
 
+    connect(m_client, &ServerClient::processListReceived, this,
+            [this](const QString &target, const std::vector<ProcessInfo> &processes) {
+                m_processTable->setProcesses(processes);
+            });
+
     connect(ui->processListButton, &QPushButton::clicked, this, [this]() {
         m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES, QString());
     });
+
 
     // m_client->connectToServer("localhost", EnvHelper::resolvePort());
     m_client->connectToServer("localhost", 8888);
@@ -94,13 +100,6 @@ void MainWindow::buildContentArea()
 
     QGridLayout *chartsGrid = new QGridLayout;
 
-    // TODO: replace hardcoded series with real metrics history from the server.
-    // One MetricsSample per second (METRICS_INTERVAL_MS); build a rolling history per chart:
-    //   CPU:     sample.cpu.per_core        (vector<float>, one value per core)
-    //   Memory:  sample.mem.phys_used/total (uint64_t bytes, convert to GB)
-    //   Network: sample.interfaces[].rx/tx_bytes_per_sec (float)
-    //   Disk:    sample.disks[].read/write_bytes_per_sec (float)
-    // Then setSeries each with its rolling history.
     chartsGrid->addWidget(createChart("CPU — per core (last 20 s)",
                                       { { 30, 45, 40, 60, 55, 50, 65, 70, 60 },
                                        { 20, 25, 30, 28, 35, 40, 38, 42, 45 },
@@ -127,6 +126,8 @@ void MainWindow::buildContentArea()
                                       { "read", "write" }), 1, 1);
 
     ui->contentLayout->insertLayout(0, chartsGrid);
+    m_processTable = new ProcessTableWidget(this);
+    ui->contentLayout->insertWidget(0, m_processTable);
 
     ui->contentLayout->insertWidget(0, new MetricCardsWidget(this));
 }

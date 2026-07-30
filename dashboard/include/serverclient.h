@@ -25,6 +25,7 @@ public:
 
 signals:
      void agentReceived(const QString &id, const QString &name, const QString &details);
+     void responseReceived(const QString &target, const QString &text);
 
 private:
     std::unique_ptr<DashboardSession> m_session;

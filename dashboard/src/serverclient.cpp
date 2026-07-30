@@ -82,7 +82,22 @@ void ServerClient::onReadyRead() {
 
 void ServerClient::sendRegister() {
   OsInfoPayload info;
+
+
+#ifdef _WIN32
   info.os_type = OSType::WINDOWS;
+  info.os_version = "Windows";
+  QString user = qEnvironmentVariable("USERNAME");
+#else
+  info.os_type = OSType::LINUX;
+  info.os_version = "Linux";
+  QString user = qEnvironmentVariable("USER");
+#endif
+
+  if (user.isEmpty())
+      user = "dashboard";
+
+
   info.arch = ArchType::X64;
   info.hostname = QHostInfo::localHostName().toStdString();
   info.current_user = qgetenv("USERNAME").toStdString();

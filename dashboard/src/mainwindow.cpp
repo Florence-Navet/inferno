@@ -130,10 +130,12 @@ void MainWindow::buildContentArea()
                                       { "read", "write" }), 1, 1);
 
     ui->contentLayout->insertLayout(0, chartsGrid);
+
     m_processTable = new ProcessTableWidget(this);
     ui->contentLayout->insertWidget(0, m_processTable);
 
-    ui->contentLayout->insertWidget(0, new MetricCardsWidget(this));
+    m_metricCards = new MetricCardsWidget(this);
+    ui->contentLayout->insertWidget(0, m_metricCards);
 }
 
 

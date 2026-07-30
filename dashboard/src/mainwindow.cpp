@@ -67,6 +67,10 @@ MainWindow::MainWindow(QWidget *parent)
                 showOutput(text);
             });
 
+    connect(ui->processListButton, &QPushButton::clicked, this, [this]() {
+        m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES, QString());
+    });
+
     // m_client->connectToServer("localhost", EnvHelper::resolvePort());
     m_client->connectToServer("localhost", 8888);
 

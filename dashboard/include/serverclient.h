@@ -31,7 +31,7 @@ private:
     std::unique_ptr<DashboardSession> m_session;
     QSocketNotifier *m_notifier = nullptr;
     std::uint32_t m_nextCommandId = 0;
-    QHash<std::uint32_t, CommandType> m_pendingCommands;
+    QHash<QString, CommandType> m_lastCommandByTarget;;
     void onReadyRead();
     void sendRegister();
     void handleFrame(const Frame &frame);

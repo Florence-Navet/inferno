@@ -7,6 +7,7 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "repository_manager.hpp"
+#include "service/response_service.hpp"
 #include "service/agent_service.hpp"
 #include "service/command_service.hpp"
 #include "service/metrics_service.hpp"
@@ -14,6 +15,7 @@
 #include "stubs/fake_agent_repository.hpp"
 #include "stubs/fake_command_repository.hpp"
 #include "stubs/fake_database_connection.hpp"
+#include "stubs/fake_response_repository.hpp"
 #include "stubs/fake_metrics_repository.hpp"
 #include "stubs/spy_socket.hpp"
 
@@ -34,6 +36,10 @@ class ServerDispatcherTest : public ::testing::Test {
   ICommandService* commandService = nullptr;
 
   // Response
+  std::unique_ptr<FakeResponseRepository> responseRepoUnique;
+  std::unique_ptr<ResponseService> responseServiceUnique;
+  FakeResponseRepository* fakeResponseRepo = nullptr;
+  IResponseService* responseService = nullptr;
 
   // Metrics
   std::unique_ptr<FakeMetricsRepository> metricsRepoUnique;
@@ -61,6 +67,12 @@ class ServerDispatcherTest : public ::testing::Test {
     commandService = commandServiceUnique.get();
 
     // Response
+    responseRepoUnique = std::make_unique<FakeResponseRepository>(fakeDb);
+    fakeResponseRepo = responseRepoUnique.get();
+ 
+    responseServiceUnique =
+        std::make_unique<ResponseService>(*fakeResponseRepo, *commandService);
+    responseService = responseServiceUnique.get();
 
     // Metrics
     metricsRepoUnique = std::make_unique<FakeMetricsRepository>();
@@ -70,7 +82,7 @@ class ServerDispatcherTest : public ::testing::Test {
         std::make_unique<MetricsService>(*fakeMetricsRepo, manager);
     metricsService = metricsServiceUnique.get();
 
-    dispatcher.emplace(manager, *agentService, *commandService,
+    dispatcher.emplace(manager, *agentService, *commandService, *responseService,
                        *metricsService);
   }
 

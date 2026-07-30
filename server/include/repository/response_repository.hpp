@@ -11,7 +11,11 @@ class IResponseRepository {
  public:
   virtual ~IResponseRepository() = default;
 
-  virtual void save(const ResponsePayload& response) = 0;
+  // Returns the received_at timestamp assigned by the DB (DEFAULT NOW()),
+  // so callers (ResponseService) can build a DashboardResponse to forward
+  // immediately without a follow-up query.
+
+  virtual std::string save(const ResponsePayload& response) = 0;
 
   // Latest N commands for one agent (dashboard history panel).
   virtual std::vector<DashboardResponse> findByCommandId(
@@ -29,14 +33,14 @@ class ResponseRepository : public IResponseRepository {
  public:
   explicit ResponseRepository(IDatabaseConnection& db) : db_(db) {}
 
-  void save(const ResponsePayload& response) override;
+  std::string save(const ResponsePayload& response) override;
 
   //   std::vector<DashboardResponse> findByAgentId(int commandId);
 
   std::vector<DashboardResponse> findByCommandId(std::uint32_t commandId,
-                                                 int limit = 50);
+                                                 int limit = 50) override;
   std::vector<DashboardResponse> findByAgentId(const std::string& agentId,
-                                               int limit = 50);
+                                               int limit = 50) override;
 };
 
 #endif

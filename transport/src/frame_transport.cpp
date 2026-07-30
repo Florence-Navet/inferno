@@ -6,7 +6,7 @@
 #include "codec/protocol_serializer.hpp"
 #include "exception/socket_exception.hpp"
 #include "logger.hpp"
- #include "socket/socket_factory.hpp"
+#include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
 
 // FrameTransport::FrameTransport() :  {}
@@ -73,7 +73,7 @@ void FrameTransport::appendToBuffer(const std::vector<std::uint8_t>& bytes) {
 void FrameTransport::sendFrame(const Frame& frame) {
   // LOG
   std::ostringstream what;
-
+  Logger::info("Frame transport", "begin of sendFrame before serializeFrame");
   std::vector<std::uint8_t> frameBytes =
       ProtocolSerializer::serializeFrame(frame);
   what << " sending " << ProtocolHelper::messageTypeToString(frame.header.type)
@@ -82,7 +82,7 @@ void FrameTransport::sendFrame(const Frame& frame) {
   // for (auto character : frame.payload) {
   //   what << character;
   // }
-  
+
   Logger::info("frame transport", what.str());
 
   // Send frame
@@ -108,7 +108,6 @@ void FrameTransport::sendFrame(const Frame& frame) {
   Logger::info("frame transport", what.str());
 }
 
-
 void FrameTransport::onError(const std::vector<std::uint8_t>& payload) {
   const ErrorPayload error = ProtocolParser::parseErrorPayload(payload);
   std::ostringstream what;
@@ -119,8 +118,7 @@ void FrameTransport::onError(const std::vector<std::uint8_t>& payload) {
   //   running = false;
 }
 
-void FrameTransport::sendError(ErrorType code,
-                           const std::string& msg) {
+void FrameTransport::sendError(ErrorType code, const std::string& msg) {
   ErrorPayload error;
   error.code = code;
   error.message = msg;

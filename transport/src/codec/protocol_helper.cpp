@@ -1,6 +1,7 @@
 #include "codec/protocol_helper.hpp"
 
 #include "exception/lptf_exception.hpp"
+#include "logger.hpp"
 
 namespace ProtocolHelper {
 const char* messageTypeToString(MessageType type) noexcept {
@@ -46,6 +47,7 @@ void validateNotNullLength(const std::uint16_t length,
 
 void validateExpectedLength(const std::vector<std::uint8_t>& input,
                             const std::size_t expectedSize) {
+  Logger::info("validateExpectedLength", "expectedSize " + std::to_string(expectedSize));
   if (input.size() != expectedSize) {
     throw InvalidSize("Payload", std::to_string(input.size()));
   }
@@ -56,6 +58,7 @@ void validateStringLength(const std::uint16_t length,
                           const std::size_t maxLen,
                           const std::size_t expectedSize) {
   validateNotNullLength(length, maxLen);
+   Logger::info("validateStringLength", "va tefaire");
   validateExpectedLength(input, expectedSize);
 }
 

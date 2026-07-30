@@ -88,12 +88,13 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   RegisterPayload registerToSent;
   agentService_.registerAgent(agent, agentInfo, registerToSent);
 
-  DataPayload registration;
-  registration.subtype = DataType::REGISTRATION;
-  registration.data =
+  DashboardData registration;
+  registration.target = agent.getId();
+  registration.data.subtype = DataType::REGISTRATION;
+  registration.data.data =
       ProtocolSerializer::serializeRegisterPayload(registerToSent);
   std::vector<std::uint8_t> registerPayload =
-      ProtocolSerializer::serializeDataPayload(registration);
+      ProtocolSerializer::serializeDashboardData(registration);
   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, registerPayload),
               registerPayload};
 
@@ -112,14 +113,15 @@ void ServerDispatcher::onDashboardRegister(
     AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
   agentService_.registerDashboard(dashboard,
                                   ProtocolParser::parseOsInfoPayload(payload));
-  DataPayload data;
-  data.subtype = DataType::AGENTS;
+  DashboardData data;
+  data.target = "";
+  data.data.subtype = DataType::AGENTS;
 
-  data.data = ProtocolSerializer::serializeRegisterPayloadList(
+  data.data.data = ProtocolSerializer::serializeRegisterPayloadList(
       agentService_.getAllAgents(dashboard));
 
   std::vector<std::uint8_t> finalPayload =
-      ProtocolSerializer::serializeDataPayload(data);
+      ProtocolSerializer::serializeDashboardData(data);
 
   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, finalPayload),
               finalPayload};
@@ -145,22 +147,21 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
   try {
     dashResponse = responseService_.save(response);
   } catch (const std::exception& e) {
-    Logger::error("server dispatcher",
-                 "Failed to save/route response id=" +
-                     std::to_string(response.id) + ": " + e.what());
+    Logger::error("server dispatcher", "Failed to save/route response id=" +
+                                           std::to_string(response.id) + ": " +
+                                           e.what());
     return;
   }
- 
+
   std::vector<std::uint8_t> dashPayload =
       ProtocolSerializer::serializeDashboardResponse(dashResponse);
   Frame frame = {
       ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
       dashPayload};
- 
+
   if (sessionManager_.isDashboard()) {
     sessionManager_.getDashboard().sendFrame(frame);
   }
-
 
   // BEFORE response_service.cpp was added, the dispatcher did the following:
   // dashResponse.target = commandService_.getTarget(response.id);
@@ -189,22 +190,24 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
 void ServerDispatcher::onData(AgentConnection& agent,
                               const std::vector<std::uint8_t>& payload) {
   const DataPayload data = ProtocolParser::parseDataPayload(payload);
+  Logger::info("server dispatcher", "[onData] after parseDatapayload()");
   std::ostringstream what;
   what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
   Frame frame;
-  int dashboardFd;
-
-  if (sessionManager_.isDashboard()) {
-    dashboardFd = sessionManager_.getDashboardFd();
-    // frame.payload = payload;
-    // sessionManager_.getDashboard().sendFrame(frame);
-  }
 
   switch (data.subtype) {
     case DataType::METRICS_SAMPLE: {
-     frame = metricsService_.save(agent.getId(),
-                           MetricsParser::parseMetricsSample(data.data));
-      sessionManager_.getDashboard().sendFrame(frame);
+      Logger::info("server dispatcher", "[onData] before parseMetricsSample");
+      MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+      Logger::info("server dispatcher",
+                   "[onData] before save and after parseMetricsSample");
+      frame = metricsService_.save(agent.getId(), sample);
+      Logger::info("server dispatcher", "[onData] after save");
+      if (sessionManager_.isDashboard()) {
+        sessionManager_.getDashboard().sendFrame(frame);
+      }
+      Logger::info("server dispatcher",
+                   "[onData] after sendFrame in METRICS SAMPLE");
       // todo use metrics service
     } break;
     case DataType::HEALTH_CHECK: {

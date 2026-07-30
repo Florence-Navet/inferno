@@ -1,5 +1,6 @@
 #include "repository/agent_repository.hpp"
 
+#include "logger.hpp"
 
 void AgentRepository::save(const RegisterPayload& agent) {
   pqxx::params params;
@@ -49,11 +50,14 @@ std::vector<RegisterPayload> AgentRepository::findAll() {
 
 std::optional<RegisterPayload> AgentRepository::findById(
     const std::string& id) {
+
+  Logger::info("agent repository", "in find by id");
+
   pqxx::params params;
   params.append(id);
 
   pqxx::result rows = db_.executeParams(
-      "SELECT registered_at, last_seen, hostname, os_type, architecture, "
+      "SELECT id, registered_at, last_seen, hostname, os_type, architecture, "
       "os_version, current_username, ip_address, mac_address "
       "FROM agents WHERE id = $1",
       params);

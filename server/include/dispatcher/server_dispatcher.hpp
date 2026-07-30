@@ -52,18 +52,11 @@ class ServerDispatcher : public IServerDispatcher {
 
   void sendDisconnect(AgentConnection& agent);
 
-  std::uint32_t nextId();
+  // void registerDashboard(AgentConnection& dashboard,
+  //                        const OsInfoPayload& dashboardInfo);
 
-  // map<command.id, target string = mac adress>
-  std::map<std::uint32_t, std::string> commandTargets_;
-
-  std::uint32_t nextCmdId_ = 0;
-
-  void registerDashboard(AgentConnection& dashboard,
-                         const OsInfoPayload& dashboardInfo);
-
-  void registerAgent(AgentConnection& agent, const OsInfoPayload& agentInfo,
-                     RegisterPayload& registerToSent);
+  // void registerAgent(AgentConnection& agent, const OsInfoPayload& agentInfo,
+  //                    RegisterPayload& registerToSent);
 };
 
 #endif

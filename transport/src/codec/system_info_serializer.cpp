@@ -39,30 +39,35 @@ std::vector<std::uint8_t> serializeOsInfoPayload(const OsInfoPayload& payload) {
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.mac.size()));
 
-  ProtocolHelper::copyString(payloadInByte, OS_INFO_FIXED_BYTES,
-                             payload.hostname);
+  ConvertEndian::writeString(payloadInByte, offset, payload.hostname);
 
-  ProtocolHelper::copyString(payloadInByte,
-                             OS_INFO_FIXED_BYTES + payload.hostname.size(),
-                             payload.os_version);
+  // ProtocolHelper::copyString(payloadInByte, OS_INFO_FIXED_BYTES,
+  //                            payload.hostname);
 
-  ProtocolHelper::copyString(
-      payloadInByte,
-      OS_INFO_FIXED_BYTES + payload.hostname.size() + payload.os_version.size(),
-      payload.current_user);
+  // ProtocolHelper::copyString(payloadInByte,
+  //                            OS_INFO_FIXED_BYTES + payload.hostname.size(),
+  //                            payload.os_version);
+  ConvertEndian::writeString(payloadInByte, offset, payload.os_version);
+  // ProtocolHelper::copyString(
+  //     payloadInByte,
+  //     OS_INFO_FIXED_BYTES + payload.hostname.size() +
+  //     payload.os_version.size(), payload.current_user);
+  ConvertEndian::writeString(payloadInByte, offset, payload.current_user);
 
-  ProtocolHelper::copyString(payloadInByte,
-                             OS_INFO_FIXED_BYTES + payload.hostname.size() +
-                                 payload.os_version.size() +
-                                 payload.current_user.size(),
-                             payload.ip);
+  // ProtocolHelper::copyString(payloadInByte,
+  //                            OS_INFO_FIXED_BYTES + payload.hostname.size() +
+  //                                payload.os_version.size() +
+  //                                payload.current_user.size(),
+  //                            payload.ip);
+  ConvertEndian::writeString(payloadInByte, offset, payload.ip);
 
-  ProtocolHelper::copyString(payloadInByte,
-                             OS_INFO_FIXED_BYTES + payload.hostname.size() +
-                                 payload.os_version.size() +
-                                 payload.current_user.size() +
-                                 payload.ip.size(),
-                             payload.mac);
+  // ProtocolHelper::copyString(payloadInByte,
+  //                            OS_INFO_FIXED_BYTES + payload.hostname.size() +
+  //                                payload.os_version.size() +
+  //                                payload.current_user.size() +
+  //                                payload.ip.size(),
+  //                            payload.mac);
+  ConvertEndian::writeString(payloadInByte, offset, payload.mac);
   return payloadInByte;
 }
 
@@ -74,7 +79,8 @@ std::vector<std::uint8_t> serializeProcessInfo(const ProcessInfo& info) {
   ConvertEndian::writeFloat(payload, offset, info.cpu_percent);
   ConvertEndian::writeU64BE(payload, offset, info.mem_bytes);
   ConvertEndian::writeU16BE(payload, offset, info.name.size());
-  std::copy(info.name.begin(), info.name.end(), payload.begin() + offset);
+  // std::copy(info.name.begin(), info.name.end(), payload.begin() + offset);
+  ConvertEndian::writeString(payload, offset, info.name);
 
   return payload;
 }
@@ -96,9 +102,10 @@ std::vector<std::uint8_t> serializeProcessInfoList(
 
   for (const ProcessInfo& info : infos) {
     std::vector<uint8_t> infoPayload = serializeProcessInfo(info);
-    std::copy(infoPayload.begin(), infoPayload.end(),
-              finalList.begin() + offset);
-    offset += infoPayload.size();
+    ConvertEndian::writeByteVector(finalList, offset, infoPayload);
+    // std::copy(infoPayload.begin(), infoPayload.end(),
+    //           finalList.begin() + offset);
+    // offset += infoPayload.size();
   }
 
   return finalList;
@@ -114,7 +121,8 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   std::vector<uint8_t> registerPayload = serializeOsInfoPayload(payload.system);
 
   std::size_t totalSize{3 * sizeof(std::uint16_t) + idLen + registeredAtLen +
-                        lastSeenLen + sizeof(std::uint8_t) + registerPayload.size()};
+                        lastSeenLen + sizeof(std::uint8_t) +
+                        registerPayload.size()};
 
   std::vector<std::uint8_t> finalPayload(totalSize);
   std::size_t offset{0};
@@ -126,20 +134,22 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   ConvertEndian::writeU16BE(finalPayload, offset, registeredAtLen);
   ConvertEndian::writeU16BE(finalPayload, offset, lastSeenLen);
 
-  std::copy(payload.id.begin(), payload.id.end(),
-            finalPayload.begin() + offset);
-  offset += idLen;
+  ConvertEndian::writeString(finalPayload, offset, payload.id);
+  // std::copy(payload.id.begin(), payload.id.end(),
+  //           finalPayload.begin() + offset);
+  // offset += idLen;
+  ConvertEndian::writeString(finalPayload, offset, payload.registered_at);
+  // std::copy(payload.registered_at.begin(), payload.registered_at.end(),
+  //           finalPayload.begin() + offset);
+  // offset += registeredAtLen;
+  ConvertEndian::writeString(finalPayload, offset, payload.last_seen);
+  // std::copy(payload.last_seen.begin(), payload.last_seen.end(),
+  //           finalPayload.begin() + offset);
+  // offset += lastSeenLen;
 
-  std::copy(payload.registered_at.begin(), payload.registered_at.end(),
-            finalPayload.begin() + offset);
-  offset += registeredAtLen;
-
-  std::copy(payload.last_seen.begin(), payload.last_seen.end(),
-            finalPayload.begin() + offset);
-  offset += lastSeenLen;
-
-  std::copy(registerPayload.begin(), registerPayload.end(),
-            finalPayload.begin() + offset);
+  ConvertEndian::writeByteVector(finalPayload, offset, registerPayload);
+  // std::copy(registerPayload.begin(), registerPayload.end(),
+  //           finalPayload.begin() + offset);
 
   return finalPayload;
 }

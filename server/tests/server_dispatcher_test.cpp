@@ -7,16 +7,16 @@
 #include "codec/protocol_parser.hpp"
 #include "fixtures/common.hpp"
 #include "repository_manager.hpp"
-#include "service/response_service.hpp"
 #include "service/agent_service.hpp"
 #include "service/command_service.hpp"
 #include "service/metrics_service.hpp"
+#include "service/response_service.hpp"
 #include "session_manager.hpp"
 #include "stubs/fake_agent_repository.hpp"
 #include "stubs/fake_command_repository.hpp"
 #include "stubs/fake_database_connection.hpp"
-#include "stubs/fake_response_repository.hpp"
 #include "stubs/fake_metrics_repository.hpp"
+#include "stubs/fake_response_repository.hpp"
 #include "stubs/spy_socket.hpp"
 
 class ServerDispatcherTest : public ::testing::Test {
@@ -69,7 +69,7 @@ class ServerDispatcherTest : public ::testing::Test {
     // Response
     responseRepoUnique = std::make_unique<FakeResponseRepository>(fakeDb);
     fakeResponseRepo = responseRepoUnique.get();
- 
+
     responseServiceUnique =
         std::make_unique<ResponseService>(*fakeResponseRepo, *commandService);
     responseService = responseServiceUnique.get();
@@ -82,8 +82,8 @@ class ServerDispatcherTest : public ::testing::Test {
         std::make_unique<MetricsService>(*fakeMetricsRepo, manager);
     metricsService = metricsServiceUnique.get();
 
-    dispatcher.emplace(manager, *agentService, *commandService, *responseService,
-                       *metricsService);
+    dispatcher.emplace(manager, *agentService, *commandService,
+                       *responseService, *metricsService);
   }
 
   // Helper: Create an agent through the manager (mirrors
@@ -219,12 +219,12 @@ TEST_F(ServerDispatcherTest,
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
   // Verify payload is AGENTS subtype with empty data
-  const DataPayload data =
-      ProtocolParser::parseDataPayload(dashboardSpy.payload());
-  EXPECT_EQ(data.subtype, DataType::AGENTS);
-  EXPECT_EQ(data.data.size(), 2);  // No agents connected
+  const DashboardData data =
+      ProtocolParser::parseDashboardData(dashboardSpy.payload());
+  EXPECT_EQ(data.data.subtype, DataType::AGENTS);
+  EXPECT_EQ(data.data.data.size(), 2);  // No agents connected
 
-  uint16_t agentCount = (data.data[0] << 8) | data.data[1];
+  uint16_t agentCount = (data.data.data[0] << 8) | data.data.data[1];
   EXPECT_EQ(agentCount, 0);
 }
 
@@ -255,9 +255,9 @@ TEST_F(ServerDispatcherTest,
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
   // Verify it's a REGISTRATION subtype
-  const DataPayload data =
-      ProtocolParser::parseDataPayload(dashboardSpy.payload());
-  EXPECT_EQ(data.subtype, DataType::REGISTRATION);
+  const DashboardData data =
+      ProtocolParser::parseDashboardData(dashboardSpy.payload());
+  EXPECT_EQ(data.data.subtype, DataType::REGISTRATION);
 }
 
 TEST_F(ServerDispatcherTest,
@@ -305,10 +305,10 @@ TEST_F(ServerDispatcherTest,
             static_cast<std::size_t>(LPTF_HEADER_SIZE));
   EXPECT_EQ(dashboardSpy.messageType(), MessageType::DATA);
 
-  const DataPayload data =
-      ProtocolParser::parseDataPayload(dashboardSpy.payload());
-  EXPECT_EQ(data.subtype, DataType::AGENTS);
-  EXPECT_GT(data.data.size(), 0);  // Has agent data
+  const DashboardData data =
+      ProtocolParser::parseDashboardData(dashboardSpy.payload());
+  EXPECT_EQ(data.data.subtype, DataType::AGENTS);
+  EXPECT_GT(data.data.data.size(), 0);  // Has agent data
 }
 
 // ════════════════════════════════════════════════════════════════════════════

@@ -17,10 +17,12 @@ void AgentService::registerAgent(AgentConnection& agent,
   // RegisterPayload registerToSent;
   registerToSent.system = agentInfo;
   registerToSent.id = agent.getId();
-
+  Logger::info("agent service", "before agent existing in db check");
   if (!repository_.findById(agent.getId()).has_value()) {
+    Logger::info("agent service", "inside agent existing in db check");
     repository_.save(registerToSent);
   }
+  Logger::info("agent service", "after agent existing in db check");
 
   std::ostringstream what;
   what << "[REGISTER] \nhostname : " << agentInfo.hostname

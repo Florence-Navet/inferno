@@ -11,7 +11,8 @@
 class QLabel;
 class LineChartWidget;
 class ServerClient;
-
+class ProcessTableWidget;
+class MetricCardsWidget;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -77,6 +78,11 @@ private:
 
     /// Fills the bottom status bar. TODO: feed with live server status.
     void buildStatusBar();
+
+    ProcessTableWidget *m_processTable = nullptr;
+
+    MetricCardsWidget *m_metricCards = nullptr;
+
 };
 
 #endif // MAINWINDOW_H

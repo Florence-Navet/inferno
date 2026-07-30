@@ -127,7 +127,9 @@ std::vector<std::uint8_t> serializeRegisterPayload(
   std::vector<std::uint8_t> finalPayload(totalSize);
   std::size_t offset{0};
 
+  std::cout << "in serializeRegisterPayload before .at(offset) for is online \n";
   finalPayload.at(offset) = isOnline;
+  std::cout << "in serializeRegisterPayload after .at(offset) for is online \n";
   offset += sizeof(std::uint8_t);
 
   ConvertEndian::writeU16BE(finalPayload, offset, idLen);

@@ -4,6 +4,7 @@
 #include <QHostInfo>
 #include <QSocketNotifier>
 
+#include "codec/metrics_parser.hpp"
 #include "codec/protocol_helper.hpp"
 #include "codec/protocol_parser.hpp"
 #include "codec/protocol_serializer.hpp"
@@ -82,13 +83,24 @@ void ServerClient::onReadyRead() {
 
 void ServerClient::sendRegister() {
   OsInfoPayload info;
+
+#ifdef _WIN32
   info.os_type = OSType::WINDOWS;
+  info.os_version = "Windows";
+  QString user = qEnvironmentVariable("USERNAME");
+#else
+  info.os_type = OSType::LINUX;
+  info.os_version = "Linux";
+  QString user = qEnvironmentVariable("USER");
+#endif
+
+  if (user.isEmpty()) user = "dashboard";
+
   info.arch = ArchType::X64;
   info.hostname = QHostInfo::localHostName().toStdString();
-  // info.current_user = qgetenv("USERNAME").toStdString();
-  info.current_user = qgetenv("USER").toStdString();  // For Arch. not USERNAME
-  info.os_version = "Windows";
-  // TODO: use the real local IP (QNetworkInterface).
+  info.current_user = user.toStdString();
+  // info.os_version = "Windows";
+  //  TODO: use the real local IP (QNetworkInterface).
   info.ip = "127.0.0.1";
   // The server uses this field as our id (setId(mac)).
   // TODO: replace with the real MAC address.
@@ -125,6 +137,25 @@ void ServerClient::handleFrame(const Frame& frame) {
                << response.response.chunk_index << "/"
                << response.response.total_chunks << "size"
                << response.response.data.size();
+
+      const QString target = QString::fromStdString(response.target);
+      const CommandType type =
+          m_lastCommandByTarget.value(target, CommandType::UNKNOWN);
+
+      if (type == CommandType::RUNNING_PROCESSES) {
+        // dated upstream
+
+            qDebug()
+            << "waiting for running processes to be parsed";
+        const std::vector<ProcessInfo> processes =
+            ProtocolParser::parseProcessInfoList(response.response.data);
+        qDebug() << "process list:" << processes.size() << "entries";
+        emit processListReceived(target, processes);
+      } else {
+        emit responseReceived(
+            target, QString::fromStdString(
+                        ProtocolParser::toString(response.response.data)));
+      }
       break;
     }
     case MessageType::INFERNO_ERROR: {
@@ -140,7 +171,11 @@ void ServerClient::handleFrame(const Frame& frame) {
 }
 
 void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
-  const DataPayload data = ProtocolParser::parseDataPayload(payload);
+  // const DataPayload data = ProtocolParser::parseDataPayload(payload);
+  const DashboardData dataDashboard =
+      ProtocolParser::parseDashboardData(payload);
+  const std::string agentId = dataDashboard.target;
+  const DataPayload data = dataDashboard.data;
 
   switch (data.subtype) {
     case DataType::AGENTS:
@@ -173,9 +208,16 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
 
       break;
     }
-    case DataType::METRICS_SAMPLE:
-      qDebug() << "metrics sample";
+    case DataType::METRICS_SAMPLE: {
+      const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+
+      qDebug() << "CPU" << sample.cpu.total_percent << "%"
+               << "cores" << sample.cpu.per_core.size() << "mem"
+               << sample.mem.phys_used << "/" << sample.mem.phys_total
+               << "disks" << sample.disks.size() << "ifaces"
+               << sample.interfaces.size();
       break;
+    }
     default:
       qDebug() << "unhandled subtype" << static_cast<int>(data.subtype);
   }
@@ -210,7 +252,7 @@ void ServerClient::sendCommand(const QString& target, CommandType type,
         ProtocolHelper::createHeader(MessageType::COMMAND, payload), payload};
 
     m_session->sendFrame(frame);
-    m_pendingCommands.insert(command.id, type);
+    m_lastCommandByTarget.insert(target, type);
     qDebug() << "sent command id" << command.id << "to" << target;
   } catch (const std::exception& e) {
     qDebug() << "send command failed:" << e.what();

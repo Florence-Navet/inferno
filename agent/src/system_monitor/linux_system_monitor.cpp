@@ -293,39 +293,6 @@ std::string LinuxSystemMonitor::readOsVersion() {
 
   return std::string{};
 }
-// std::string LinuxSystemMonitor::readIpAddress() {
-//   struct ifaddrs* ifaddr = nullptr;
-//   std::string result;
-
-//   if (getifaddrs(&ifaddr) == -1) {
-//     // return std::string{};  // Error retrieving interfaces
-//     throw std::runtime_error("Failed to retrieve network interfaces");
-//   }
-
-//   for (struct ifaddrs* ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-//     if (ifa->ifa_addr == nullptr) continue;
-
-//     // Skip loopback and interfaces that aren't up
-//     if ((ifa->ifa_flags & IFF_LOOPBACK) || !(ifa->ifa_flags & IFF_UP)) {
-//       continue;
-//     }
-
-//     // Only handle IPv4 for now
-//     if (ifa->ifa_addr->sa_family == AF_INET) {
-//       struct sockaddr_in* ipv4 =
-//           reinterpret_cast<struct sockaddr_in*>(ifa->ifa_addr);
-
-//       char addressBuffer[INET_ADDRSTRLEN];
-//       inet_ntop(AF_INET, &ipv4->sin_addr, addressBuffer, INET_ADDRSTRLEN);
-
-//       result = std::string{addressBuffer};
-//       break;  // Return first valid non-loopback interface
-//     }
-//   }
-
-//   freeifaddrs(ifaddr);
-//   return result;
-// }
 
 std::string LinuxSystemMonitor::readIpAddress() {
   struct ifaddrs* ifaddr = nullptr;

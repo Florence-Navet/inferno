@@ -183,7 +183,7 @@ TEST(TcpServerIntegration, should_report_loopback_address_for_connected_agent) {
   serverReady.set_value();
   auto accepted = server.acceptAgent();
   ASSERT_NE(accepted, nullptr);
-  EXPECT_EQ(accepted->remoteAddress(), Common::SERVER_HOST);
+  EXPECT_EQ(accepted->remoteAddress(), "::ffff:" + Common::SERVER_HOST);
   EXPECT_GT(accepted->remotePort(), 0);
 
   serverDone.set_value();

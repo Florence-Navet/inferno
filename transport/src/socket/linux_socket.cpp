@@ -13,7 +13,7 @@ also called socket, the compiler would get confused.
 LinuxSocket::LinuxSocket() {
   // SOCK_STREAM = TCP. Use SOCK_DGRAM for UDP.
   // AF_INET = IPv4. Use AF_INET6 for IPv6, or handle both.
-  socketFileDescriptor_ = ::socket(AF_INET, SOCK_STREAM, 0);
+  socketFileDescriptor_ = ::socket(AF_INET6, SOCK_STREAM, 0);
   // socketFileDescriptor_ == -1 on failure, isValid() will return false
   /*
   AF_INET = use IPv4 addresses (the classic 192.168.x.x style)
@@ -23,7 +23,13 @@ LinuxSocket::LinuxSocket() {
 
   // Useful for servers: reuse address immediately after restart
   if (socketFileDescriptor_ != -1) {
-    int opt = 1;
+    // Allow both IPv4 and IPv6
+    int opt = 0;
+    ::setsockopt(socketFileDescriptor_, IPPROTO_IPV6, IPV6_V6ONLY, &opt,
+                 sizeof(opt));
+
+    // Reuse adress
+    opt = 1;
     ::setsockopt(socketFileDescriptor_, SOL_SOCKET, SO_REUSEADDR, &opt,
                  sizeof(opt));
 
@@ -54,6 +60,26 @@ bool LinuxSocket::connect(const std::string& host, uint16_t port) {
   bool connected = false;
   for (addrinfo* candidate = result; candidate != nullptr;
        candidate = candidate->ai_next) {
+     // If socket family doesn't match candidate family, recreate socket
+    if (candidate->ai_family != AF_INET6 || 
+        (candidate->ai_family == AF_INET && socketFileDescriptor_ == -1)) {
+      
+      if (socketFileDescriptor_ != -1) {
+        ::close(socketFileDescriptor_);
+      }
+      
+      socketFileDescriptor_ = ::socket(candidate->ai_family, SOCK_STREAM, 0);
+      if (socketFileDescriptor_ == -1) continue;
+      
+      // Reapply socket options if we created an IPv6 socket
+      if (candidate->ai_family == AF_INET6) {
+        int opt = 0;
+        ::setsockopt(socketFileDescriptor_, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+        opt = 1;
+        ::setsockopt(socketFileDescriptor_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+      }
+    }
+    
     if (::connect(socketFileDescriptor_, candidate->ai_addr,
                   candidate->ai_addrlen) == 0) {
       connected = true;
@@ -65,11 +91,11 @@ bool LinuxSocket::connect(const std::string& host, uint16_t port) {
 }
 
 bool LinuxSocket::bind(uint16_t port) {
-  sockaddr_in addr{};
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = INADDR_ANY;  // Listen on all interfaces
-  addr.sin_port = htons(port);        // htons = host-to-network byte order
-                                      // (but you already handle endianness!)
+  sockaddr_in6 addr{};
+  addr.sin6_family = AF_INET6;
+  addr.sin6_addr = in6addr_any;  //    INADDR_ANY;  // Listen on all interfaces
+  addr.sin6_port = htons(port);  // htons = host-to-network byte order
+                                 // (but you already handle endianness!)
   return ::bind(socketFileDescriptor_, reinterpret_cast<sockaddr*>(&addr),
                 sizeof(addr)) == 0;
 }
@@ -81,8 +107,10 @@ bool LinuxSocket::listen(int backlog) {
 // blocking call - Each call to accept() gives you a new socket for each new
 // agent.
 std::unique_ptr<ISocket> LinuxSocket::accept() {
-  sockaddr_in agentAddr{};
+  sockaddr_storage agentAddr{};
   socklen_t addrLen = sizeof(agentAddr);
+  // sockaddr_in agentAddr{};
+  // socklen_t addrLen = sizeof(agentAddr);
 
   int agentFd = ::accept(socketFileDescriptor_,
                          reinterpret_cast<sockaddr*>(&agentAddr), &addrLen);
@@ -117,8 +145,8 @@ SocketResult LinuxSocket::recv(uint8_t* data, size_t length) {
 
 void LinuxSocket::close() {
   if (socketFileDescriptor_ != -1) {
-    ::close(
-        socketFileDescriptor_);  // Linux: close() the fd. Windows: closesocket()
+    ::close(socketFileDescriptor_);  // Linux: close() the fd. Windows:
+                                     // closesocket()
     socketFileDescriptor_ = -1;
   }
 }
@@ -133,23 +161,37 @@ bool LinuxSocket::setNonBlocking(bool on) {
 bool LinuxSocket::isValid() const { return socketFileDescriptor_ != -1; }
 
 std::string LinuxSocket::remoteAddress() const {
-  sockaddr_in address{};
+  sockaddr_storage address{};
   socklen_t length = sizeof(address);
-  if (::getpeername(socketFileDescriptor_, reinterpret_cast<sockaddr*>(&address),
-                    &length) == -1)
+  if (::getpeername(socketFileDescriptor_,
+                    reinterpret_cast<sockaddr*>(&address), &length) == -1)
     return "";
-  char buffer[INET_ADDRSTRLEN];
-  ::inet_ntop(AF_INET, &address.sin_addr, buffer, sizeof(buffer));
+  char buffer[INET6_ADDRSTRLEN];  // Large enough for IPv6
+
+  if (address.ss_family == AF_INET6) {
+    auto* addr6 = reinterpret_cast<sockaddr_in6*>(&address);
+    ::inet_ntop(AF_INET6, &addr6->sin6_addr, buffer, sizeof(buffer));
+  } else if (address.ss_family == AF_INET) {
+    auto* addr4 = reinterpret_cast<sockaddr_in*>(&address);
+    ::inet_ntop(AF_INET, &addr4->sin_addr, buffer, sizeof(buffer));
+  }
+
   return buffer;
 }
 
 uint16_t LinuxSocket::remotePort() const {
-  sockaddr_in address{};
+  sockaddr_storage address{};
   socklen_t length = sizeof(address);
   if (::getpeername(socketFileDescriptor_, reinterpret_cast<sockaddr*>(&address),
                     &length) == -1)
     return 0;
-  return ntohs(address.sin_port);
+
+  if (address.ss_family == AF_INET6) {
+    return ntohs(reinterpret_cast<sockaddr_in6*>(&address)->sin6_port);
+  } else if (address.ss_family == AF_INET) {
+    return ntohs(reinterpret_cast<sockaddr_in*>(&address)->sin_port);
+  }
+  return 0;
 }
 
 SocketStatus LinuxSocket::translateStatus(int err) const {

@@ -25,7 +25,7 @@ void Reactor::run() {
         if (event.fileDescriptor == server_.getFd()) {
           onNewConnection();
         } else if (event.readable) {
-          Logger::info("reactor", "has stuff to read");
+          Logger::info("reactor", "has new event to handle");
           onAgentReady(event.fileDescriptor);
         } else if (event.error) {
           Logger::info("reactor", "has error");
@@ -92,6 +92,7 @@ void Reactor::onAgentReady(int fileDescriptor) {
       dispatcher_.handleFrame(session, frame.value());
     }
   }
+  Logger::info("reactor", "who ? " + session.getAgentInfo().hostname);
   Logger::info("reactor", "on agent ready end");
 }
 

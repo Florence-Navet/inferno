@@ -60,7 +60,7 @@ pqxx::result DatabaseConnection::executeParams(const std::string& query,
                                                const pqxx::params& params) {
   try {
     pqxx::work txn(conn_);
-    auto result = txn.exec_params(query, params);
+    auto result = txn.exec(query, params); // from txn.exec_params to txn.exec
     txn.commit();
     return result;
   } catch (const pqxx::sql_error& e) {

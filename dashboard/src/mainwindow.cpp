@@ -12,7 +12,7 @@
 #include <QVector>
 #include <QGridLayout>
 #include <QLabel>
-
+#include "env_helper.hpp"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -62,7 +62,8 @@ MainWindow::MainWindow(QWidget *parent)
                 addAgentItem(id, name, details, true);
             });
 
-    m_client->connectToServer("localhost", 8888);
+    // m_client->connectToServer("localhost", EnvHelper::resolvePort());
+    m_client->connectToServer("localhost", 8889);
 
 }
 

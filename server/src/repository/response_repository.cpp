@@ -6,8 +6,15 @@ void ResponseRepository::save(const ResponsePayload& response) {
   params.append(static_cast<int>(response.status));
   params.append(static_cast<int>(response.total_chunks));
   params.append(static_cast<int>(response.chunk_index));
-  params.append(pqxx::binarystring(response.data.data(),
-  response.data.size()));
+  // params.append(pqxx::binarystring(response.data.data(),
+  // response.data.size()));
+  // using data.size() is deprecated, try this
+  // params.append(pqxx::binarystring(
+  //     reinterpret_cast<const std::byte*>(response.data.data()),
+  //     response.data.size()));
+  params.append(pqxx::bytes_view(
+    reinterpret_cast<const std::byte*>(response.data.data()),
+    response.data.size()));
 
   db_.executeParams(
       "INSERT INTO responses "

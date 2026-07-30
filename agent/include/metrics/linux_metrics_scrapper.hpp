@@ -12,13 +12,14 @@ class LinuxMetricsScrapper : public IMetricsScrapper {
   MetricsSample sample() override;
 
  private:
- std::string procRoot_;
+  std::string procRoot_;
   // delta state
   RawCpuSnapshot previousCpu_;
   std::map<std::string, RawDiskSnapshot> previousDisks_;
   std::map<std::string, RawNetSnapshot> previousNet_;
   bool firstSample_{true};
-  std::chrono::steady_clock::time_point lastSampleTime_;
+  // std::chrono::steady_clock::time_point lastSampleTime_;
+  std::chrono::system_clock::time_point lastSampleTime_;  // ← Changed
 
   // per-subsystem private readers
   CpuSample readCpu();

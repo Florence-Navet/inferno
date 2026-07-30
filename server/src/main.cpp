@@ -40,8 +40,11 @@ int main() {
   CommandRepository commandRepository(db);
   CommandService commandService(commandRepository, sessionManager);
 
+  ResponseRepository responseRepository(db);
+  ResponseService responseService(responseRepository, commandService);
+
   // RepositoryManager repositoryManager;
-  ServerDispatcher dispatcher(sessionManager, agentService, commandService);
+  ServerDispatcher dispatcher(sessionManager, agentService, commandService, responseService);
   Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;

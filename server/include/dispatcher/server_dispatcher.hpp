@@ -10,16 +10,19 @@
 // #include "repository_manager.hpp"
 #include "service/agent_service.hpp"
 #include "service/command_service.hpp"
+#include "service/response_service.hpp"
 #include "session_manager.hpp"
 
 class ServerDispatcher : public IServerDispatcher {
  public:
   explicit ServerDispatcher(SessionManager& sessionManager,
                             IAgentService& agentService,
-                            ICommandService& commandService)
+                            ICommandService& commandService,
+                            IResponseService& responseService)
       : sessionManager_(sessionManager),
         agentService_(agentService),
-        commandService_(commandService) {};
+        commandService_(commandService),
+        responseService_(responseService) {};
 
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
@@ -36,6 +39,7 @@ class ServerDispatcher : public IServerDispatcher {
   // RepositoryManager& repositoryManager_;
   IAgentService& agentService_;
   ICommandService& commandService_;
+  IResponseService& responseService_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);

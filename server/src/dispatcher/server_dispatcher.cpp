@@ -19,7 +19,7 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
 
   switch (frame.header.type) {
     case MessageType::REGISTER:
-    Logger::info("server dispatcher", "register received");
+      Logger::info("server dispatcher", "register received");
       onRegister(connection, frame.payload);
       break;
     case MessageType::DASHBOARD_REGISTER:
@@ -27,7 +27,7 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       onDashboardRegister(connection, frame.payload);
       break;
     case MessageType::RESPONSE:
-    Logger::info("server dispatcher", "response received");
+      Logger::info("server dispatcher", "response received");
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
@@ -86,7 +86,7 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
                                   const std::vector<std::uint8_t>& payload) {
   OsInfoPayload agentInfo = ProtocolParser::parseOsInfoPayload(payload);
   RegisterPayload registerToSent;
-  registerAgent(agent, agentInfo, registerToSent);
+  agentService_.registerAgent(agent, agentInfo, registerToSent);
 
   DataPayload registration;
   registration.subtype = DataType::REGISTRATION;
@@ -108,70 +108,75 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   }
 }
 
-void ServerDispatcher::registerAgent(AgentConnection& agent,
-                                     const OsInfoPayload& agentInfo,
-                                     RegisterPayload& registerToSent) {
-  agent.setAgentInfo(agentInfo);
-  agent.setIsRegisered();
-  agent.setId(agentInfo.mac);
-  sessionManager_.recordAgentTarget(agent.getFd(), agent.getId());
+// void ServerDispatcher::registerAgent(AgentConnection& agent,
+//                                      const OsInfoPayload& agentInfo,
+//                                      RegisterPayload& registerToSent) {
+//   agent.setAgentInfo(agentInfo);
+//   agent.setIsRegisered();
+//   agent.setId(agentInfo.mac);
+//   sessionManager_.recordAgentTarget(agent.getFd(), agent.getId());
 
-  // RegisterPayload registerToSent;
-  registerToSent.system = agentInfo;
-  registerToSent.id = agent.getId();
-  repositoryManager_.agents().save(registerToSent);
+//   // RegisterPayload registerToSent;
+//   registerToSent.system = agentInfo;
+//   registerToSent.id = agent.getId();
+//   if (!repositoryManager_.agents().findById(agent.getId()).has_value()) {
+//     repositoryManager_.agents().save(registerToSent);
+//   }
 
-  std::ostringstream what;
-  what << "[REGISTER] \nhostname : " << agentInfo.hostname
-       << "\nuser : " << agentInfo.current_user
-       << "\nos : " << static_cast<int>(agentInfo.os_type)
-       << "\narch : " << static_cast<int>(agentInfo.arch)
-       << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip
-       << "\nmac : " << agentInfo.mac;
-  Logger::info("server dispatcher", what.str());
-}
+//   std::ostringstream what;
+//   what << "[REGISTER] \nhostname : " << agentInfo.hostname
+//        << "\nuser : " << agentInfo.current_user
+//        << "\nos : " << static_cast<int>(agentInfo.os_type)
+//        << "\narch : " << static_cast<int>(agentInfo.arch)
+//        << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip
+//        << "\nmac : " << agentInfo.mac;
+//   Logger::info("server dispatcher", what.str());
+// }
 
-void ServerDispatcher::registerDashboard(AgentConnection& dashboard,
-                                         const OsInfoPayload& dashboardInfo) {
-  dashboard.setAgentInfo(dashboardInfo);
-  dashboard.setIsRegisered();
-  // dashboard.setId(dashboardInfo.hostname + ":" + dashboardInfo.ip);
-  dashboard.setId(dashboardInfo.mac);
-  sessionManager_.setDashboardFd(dashboard.getFd());
-  sessionManager_.recordAgentTarget(dashboard.getFd(), dashboard.getId());
+// void ServerDispatcher::registerDashboard(AgentConnection& dashboard,
+//                                          const OsInfoPayload& dashboardInfo)
+//                                          {
+//   dashboard.setAgentInfo(dashboardInfo);
+//   dashboard.setIsRegisered();
+//   // dashboard.setId(dashboardInfo.hostname + ":" + dashboardInfo.ip);
+//   dashboard.setId(dashboardInfo.mac);
+//   sessionManager_.setDashboardFd(dashboard.getFd());
+//   sessionManager_.recordAgentTarget(dashboard.getFd(), dashboard.getId());
 
-  Logger::info("server dispatcher",
-               "[DASHBOARD REGISTER] : " + dashboard.getId());
-}
+//   Logger::info("server dispatcher",
+//                "[DASHBOARD REGISTER] : " + dashboard.getId());
+// }
 
 void ServerDispatcher::onDashboardRegister(
     AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
   // OsInfoPayload dashboardInfo = ProtocolParser::parseOsInfoPayload(payload);
-  registerDashboard(dashboard, ProtocolParser::parseOsInfoPayload(payload));
+  agentService_.registerDashboard(dashboard,
+                                  ProtocolParser::parseOsInfoPayload(payload));
 
-  std::vector<RegisterPayload> agentsInDb =
-      repositoryManager_.agents().findAll();
+  // std::vector<RegisterPayload> agentsInDb =
+  //     repositoryManager_.agents().findAll();
 
   DataPayload data;
   data.subtype = DataType::AGENTS;
-  std::vector<RegisterPayload> registerList;
+  // std::vector<RegisterPayload> registerList;
 
-  if (!sessionManager_.getAgents().empty() || !agentsInDb.empty()) {
-    std::unordered_set<std::string> onlineAgents;
+  // if (!sessionManager_.getAgents().empty() || !agentsInDb.empty()) {
+  //   std::unordered_set<std::string> onlineAgents;
 
-    for (const auto& [fd, agent] : sessionManager_.getAgents()) {
-      if (fd == dashboard.getFd()) continue;
-      onlineAgents.insert(agent.getId());
-    }
+  //   for (const auto& [fd, agent] : sessionManager_.getAgents()) {
+  //     if (fd == dashboard.getFd()) continue;
+  //     onlineAgents.insert(agent.getId());
+  //   }
 
-    for (RegisterPayload& registration : agentsInDb) {
-      registration.online = onlineAgents.contains(registration.id);  // C++20
-      // onlineAgents.find(registration.id) != onlineAgents.end();
-      registerList.push_back(registration);
-    }
-  }
+  //   for (RegisterPayload& registration : agentsInDb) {
+  //     registration.online = onlineAgents.contains(registration.id);  // C++20
+  //     // onlineAgents.find(registration.id) != onlineAgents.end();
+  //     registerList.push_back(registration);
+  //   }
+  // }
 
-  data.data = ProtocolSerializer::serializeRegisterPayloadList(registerList);
+  data.data = ProtocolSerializer::serializeRegisterPayloadList(
+      agentService_.getAllAgents(dashboard));
 
   std::vector<std::uint8_t> finalPayload =
       ProtocolSerializer::serializeDataPayload(data);
@@ -334,9 +339,7 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
       what << "unknown data type";
     }
   }
-  // if (data.subtype == DataType::METRICS_SAMPLE) {
-
-  // }
+  
   if (sessionManager_.isDashboard()) {
     frame.payload = payload;
     sessionManager_.getDashboard().sendFrame(frame);
@@ -352,16 +355,11 @@ void ServerDispatcher::onDashboardCommand(
 
   // Route to agent
   try {
-    // int agentFd = sessionManager_.getFdByTarget(commandDashboard.target);
-    // AgentConnection& agent = sessionManager_.getAgent(agentFd);
     AgentConnection& agent =
         sessionManager_.getAgentByTarget(commandDashboard.target);
-
-    commandDashboard.command.id =
-        repositoryManager_.commands().save(commandDashboard);
+    commandService_.save(commandDashboard);
     // Forward to agent
     sendCommand(agent, commandDashboard.command);
-
   } catch (const std::exception& e) {
     dashboard.sendError(ErrorType::UNKNOWN_COMMAND,
                         "Agent target not found: " + commandDashboard.target);

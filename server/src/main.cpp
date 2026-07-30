@@ -6,7 +6,9 @@
 #include "env_helper.hpp"
 #include "poller/epoller.hpp"
 #include "reactor.hpp"
+#include "repository/database_connection.hpp"
 #include "repository_manager.hpp"
+#include "service/agent_service.hpp"
 #include "tcp_server.hpp"
 
 int main() {
@@ -30,8 +32,16 @@ int main() {
   server.setNonBlocking();
 
   SessionManager sessionManager;
-  RepositoryManager repositoryManager;
-  ServerDispatcher dispatcher(sessionManager, repositoryManager);
+  DatabaseConnection db;
+
+  AgentRepository agentRepository(db);
+  AgentService agentService(agentRepository, sessionManager);
+
+  CommandRepository commandRepository(db);
+  CommandService commandService(commandRepository, sessionManager);
+
+  // RepositoryManager repositoryManager;
+  ServerDispatcher dispatcher(sessionManager, agentService, commandService);
   Reactor reactor(server, dispatcher, poller, sessionManager);
   reactor.run();
   return 0;

@@ -148,6 +148,7 @@ void ServerClient::handleFrame(const Frame& frame) {
           const std::vector<ProcessInfo> processes =
               ProtocolParser::parseProcessInfoList(response.response.data);
           qDebug() << "process list:" << processes.size() << "entries";
+          emit processListReceived(target, processes);
       } else {
           emit responseReceived(
               target,

@@ -35,8 +35,8 @@ void AgentRepository::setLastSeen(const std::string& id,
 
 std::vector<RegisterPayload> AgentRepository::findAll() {
   pqxx::result rows = db_.execute(
-      "SELECT id, registered_at, last_seen, hostname, os_type, arch, "
-      "os_version, current_username, ip "
+      "SELECT id, registered_at, last_seen, hostname, os_type, architecture, "
+      "os_version, current_username, ip_address, mac_address "
       "FROM agents ORDER BY hostname");
 
   std::vector<RegisterPayload> agents;
@@ -53,8 +53,8 @@ std::optional<RegisterPayload> AgentRepository::findById(
   params.append(id);
 
   pqxx::result rows = db_.executeParams(
-      "SELECT registered_at, last_seen, hostname, os_type, arch, "
-      "os_version, current_username, ip "
+      "SELECT registered_at, last_seen, hostname, os_type, architecture, "
+      "os_version, current_username, ip_address, mac_address "
       "FROM agents WHERE id = $1",
       params);
 

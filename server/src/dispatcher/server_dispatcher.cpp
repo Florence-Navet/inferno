@@ -19,12 +19,15 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
 
   switch (frame.header.type) {
     case MessageType::REGISTER:
+    Logger::info("server dispatcher", "register received");
       onRegister(connection, frame.payload);
       break;
     case MessageType::DASHBOARD_REGISTER:
+      Logger::info("server dispatcher", "dashboard register received");
       onDashboardRegister(connection, frame.payload);
       break;
     case MessageType::RESPONSE:
+    Logger::info("server dispatcher", "response received");
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:

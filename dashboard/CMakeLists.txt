@@ -22,7 +22,6 @@ if(NOT TARGET transport_lib)
     )
 endif()
 
-
 set(PROJECT_SOURCES
         src/main.cpp
         src/mainwindow.cpp

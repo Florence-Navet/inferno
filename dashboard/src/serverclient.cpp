@@ -9,6 +9,7 @@
 #include "codec/protocol_serializer.hpp"
 #include "dashboardsession.h"
 #include "socket/socket_factory.hpp"
+#include "socket/tls_socket_factory.hpp"
 
 static QString osTypeToString(OSType type) {
   switch (type) {
@@ -42,7 +43,8 @@ ServerClient::~ServerClient() = default;
 
 bool ServerClient::connectToServer(const QString& host, quint16 port) {
   std::unique_ptr<ISocket> socket = SocketFactory::createTCP();
-
+  // std::unique_ptr<ISocket> socket =
+  // TLSSocketFactory::createClient("certs/ca.crt");
   if (!socket->connect(host.toStdString(), port)) {
     qDebug() << "connection failed";
     return false;
@@ -67,7 +69,7 @@ void ServerClient::onReadyRead() {
 
   // nothing to read for this moment
   if (!result.ok() && !result.wouldBlock()) {
-    qDebug() << "receive error";
+    // qDebug() << "receive error";
     return;
   }
 
@@ -144,22 +146,30 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
     case DataType::REGISTRATION: {
       if (data.data.empty()) break;  // no agent connected yet
 
-      const RegisterPayload agent =
-          ProtocolParser::parseRegisterPayload(data.data);
-      qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
-               << QString::fromStdString(agent.system.ip)
-               << "id:" << QString::fromStdString(agent.id);
+      const std::vector<RegisterPayload> agents =
+          ProtocolParser::parseRegisterPayloadList(data.data);
 
-      const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
+      for (const auto& agent : agents) {
+        qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
+                 << QString::fromStdString(agent.system.ip)
+                 << "id:" << QString::fromStdString(agent.id);
+        // ... emit signals for each agent
+        const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
 
-      const QString details = QString("%1 · %2 · %3")
-                                  .arg(osTypeToString(agent.system.os_type),
-                                       archToString(agent.system.arch),
-                                       QString::fromStdString(agent.system.ip));
+        const QString details =
+            QString("%1 · %2 · %3")
+                .arg(osTypeToString(agent.system.os_type),
+                     archToString(agent.system.arch),
+                     QString::fromStdString(agent.system.ip));
 
-      emit agentReceived(QString::fromStdString(id),
-                         QString::fromStdString(agent.system.hostname),
-                         details);
+        emit agentReceived(QString::fromStdString(id),
+                           QString::fromStdString(agent.system.hostname),
+                           details);
+      }
+      // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
+      //          << QString::fromStdString(agent.system.ip)
+      //          << "id:" << QString::fromStdString(agent.id);
+
       break;
     }
     case DataType::METRICS_SAMPLE:

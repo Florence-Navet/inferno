@@ -20,7 +20,7 @@ class FakeAgentRepository : public IAgentRepository {
                    const std::string& timestampIso) override {
     if (agents_.find(id) != agents_.end()) {
       // In real code, would update DB; here just silently succeed
-      std::cout << "updated last seen\n";
+      std::cout << "updated last seen : "<< timestampIso <<"\n";
     }
   };
   std::vector<RegisterPayload> findAll() override {

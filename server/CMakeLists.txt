@@ -43,6 +43,12 @@ set(REPOSITORY_SOURCES
     src/repository/response_repository.cpp
 )
 
+set(SERVICE_SOURCES
+    src/service/agent_service.cpp
+    src/service/command_service.cpp
+)
+
+
 # ── Server library (all logic, no main) ──────────────────────────────────────
 add_library(server_lib STATIC
     src/tcp_server.cpp
@@ -52,6 +58,7 @@ add_library(server_lib STATIC
     src/poller/epoller.cpp
     src/session_manager.cpp
     ${REPOSITORY_SOURCES}
+    ${SERVICE_SOURCES}
     # src/agent_manager.cpp        ← add as you create files
     # src/command_dispatcher.cpp
 )

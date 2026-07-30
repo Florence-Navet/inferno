@@ -48,4 +48,10 @@ class InvalidFieldValue : public InfernoException {
       : InfernoException("Unsupported value for " + field, value) {}
 };
 
+class NotFound : public InfernoException {
+ public:
+  NotFound(const std::string& field, const std::string& value)
+      : InfernoException("Value not found for" + field, value) {}
+};
+
 #endif

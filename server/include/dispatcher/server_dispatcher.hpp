@@ -7,15 +7,20 @@
 #include <vector>
 
 #include "dispatcher/i_server_dispatcher.hpp"
-#include "repository_manager.hpp"
+// #include "repository_manager.hpp"
+#include "service/agent_service.hpp"
+#include "service/command_service.hpp"
 #include "session_manager.hpp"
 
 class ServerDispatcher : public IServerDispatcher {
  public:
   explicit ServerDispatcher(SessionManager& sessionManager,
-                            RepositoryManager& repositoryManager)
+                            IAgentService& agentService,
+                            ICommandService& commandService)
       : sessionManager_(sessionManager),
-        repositoryManager_(repositoryManager) {};
+        agentService_(agentService),
+        commandService_(commandService) {};
+
   ServerDispatcher(const ServerDispatcher&) = delete;
   ~ServerDispatcher() = default;
   ServerDispatcher& operator=(const ServerDispatcher&) = delete;
@@ -28,7 +33,9 @@ class ServerDispatcher : public IServerDispatcher {
 
  private:
   SessionManager& sessionManager_;
-  RepositoryManager& repositoryManager_;
+  // RepositoryManager& repositoryManager_;
+  IAgentService& agentService_;
+  ICommandService& commandService_;
   // ── Incoming message handlers ───────────────────────
   void onRegister(AgentConnection& agent,
                   const std::vector<std::uint8_t>& payload);
@@ -45,18 +52,11 @@ class ServerDispatcher : public IServerDispatcher {
 
   void sendDisconnect(AgentConnection& agent);
 
-  std::uint32_t nextId();
+  // void registerDashboard(AgentConnection& dashboard,
+  //                        const OsInfoPayload& dashboardInfo);
 
-  // map<command.id, target string = mac adress>
-  std::map<std::uint32_t, std::string> commandTargets_;
-
-  std::uint32_t nextCmdId_ = 0;
-
-  void registerDashboard(AgentConnection& dashboard,
-                         const OsInfoPayload& dashboardInfo);
-
-  void registerAgent(AgentConnection& agent, const OsInfoPayload& agentInfo,
-                     RegisterPayload& registerToSent);
+  // void registerAgent(AgentConnection& agent, const OsInfoPayload& agentInfo,
+  //                    RegisterPayload& registerToSent);
 };
 
 #endif

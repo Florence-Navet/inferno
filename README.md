@@ -148,15 +148,61 @@ docker compose --profile agent up
 
 ```
 docker compose --profile agent up --scale agent=N
+
 ```
 
 > replace N with the actual number you need
+    time TIMESTAMPTZ NOT NULL,
+    agent_id TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    
+    -- CPU
+    cpu_total_percent FLOAT8,
+    cpu_core_count SMALLINT,
+    cpu_per_core FLOAT8[],  -- array of per-core percentages
+    
+    -- Memory
+    mem_phys_total BIGINT,
+    mem_phys_used BIGINT,
+    mem_phys_available BIGINT,
+    mem_swap_total BIGINT,
+    mem_swap_used BIGINT,
+    
+    -- Disk I/O
+    disk_read_bytes_per_sec FLOAT8,
+    disk_write_bytes_per_sec FLOAT8,
+    disk_device TEXT,
+    
+    -- Network I/O
+    net_rx_bytes_per_sec FLOAT8,
+    net_tx_bytes_per_sec FLOAT8,
+    net_iface TEXT
+#### Start only (if already built)
+
+```
+docker compose up agent
+```
 
 ### Start only server
+
+#### Build & start
 
 ```
 docker compose --profile server up
 ```
+
+#### Start only (if already built)
+
+```
+docker compose up server
+```
+
+### Start only database (timescaleDB)
+
+```
+docker compose --profile db up -d
+```
+
+> -d = detached, run in background
 
 ### Stop all services
 
@@ -305,4 +351,3 @@ Execute command inside container with
 ```bash
 docker compose --profile db exec inferno-db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /queries.sql'
 ```
-

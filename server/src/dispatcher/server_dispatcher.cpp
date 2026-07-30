@@ -190,24 +190,17 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
 void ServerDispatcher::onData(AgentConnection& agent,
                               const std::vector<std::uint8_t>& payload) {
   const DataPayload data = ProtocolParser::parseDataPayload(payload);
-  Logger::info("server dispatcher", "[onData] after parseDatapayload()");
   std::ostringstream what;
   what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
   Frame frame;
 
   switch (data.subtype) {
     case DataType::METRICS_SAMPLE: {
-      Logger::info("server dispatcher", "[onData] before parseMetricsSample");
       MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
-      Logger::info("server dispatcher",
-                   "[onData] before save and after parseMetricsSample");
       frame = metricsService_.save(agent.getId(), sample);
-      Logger::info("server dispatcher", "[onData] after save");
       if (sessionManager_.isDashboard()) {
         sessionManager_.getDashboard().sendFrame(frame);
       }
-      Logger::info("server dispatcher",
-                   "[onData] after sendFrame in METRICS SAMPLE");
       // todo use metrics service
     } break;
     case DataType::HEALTH_CHECK: {

@@ -207,14 +207,9 @@ std::vector<std::uint8_t> serializeDashboardDisconnect(
 }
 
 std::vector<std::uint8_t> serializeFrame(const Frame& frame) {
-  Logger::info("Protocol serializer", "begin of serializeFrame");
   if (frame.payload.size() > MAX_VALUE_INT16) {
     throw InvalidSize("payload", std::to_string(frame.payload.size()));
   }
-  Logger::info(
-      "Protocol serializer",
-      "frame payload size = " + std::to_string(frame.payload.size()) +
-          " header expected size = " + std::to_string(frame.header.size));
 
   const std::vector<std::uint8_t> headerBytes = serializeHeader(frame.header);
 

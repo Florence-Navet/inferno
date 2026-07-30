@@ -46,19 +46,12 @@ DataPayload parseDataPayload(const std::vector<std::uint8_t>& input) {
   std::size_t offset{1};
   const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};
   const std::size_t expectedSize{DATA_FIXED_BYTES + dataLen};
-  Logger::info("parseDataPayload", "va tefaire");
   ProtocolHelper::validateExpectedLength(input, expectedSize);
-  Logger::info("parseDataPayload", "va tefaire après validateExpectedLength");
   DataPayload payload;
   payload.subtype = ProtocolHelper::EnumConversion::toDataType(input[0]);
-  Logger::info("parseDataPayload",
-               "va tefaire data type = " +
-                   std::to_string(static_cast<std::uint8_t>(payload.subtype)));
   payload.data =
       std::vector<std::uint8_t>(input.begin() + DATA_FIXED_BYTES,
                                 input.begin() + DATA_FIXED_BYTES + dataLen);
-  Logger::info("parseDataPayload",
-               "va tefaire after assigning payload.data its vector");
   return payload;
 }
 
@@ -78,7 +71,6 @@ CommandPayload parseCommandPayload(const std::vector<std::uint8_t>& input) {
 
   const std::uint16_t dataLen = ConvertEndian::readU16BE(input, typeOffset);
   const std::size_t expectedSize{COMMAND_FIXED_BYTES + dataLen};
-  Logger::info("parseCommandPayload", "va tefaire");
   ProtocolHelper::validateExpectedLength(input, expectedSize);
 
   // std::size_t payloadOffset{0};
@@ -116,7 +108,6 @@ ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input) {
   const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};  // 5
 
   const std::size_t expectedSize{RESPONSE_FIXED_BYTES + dataLen};
-  Logger::info("parseResponsePayload", "va tefaire");
   ProtocolHelper::validateExpectedLength(input, expectedSize);
   // payload.data.assign(
   //     reinterpret_cast<const char*>(input.data() + RESPONSE_FIXED_BYTES),

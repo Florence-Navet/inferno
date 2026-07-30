@@ -73,7 +73,6 @@ void FrameTransport::appendToBuffer(const std::vector<std::uint8_t>& bytes) {
 void FrameTransport::sendFrame(const Frame& frame) {
   // LOG
   std::ostringstream what;
-  Logger::info("Frame transport", "begin of sendFrame before serializeFrame");
   std::vector<std::uint8_t> frameBytes =
       ProtocolSerializer::serializeFrame(frame);
   what << " sending " << ProtocolHelper::messageTypeToString(frame.header.type)

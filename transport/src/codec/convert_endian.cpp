@@ -79,6 +79,17 @@ std::string getString(const std::vector<std::uint8_t>& buffer,
   return finalString;
 }
 
+void writeString(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                 const std::string& value) {
+  std::copy(value.begin(), value.end(), buffer.begin() + offset);
+  offset += value.size();
+}
+
+void writeByteVector(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                     const std::vector<std::uint8_t>& value) {
+  std::copy(value.begin(), value.end(), buffer.begin() + offset);
+  offset += value.size();
+}
 void writeU32BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
                 std::uint32_t value) {
   buffer[offset] = static_cast<std::uint8_t>((value >> 24) & 0xFF);

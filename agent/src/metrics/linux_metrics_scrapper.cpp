@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
+#include <iomanip>
 #include "logger.hpp"
 
 std::ifstream LinuxMetricsScrapper::openFile(const std::string& relativePath) {
@@ -250,7 +250,12 @@ MetricsSample LinuxMetricsScrapper::sample() {
   // Logger logger("LinuxMetricsScrapper");
   std::ostringstream what;
   MetricsSample sample;
-  auto now = std::chrono::steady_clock::now();
+  auto now = std::chrono::system_clock::now();
+  auto time_t_now = std::chrono::system_clock::to_time_t(now);
+
+  std::ostringstream ss;
+  ss << std::put_time(std::gmtime(&time_t_now), "%Y-%m-%dT%H:%M:%SZ");
+  sample.timestamp = ss.str();
 
   float elapsed = 0.0f;
 
@@ -283,7 +288,7 @@ MetricsSample LinuxMetricsScrapper::sample() {
     sample.interfaces = readNet(elapsed);
   } catch (const std::exception& e) {
     what << "readNet() failed: " << e.what() << std::endl;
-     Logger::error("LinuxMetricsScrapper",what.str());
+    Logger::error("LinuxMetricsScrapper", what.str());
   }
 
   lastSampleTime_ = now;

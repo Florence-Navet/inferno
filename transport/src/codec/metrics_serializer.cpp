@@ -26,8 +26,9 @@ std::vector<std::uint8_t> MetricsSerializer::serializeDiskSample(
   ConvertEndian::writeFloat(diskSample, offset, sample.read_bytes_per_sec);
   ConvertEndian::writeFloat(diskSample, offset, sample.write_bytes_per_sec);
   ConvertEndian::writeU16BE(diskSample, offset, sample.device.size());
-  std::copy(sample.device.begin(), sample.device.end(),
-            diskSample.begin() + offset);
+  // std::copy(sample.device.begin(), sample.device.end(),
+  //           diskSample.begin() + offset);
+  ConvertEndian::writeString(diskSample, offset, sample.device);
   return diskSample;
 }
 
@@ -39,8 +40,9 @@ std::vector<std::uint8_t> MetricsSerializer::serializeNetSample(
   ConvertEndian::writeFloat(netSample, offset, sample.rx_bytes_per_sec);
   ConvertEndian::writeFloat(netSample, offset, sample.tx_bytes_per_sec);
   ConvertEndian::writeU16BE(netSample, offset, sample.iface.size());
-  std::copy(sample.iface.begin(), sample.iface.end(),
-            netSample.begin() + offset);
+  // std::copy(sample.iface.begin(), sample.iface.end(),
+  //           netSample.begin() + offset);
+  ConvertEndian::writeString(netSample, offset, sample.iface);
   return netSample;
 }
 
@@ -73,11 +75,14 @@ std::vector<std::uint8_t> MetricsSerializer::serializeMetricsSample(
   // mem
   MetricsSerializer::serializeMemSample(sample.mem, metricsSample, offset);
 
+  ConvertEndian::writeU16BE(metricsSample, offset, sample.timestamp.size());
+
   metricsSample[offset] = static_cast<std::uint8_t>(sample.disks.size());
   offset++;
   metricsSample[offset] = static_cast<std::uint8_t>(sample.interfaces.size());
   offset++;
-
+  // timestamp
+  ConvertEndian::writeString(metricsSample, offset, sample.timestamp);
   // disk
   MetricsSerializer::serializeDiskSamples(sample, metricsSample, offset);
 
@@ -132,6 +137,8 @@ void MetricsSerializer::serializeNetSamples(
 std::size_t MetricsSerializer::getMetricsSampleSize(
     const MetricsSample& sample) {
   std::size_t totalSize{METRICS_SAMPLE_FIXED_SIZE};  // disk and interface count
+                                                     // + timestamp_len value
+  totalSize += sample.timestamp.size();  // reserve actual string length
 
   totalSize +=
       CPU_SAMPLE_FIXED_SIZE + (sample.cpu.per_core.size() * sizeof(float));
@@ -144,5 +151,6 @@ std::size_t MetricsSerializer::getMetricsSampleSize(
   for (const NetSample& net : sample.interfaces) {
     totalSize += NET_SAMPLE_FIXED_SIZE + net.iface.size();
   }
+
   return totalSize;
 }

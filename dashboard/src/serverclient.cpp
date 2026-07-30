@@ -10,6 +10,7 @@
 #include "dashboardsession.h"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
+#include "codec/metrics_parser.hpp"
 
 static QString osTypeToString(OSType type) {
   switch (type) {
@@ -202,9 +203,16 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
 
       break;
     }
-    case DataType::METRICS_SAMPLE:
-      qDebug() << "metrics sample";
-      break;
+    case DataType::METRICS_SAMPLE: {
+        const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+
+        qDebug() << "CPU" << sample.cpu.total_percent << "%"
+                 << "cores" << sample.cpu.per_core.size()
+                 << "mem" << sample.mem.phys_used << "/" << sample.mem.phys_total
+                 << "disks" << sample.disks.size()
+                 << "ifaces" << sample.interfaces.size();
+        break;
+    }
     default:
       qDebug() << "unhandled subtype" << static_cast<int>(data.subtype);
   }

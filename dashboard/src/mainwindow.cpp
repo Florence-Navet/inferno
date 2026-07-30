@@ -54,7 +54,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->agentList, &QListWidget::currentItemChanged,
             this, [this](QListWidgetItem *current, QListWidgetItem *) {
                 m_target = current ? current->data(Qt::UserRole).toString() : QString();
+
+                if (!m_target.isEmpty())
+                    m_client->sendCommand(m_target, CommandType::START_METRICS, QString());
             });
+
 
     m_client = new ServerClient(this);
     connect(m_client, &ServerClient::agentReceived, this,
@@ -96,7 +100,7 @@ void MainWindow::populateAgents()
 void MainWindow::buildContentArea()
 {
 
-   ui->contentLayout->insertWidget(0, new ProcessTableWidget(this));
+   //ui->contentLayout->insertWidget(0, new ProcessTableWidget(this));
 
     QGridLayout *chartsGrid = new QGridLayout;
 

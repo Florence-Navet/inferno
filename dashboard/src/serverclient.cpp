@@ -224,7 +224,7 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
       //          sample.mem.phys_total
       //          << "disks" << sample.disks.size()
       // << "ifaces" << sample.interfaces.size();
-      emit metricsReceived(sample);
+      emit metricsReceived(QString::fromStdString(agentId), sample);
       break;
     }
     default:

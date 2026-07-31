@@ -30,7 +30,7 @@ class MainWindow : public QMainWindow {
 
  private slots:
   /// Fills the metric cards with the latest sample.
-  void onMetricsReceived(const MetricsSample& sample);
+  void onMetricsReceived(const QString &target, const MetricsSample &sample);
 
  private:
   ServerClient* m_client = nullptr;

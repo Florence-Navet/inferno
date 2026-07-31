@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QVector>
+#include <QCloseEvent>
 
 #include "./ui_mainwindow.h"
 #include "agentitemwidget.h"
@@ -46,21 +47,25 @@ MainWindow::MainWindow(QWidget* parent)
                 [this, preset]() { ui->commandEdit->setText(preset.second); });
     }
 
-    connect(ui->agentList, &QListWidget::currentItemChanged, this,
-            [this](QListWidgetItem* current, QListWidgetItem*) {
+    connect(ui->agentList, &QListWidget::itemClicked, this,
+            [this](QListWidgetItem* item) {
 
-                if (!m_target.isEmpty())
-                    m_client->sendCommand(m_target, CommandType::STOP_METRICS,
-                                          QString());
+        const QString clicked = item->data(Qt::UserRole).toString();
+        const bool wasStreaming = (clicked == m_streamingTarget);
 
+        if (!m_streamingTarget.isEmpty()) {
+            m_client->sendCommand(m_streamingTarget,
+                                  CommandType::STOP_METRICS, QString());
+            m_streamingTarget.clear();
+        }
 
+        m_target = clicked;
 
-                m_target =
-                    current ? current->data(Qt::UserRole).toString() : QString();
+        if (wasStreaming) return;
 
-                if (!m_target.isEmpty())
-                    m_client->sendCommand(m_target, CommandType::START_METRICS,
-                                          QString());
+        m_client->sendCommand(m_target, CommandType::START_METRICS,
+                              QString());
+        m_streamingTarget = m_target;
             });
 
     m_client = new ServerClient(this);
@@ -195,4 +200,12 @@ void MainWindow::onMetricsReceived(const QString& target,
     if (target != m_target) return;
 
     m_metricCards->updateFromSample(sample);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (m_client && !m_streamingTarget.isEmpty())
+        m_client->sendCommand(m_streamingTarget, CommandType::STOP_METRICS,
+                              QString());
+
+    QMainWindow::closeEvent(event);
 }

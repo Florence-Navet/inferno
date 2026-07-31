@@ -32,6 +32,9 @@ class MainWindow : public QMainWindow {
   /// Fills the metric cards with the latest sample.
   void onMetricsReceived(const QString &target, const MetricsSample &sample);
 
+ protected:
+     void closeEvent(QCloseEvent *event) override;
+
  private:
   ServerClient* m_client = nullptr;
 
@@ -62,6 +65,8 @@ class MainWindow : public QMainWindow {
                                const QString& topRight = {});
 
   QString m_target;
+
+  QString m_streamingTarget;
 
   QHash<QString, QLabel*> m_metricValues;
 

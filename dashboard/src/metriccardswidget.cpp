@@ -2,7 +2,9 @@
 #include "uiutils.h"
 
 #include <QLabel>
+#include <QString>
 #include <QFrame>
+#include <QDebug>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 
@@ -38,4 +40,28 @@ QWidget *MetricCardsWidget::createMetricCard(const QString &key, const QString &
     layout->addWidget(makeLabel(subtitle, "metricSubtitle"));
 
     return card;
+}
+
+void MetricCardsWidget::updateFromSample(const MetricsSample &sample)
+{
+    updateMetric("cpu", QString::number(sample.cpu.total_percent, 'f', 1) + "%");
+
+    const double gb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
+    updateMetric("memory", QString::number(gb, 'f', 1) + " GB");
+
+    double diskRead = 0.0;
+    for (const DiskSample &disk : sample.disks) diskRead += disk.read_bytes_per_sec;
+
+    diskRead = diskRead / 1024.0 / 1024.0;
+    updateMetric("disk", QString::number(diskRead, 'f', 1) + " MB/s");
+
+    double netRx = 0.0;
+    for (const NetSample &iface : sample.interfaces) netRx += iface.rx_bytes_per_sec;
+
+    if (netRx > 1024.0 * 1024.0 * 1024.0) {
+        qDebug() << "network rx out of range, sample skipped:" << netRx;
+    } else {
+        netRx = netRx / 1024.0;
+        updateMetric("network", QString::number(netRx, 'f', 1) + " KB/s");
+    }
 }

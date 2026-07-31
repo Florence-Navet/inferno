@@ -29,7 +29,7 @@ class ServerClient : public QObject {
   void processListReceived(const QString& target,
                            const std::vector<ProcessInfo>& processes);
   /// Emitted once per metrics sample received from an agent.
-  void metricsReceived(const MetricsSample& sample);
+  void metricsReceived(const QString& target, const MetricsSample& sample);
 
  private:
   std::unique_ptr<DashboardSession> m_session;

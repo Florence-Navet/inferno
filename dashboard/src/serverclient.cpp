@@ -143,23 +143,26 @@ void ServerClient::sendRegister() {
 void ServerClient::handleFrame(const Frame& frame) {
   switch (frame.header.type) {
     case MessageType::DATA:
-      // qDebug() << "DATA received," << frame.payload.size() << "bytes";
+      qDebug() << "DATA received," << frame.payload.size() << "bytes";
       handleData(frame.payload);
       break;
     case MessageType::RESPONSE: {
       const DashboardResponse response =
           ProtocolParser::parseDashboardResponse(frame.payload);
 
-      qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
-               << "id" << response.response.id << "status"
-               << static_cast<int>(response.response.status) << "chunk"
-               << response.response.chunk_index << "/"
-               << response.response.total_chunks << "size"
-               << response.response.data.size();
+      // qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
+      //          << "id" << response.response.id << "status"
+      //          << static_cast<int>(response.response.status) << "chunk"
+      //          << response.response.chunk_index << "/"
+      //          << response.response.total_chunks << "size"
+      //          << response.response.data.size();
 
       const QString target = QString::fromStdString(response.target);
       const CommandType type =
           m_lastCommandByTarget.value(target, CommandType::UNKNOWN);
+      qDebug() << "RESPONSE target:" << target
+               << "| type:" << static_cast<int>(type)
+               << "| cles:" << m_lastCommandByTarget.keys();
 
       if (type == CommandType::RUNNING_PROCESSES) {
         // dated upstream
@@ -190,8 +193,16 @@ void ServerClient::handleFrame(const Frame& frame) {
 
 void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
   // const DataPayload data = ProtocolParser::parseDataPayload(payload);
-  const DashboardData dataDashboard =
-      ProtocolParser::parseDashboardData(payload);
+  // const DashboardData dataDashboard =
+  //     ProtocolParser::parseDashboardData(payload);
+  DashboardData dataDashboard;
+  try {
+      dataDashboard = ProtocolParser::parseDashboardData(payload);
+  } catch (const std::exception& e) {
+      qDebug() << "parseDashboardData failed:" << e.what();
+      return;
+  }
+
   const std::string agentId = dataDashboard.target;
   const DataPayload data = dataDashboard.data;
 
@@ -218,7 +229,7 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
 
         emit agentReceived(QString::fromStdString(id),
                            QString::fromStdString(agent.system.hostname),
-                           details);
+                           details, agent.online);
       }
       // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
       //          << QString::fromStdString(agent.system.ip)
@@ -229,11 +240,13 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
     case DataType::METRICS_SAMPLE: {
       const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
 
-      qDebug() << "CPU" << sample.cpu.total_percent << "%"
-               << "cores" << sample.cpu.per_core.size() << "mem"
-               << sample.mem.phys_used << "/" << sample.mem.phys_total
-               << "disks" << sample.disks.size() << "ifaces"
-               << sample.interfaces.size();
+      // qDebug() << "CPU" << sample.cpu.total_percent << "%"
+      //          << "cores" << sample.cpu.per_core.size()
+      //          << "mem" << sample.mem.phys_used << "/" <<
+      //          sample.mem.phys_total
+      //          << "disks" << sample.disks.size()
+      // << "ifaces" << sample.interfaces.size();
+      emit metricsReceived(QString::fromStdString(agentId), sample);
       break;
     }
     default:

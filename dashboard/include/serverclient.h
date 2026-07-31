@@ -24,7 +24,8 @@ public:
     void sendCommand(const QString &target, CommandType type, const QString &data);
 
 signals:
-     void agentReceived(const QString &id, const QString &name, const QString &details);
+     void agentReceived(const QString &id, const QString &name,
+                       const QString &details, bool online);
      void responseReceived(const QString &target, const QString &text);
      void processListReceived(const QString &target, const std::vector<ProcessInfo> &processes);
 

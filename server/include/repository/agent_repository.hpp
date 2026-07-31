@@ -14,7 +14,7 @@ class IAgentRepository {
 
   // Upsert — creates agent on first REGISTER, updates fields on reconnect.
   virtual void save(const RegisterPayload& agent) = 0;
-  virtual void setLastSeen(const std::string& id,const std::string& timestampIso) = 0;
+  virtual void setLastSeen(const std::string& id) = 0;
   virtual std::vector<RegisterPayload> findAll() = 0;
   virtual std::optional<RegisterPayload> findById(const std::string& id) = 0;
 };
@@ -29,7 +29,7 @@ class AgentRepository : public IAgentRepository {
   explicit AgentRepository(IDatabaseConnection& db) : db_(db) {}
 
   void save(const RegisterPayload& agent) override;
-  void setLastSeen(const std::string& id, const std::string& timestampIso) override;
+  void setLastSeen(const std::string& id) override;
   std::vector<RegisterPayload> findAll() override;
   std::optional<RegisterPayload> findById(const std::string& id) override;
   // etc.

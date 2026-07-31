@@ -184,5 +184,9 @@ void MainWindow::showOutput(const QString& text) {
 }
 
 void MainWindow::onMetricsReceived(const MetricsSample& sample) {
-  qDebug() << "metrics slot:" << sample.cpu.total_percent << "%";
+    m_metricCards->updateMetric(
+        "cpu", QString::number(sample.cpu.total_percent, 'f', 1) + "%");
+
+    const double gb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
+    m_metricCards->updateMetric("memory", QString::number(gb, 'f', 1) + " GB");
 }

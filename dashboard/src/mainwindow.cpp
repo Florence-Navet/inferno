@@ -184,30 +184,6 @@ void MainWindow::showOutput(const QString& text) {
 }
 
 void MainWindow::onMetricsReceived(const MetricsSample& sample) {
-    m_metricCards->updateMetric(
-        "cpu", QString::number(sample.cpu.total_percent, 'f', 1) + "%");
-
-    const double gb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
-    m_metricCards->updateMetric("memory", QString::number(gb, 'f', 1) + " GB");
-
-    double diskRead = 0.0;
-    for (const DiskSample& disk : sample.disks) diskRead += disk.read_bytes_per_sec;
-
-    diskRead = diskRead / 1024.0 / 1024.0;
-    m_metricCards->updateMetric("disk",
-                                QString::number(diskRead, 'f', 1) + " MB/s");
-
-    double netRx = 0.0;
-    for (const NetSample& iface : sample.interfaces) netRx += iface.rx_bytes_per_sec;
-
-    if (netRx > 1024.0 * 1024.0 * 1024.0) {
-        qDebug() << "network rx out of range, sample skipped:" << netRx;
-        return;
-    }
-
-    netRx = netRx / 1024.0;
-    m_metricCards->updateMetric("network",
-                                QString::number(netRx, 'f', 1) + " KB/s");
-
+    m_metricCards->updateFromSample(sample);
 
 }

@@ -14,7 +14,6 @@
 #include "session_manager.hpp"
 #include "stubs/fake_agent_repository.hpp"
 #include "stubs/fake_command_repository.hpp"
-#include "stubs/fake_database_connection.hpp"
 #include "stubs/fake_metrics_repository.hpp"
 #include "stubs/fake_response_repository.hpp"
 #include "stubs/spy_socket.hpp"
@@ -22,7 +21,6 @@
 class ServerDispatcherTest : public ::testing::Test {
  protected:
   SessionManager manager;
-  FakeDatabaseConnection fakeDb;
   // Agent
   std::unique_ptr<FakeAgentRepository> agentRepoUnique;
   std::unique_ptr<AgentService> agentServiceUnique;
@@ -51,7 +49,7 @@ class ServerDispatcherTest : public ::testing::Test {
 
   void SetUp() override {
     // Agent
-    agentRepoUnique = std::make_unique<FakeAgentRepository>(fakeDb);
+    agentRepoUnique = std::make_unique<FakeAgentRepository>();
     fakeAgentRepo = agentRepoUnique.get();
 
     agentServiceUnique =
@@ -59,7 +57,7 @@ class ServerDispatcherTest : public ::testing::Test {
     agentService = agentServiceUnique.get();
 
     // Command
-    commandRepoUnique = std::make_unique<FakeCommandRepository>(fakeDb);
+    commandRepoUnique = std::make_unique<FakeCommandRepository>();
     fakeCommandRepo = commandRepoUnique.get();
 
     commandServiceUnique =
@@ -67,7 +65,7 @@ class ServerDispatcherTest : public ::testing::Test {
     commandService = commandServiceUnique.get();
 
     // Response
-    responseRepoUnique = std::make_unique<FakeResponseRepository>(fakeDb);
+    responseRepoUnique = std::make_unique<FakeResponseRepository>();
     fakeResponseRepo = responseRepoUnique.get();
 
     responseServiceUnique =

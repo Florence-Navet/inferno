@@ -14,6 +14,7 @@
 #include "service/command_service.hpp"
 #include "service/metrics_service.hpp"
 #include "tcp_server.hpp"
+#include "logger.hpp" 
 
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
@@ -25,6 +26,8 @@ int main() {
   }
 
   const uint16_t serverPort = EnvHelper::resolvePort();
+  Logger::info("server main", "SERVER_PORT = " + std::to_string(serverPort));
+  
   bool encryption = EnvHelper::resolveTlsEnabled();
   TcpServer server(serverPort, encryption);
   if (!server.start()) {

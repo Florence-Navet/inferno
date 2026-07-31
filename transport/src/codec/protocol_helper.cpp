@@ -1,6 +1,7 @@
 #include "codec/protocol_helper.hpp"
 
 #include "exception/lptf_exception.hpp"
+#include "logger.hpp"
 
 namespace ProtocolHelper {
 const char* messageTypeToString(MessageType type) noexcept {

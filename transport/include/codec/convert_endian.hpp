@@ -40,6 +40,11 @@ float readFloat(const std::vector<std::uint8_t>& buffer, std::size_t& offset);
 
 std::string getString(const std::vector<std::uint8_t>& buffer,
                       std::size_t& offset, std::uint16_t length);
+void writeString(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                 const std::string& value);
+                 
+void writeByteVector(std::vector<std::uint8_t>& buffer, std::size_t& offset,
+                     const std::vector<std::uint8_t>& value);
 
 void writeU32BE(std::vector<std::uint8_t>& buffer, std::size_t& offset,
                 std::uint32_t value);

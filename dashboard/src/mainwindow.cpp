@@ -81,8 +81,8 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
 
-    // m_client->connectToServer("localhost", EnvHelper::resolvePort());
-    m_client->connectToServer("localhost", 8889);
+    m_client->connectToServer("localhost", EnvHelper::resolvePort());
+    // m_client->connectToServer("localhost", 8889);
 
 }
 

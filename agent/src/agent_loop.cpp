@@ -8,11 +8,11 @@
 #include "metrics/metrics_scrapper_factory.hpp"
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
-                     std::string host, std::uint16_t port, int heartbeatMs,
+                     std::string_view host, std::uint16_t port, int heartbeatMs,
                      int retryMs, const bool encryption)
     : poller_(poller),
       dispatcher_(dispatcher),
-      host_(std::move(host)),
+      host_(host),
       port_(port),
       heartbeatMs_(heartbeatMs),
       retryMs_(retryMs),
@@ -23,16 +23,17 @@ AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
   dispatcher_.setMetricsController(metricsController_);
   Logger::info("agent loop",
                "TLS = " + std::string(encryption ? "true" : "false"));
+  Logger::info("agent loop", "SERVER_HOST = " + host_);
 }
 
 AgentLoop::AgentLoop(IPoller& poller, AgentDispatcher& dispatcher,
                      std::shared_ptr<MetricsController> metricsController,
-                     std::string host, std::uint16_t port, int heartbeatMs,
+                     std::string_view host, std::uint16_t port, int heartbeatMs,
                      int retryMs, const bool encryption)
     : poller_(poller),
       dispatcher_(dispatcher),
       metricsController_(metricsController),
-      host_(std::move(host)),
+      host_(host),
       port_(port),
       heartbeatMs_(heartbeatMs),
       retryMs_(retryMs),

@@ -1,6 +1,6 @@
 #include "repository/response_repository.hpp"
 
-void ResponseRepository::save(const ResponsePayload& response) {
+std::string ResponseRepository::save(const ResponsePayload& response) {
   pqxx::params params;
   params.append(response.id);
   params.append(static_cast<int>(response.status));
@@ -16,11 +16,12 @@ void ResponseRepository::save(const ResponsePayload& response) {
     reinterpret_cast<const std::byte*>(response.data.data()),
     response.data.size()));
 
-  db_.executeParams(
+  pqxx::result result = db_.executeParams(
       "INSERT INTO responses "
       "  (command_id, status, total_chunks, chunk_index, data) "
-      "VALUES ($1, $2, $3, $4, $5)",
+      "VALUES ($1, $2, $3, $4, $5) RETURNING received_at",
       params);
+  return result[0][0].as<std::string>();
 }
 
 std::vector<DashboardResponse> ResponseRepository::findByCommandId(

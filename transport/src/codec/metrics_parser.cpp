@@ -59,11 +59,15 @@ MetricsSample MetricsParser::parseMetricsSample(
   std::size_t offset{0};
   sample.cpu = MetricsParser::parseCpuSample(input, offset);
   sample.mem = MetricsParser::parseMemSample(input, offset);
-  std::uint8_t diskCount = input[offset];
+  std::uint16_t timestampLen = ConvertEndian::readU16BE(input, offset);
+
+    std::uint8_t diskCount = input[offset];
   offset++;
   std::uint8_t interfaceCount = input[offset];
   offset++;
-
+  
+  // timestamp
+  sample.timestamp = ConvertEndian::getString(input, offset, timestampLen);
   // disks
   for (std::uint8_t i{0}; i < diskCount; ++i) {
     sample.disks.push_back(MetricsParser::parseDiskSample(input, offset));

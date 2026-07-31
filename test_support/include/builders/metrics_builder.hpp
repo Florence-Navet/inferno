@@ -52,10 +52,11 @@ inline NetSample createNetSample(std::uint64_t rx_bytes_per_sec = 500000ULL,
 }
 
 inline MetricsSample createMetricsSample(int diskCount = 2,
-                                                         int ifaceCount = 2) {
+                                         int ifaceCount = 2) {
   MetricsSample sample;
   sample.cpu = MetricsBuilder::createCpuSample();
   sample.mem = MetricsBuilder::createMemSample();
+  sample.timestamp = "2026-07-28T14:32:45Z";
   for (int i{0}; i < diskCount; ++i)
     sample.disks.push_back(MetricsBuilder::createDiskSample());
   for (int i{0}; i < ifaceCount; ++i)

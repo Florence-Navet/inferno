@@ -7,6 +7,7 @@
 #include "codec/protocol_helper.hpp"
 #include "codec/protocol_serializer.hpp"
 #include "exception/lptf_exception.hpp"
+#include "logger.hpp"
 
 namespace ProtocolSerializer {
 std::vector<std::uint8_t> serializeHeader(const LptfHeader& header) {
@@ -82,8 +83,9 @@ std::vector<std::uint8_t> serializeDataPayload(const DataPayload& payload) {
   ConvertEndian::writeU16BE(payloadInByte, offset,
                             static_cast<std::uint16_t>(payload.data.size()));
   // copyString(payloadInByte, DATA_FIXED_BYTES, payload.data);
-  std::copy(payload.data.begin(), payload.data.end(),
-            payloadInByte.begin() + DATA_FIXED_BYTES);
+  ConvertEndian::writeByteVector(payloadInByte, offset, payload.data);
+  // std::copy(payload.data.begin(), payload.data.end(),
+  //           payloadInByte.begin() + DATA_FIXED_BYTES);
 
   return payloadInByte;
 }
@@ -99,7 +101,9 @@ std::vector<std::uint8_t> serializeErrorPayload(const ErrorPayload& payload) {
   std::size_t offset{1};
   ConvertEndian::writeU16BE(payloadInByte, offset, message_length);
 
-  ProtocolHelper::copyString(payloadInByte, ERROR_FIXED_BYTES, payload.message);
+  ConvertEndian::writeString(payloadInByte, offset, payload.message);
+  // ProtocolHelper::copyString(payloadInByte, ERROR_FIXED_BYTES,
+  // payload.message);
   return payloadInByte;
 }
 
@@ -118,16 +122,18 @@ std::vector<std::uint8_t> serializeDashboardCommand(
   std::size_t offset{0};
   ConvertEndian::writeU16BE(payload, offset, target_len);
   ConvertEndian::writeU16BE(payload, offset, sent_at_len);
-  std::copy(command.target.begin(), command.target.end(),
-            payload.begin() + offset);
-  offset += target_len;
+  ConvertEndian::writeString(payload, offset, command.target);
+  // std::copy(command.target.begin(), command.target.end(),
+  //           payload.begin() + offset);
+  // offset += target_len;
 
-  std::copy(command.sent_at.begin(), command.sent_at.end(),
-            payload.begin() + offset);
-  offset += sent_at_len;
-
-  std::copy(commandPayload.begin(), commandPayload.end(),
-            payload.begin() + offset);
+  ConvertEndian::writeString(payload, offset, command.sent_at);
+  // std::copy(command.sent_at.begin(), command.sent_at.end(),
+  //           payload.begin() + offset);
+  // offset += sent_at_len;
+  ConvertEndian::writeByteVector(payload, offset, commandPayload);
+  // std::copy(commandPayload.begin(), commandPayload.end(),
+  //           payload.begin() + offset);
   return payload;
 }
 
@@ -141,9 +147,12 @@ std::vector<std::uint8_t> serializeDashboardData(const DashboardData& data) {
   std::size_t offset{0};
 
   ConvertEndian::writeU16BE(payload, offset, target_len);
-  std::copy(data.target.begin(), data.target.end(), payload.begin() + offset);
-  offset += target_len;
-  std::copy(dataPayload.begin(), dataPayload.end(), payload.begin() + offset);
+  ConvertEndian::writeString(payload, offset, data.target);
+  // std::copy(data.target.begin(), data.target.end(), payload.begin() +
+  // offset); offset += target_len;
+  ConvertEndian::writeByteVector(payload, offset, dataPayload);
+  // std::copy(dataPayload.begin(), dataPayload.end(), payload.begin() +
+  // offset);
 
   return payload;
 }
@@ -164,20 +173,22 @@ std::vector<std::uint8_t> serializeDashboardResponse(
   ConvertEndian::writeU16BE(payload, offset, target_len);
   ConvertEndian::writeU16BE(payload, offset, received_at_len);
 
-  std::copy(response.target.begin(), response.target.end(),
-            payload.begin() + offset);
-  offset += target_len;
+  // std::copy(response.target.begin(), response.target.end(),
+  //           payload.begin() + offset);
+  // offset += target_len;
+  ConvertEndian::writeString(payload, offset, response.target);
 
-  std::copy(response.received_at.begin(), response.received_at.end(),
-            payload.begin() + offset);
-  offset += received_at_len;
+  // std::copy(response.received_at.begin(), response.received_at.end(),
+  //           payload.begin() + offset);
+  // offset += received_at_len;
+  ConvertEndian::writeString(payload, offset, response.received_at);
 
-  std::copy(responsePayload.begin(), responsePayload.end(),
-            payload.begin() + offset);
+  // std::copy(responsePayload.begin(), responsePayload.end(),
+  //           payload.begin() + offset);
+  ConvertEndian::writeByteVector(payload, offset, responsePayload);
 
   return payload;
 }
-
 
 std::vector<std::uint8_t> serializeDashboardDisconnect(
     const DashboardDisconnect& payload) {
@@ -188,8 +199,9 @@ std::vector<std::uint8_t> serializeDashboardDisconnect(
   std::size_t offset{0};
   ConvertEndian::writeU16BE(finalPayload, offset, targetLen);
 
-  std::copy(payload.target.begin(), payload.target.end(),
-            finalPayload.begin() + offset);
+  ConvertEndian::writeString(finalPayload, offset, payload.target);
+  // std::copy(payload.target.begin(), payload.target.end(),
+  //           finalPayload.begin() + offset);
 
   return finalPayload;
 }

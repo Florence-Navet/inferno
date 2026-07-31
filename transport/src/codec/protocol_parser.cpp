@@ -6,6 +6,7 @@
 #include "codec/convert_endian.hpp"
 #include "codec/protocol_helper.hpp"
 #include "exception/lptf_exception.hpp"
+#include "logger.hpp"
 
 namespace ProtocolParser {
 LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
@@ -38,7 +39,6 @@ LptfHeader parseHeader(const std::vector<std::uint8_t>& input) {
   return header;
 }
 
-
 DataPayload parseDataPayload(const std::vector<std::uint8_t>& input) {
   if (input.size() < DATA_FIXED_BYTES) {
     throw InvalidSize("data payload", std::to_string(input.size()));
@@ -47,13 +47,11 @@ DataPayload parseDataPayload(const std::vector<std::uint8_t>& input) {
   const std::uint16_t dataLen{ConvertEndian::readU16BE(input, offset)};
   const std::size_t expectedSize{DATA_FIXED_BYTES + dataLen};
   ProtocolHelper::validateExpectedLength(input, expectedSize);
-
   DataPayload payload;
   payload.subtype = ProtocolHelper::EnumConversion::toDataType(input[0]);
   payload.data =
       std::vector<std::uint8_t>(input.begin() + DATA_FIXED_BYTES,
                                 input.begin() + DATA_FIXED_BYTES + dataLen);
-
   return payload;
 }
 
@@ -114,6 +112,7 @@ ResponsePayload parseResponsePayload(const std::vector<std::uint8_t>& input) {
   // payload.data.assign(
   //     reinterpret_cast<const char*>(input.data() + RESPONSE_FIXED_BYTES),
   //     dataLen);
+
   payload.data.assign(input.begin() + RESPONSE_FIXED_BYTES,
                       input.begin() + RESPONSE_FIXED_BYTES + dataLen);
   return payload;
@@ -143,7 +142,6 @@ ErrorPayload parseErrorPayload(const std::vector<std::uint8_t>& input) {
       messageLen);
   return payload;
 }
-
 
 DashboardCommand parseDashboardCommand(const std::vector<std::uint8_t>& input) {
   //       if (input.size() < PROCESS_INFO_FIXED_SIZE) {

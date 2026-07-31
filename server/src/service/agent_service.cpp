@@ -17,7 +17,6 @@ void AgentService::registerAgent(AgentConnection& agent,
   // RegisterPayload registerToSent;
   registerToSent.system = agentInfo;
   registerToSent.id = agent.getId();
-
   if (!repository_.findById(agent.getId()).has_value()) {
     repository_.save(registerToSent);
   }

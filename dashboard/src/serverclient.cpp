@@ -45,7 +45,6 @@ ServerClient::ServerClient(QObject* parent) : QObject{parent} {}
 ServerClient::~ServerClient() = default;
 
 bool ServerClient::connectToServer(const QString& host, quint16 port) {
-  // std::unique_ptr<ISocket> socket = SocketFactory::createTCP();
   qDebug() << "before creating tls socket";
   bool tlsEnabled = EnvHelper::resolveTlsEnabled();
   std::unique_ptr<ISocket> socket;

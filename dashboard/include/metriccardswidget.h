@@ -20,12 +20,19 @@ class MetricCardsWidget : public QWidget {
   /// Fills every card from one metrics sample.
   void updateFromSample(const MetricsSample& sample);
 
+  /// Updates a metric card subtitle by key.
+  void updateSubtitle(const QString &key, const QString &value);
+
  private:
   /// Creates one metric card (title + big value + subtitle).
   QWidget* createMetricCard(const QString& key, const QString& title,
                             const QString& value, const QString& subtitle);
 
   QHash<QString, QLabel*> m_metricValues;
+
+  QHash<QString, QLabel *> m_metricSubtitles;
+
+
 };
 
 #endif  // METRICCARDSWIDGET_H

@@ -6,20 +6,21 @@
 
 #include "socket/i_socket.hpp"
 #include "socket/socket_factory.hpp"
-class EnvHelper {
- public:
-  EnvHelper() = delete;
-  EnvHelper(const EnvHelper&) = delete;
-  EnvHelper& operator=(const EnvHelper&) = delete;
 
-  static std::uint16_t resolvePort(const std::string& portName = "SERVER_PORT");
-  static std::string resolveString(const std::string& variableName);
-  static std::string resolveServerHost();
+namespace EnvHelper {
+std::uint16_t resolvePort(const std::string& portName = "SERVER_PORT");
+std::string resolveString(const std::string& variableName);
+std::string resolveServerHost();
 
-  static const std::uint16_t SERVER_PORT = 8888;
-  static bool resolveTlsEnabled();
+bool resolveTlsEnabled();
+void loadEnvFile(const std::string& filePath = ".env");
+std::string getFromCache(const std::string& key);
 
- private:
-};
+}  // namespace EnvHelper
+// class EnvHelper {
+//  public:
+
+//  private:
+// };
 
 #endif

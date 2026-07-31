@@ -5,12 +5,11 @@
 
 class FakeCommandRepository : public ICommandRepository {
  private:
-  IDatabaseConnection& db_;  // same connection, different instance
   std::vector<DashboardCommand> commands_;
   int nextId_ = 1;
 
  public:
-  explicit FakeCommandRepository(IDatabaseConnection& db) : db_(db) {}
+  explicit FakeCommandRepository() {}
 
   std::uint32_t save(const DashboardCommand& cmd) override {
     commands_.push_back(cmd);

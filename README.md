@@ -278,6 +278,7 @@ From **PowerShell**:
 
 From **Git Bash**:
 
+#### Release
 ```bash
 powershell.exe -NoProfile -Command "& '$(cygpath -w ./dashboard/windows-build.bat)'"
 ```

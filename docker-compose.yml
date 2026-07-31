@@ -142,6 +142,10 @@ services:
     depends_on:
       transport:
         condition: service_completed_successfully
+    environment:
+      # Server configuration
+      SERVER_PORT: ${SERVER_PORT}
+      TLS: ${TLS}
     build:
       context: .
       dockerfile: Dockerfile.backend

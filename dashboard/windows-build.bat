@@ -51,7 +51,7 @@ if errorlevel 1 (
 )
 
 echo [OK] Qt6 found
-qmake --version
+qmake6 --version
 echo.
 
 REM Verify we have CMakeLists.txt in current directory
@@ -195,46 +195,66 @@ echo [INFO] PATH updated (temporary - only for this build)
 echo.
 
 @REM TODO : BEGIN OF OPENSSL HANDLING
-echo.
-echo Checking for OpenSSL...
-echo.
 
-REM Check common vcpkg locations
-set "VCPKG_ROOT="
-if exist "%USERPROFILE%\vcpkg" (
-    set "VCPKG_ROOT=%USERPROFILE%\vcpkg"
-) else if exist "C:\vcpkg" (
-    set "VCPKG_ROOT=C:\vcpkg"
+set "OPENSSL_PATH="
+
+REM Search locations where OpenSSL may exist
+
+set "OPENSSL_CANDIDATES="
+
+REM MSYS2 MinGW64
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! C:\msys64\mingw64"
+
+REM MSYS2 UCRT64
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! C:\msys64\ucrt64"
+
+REM Common vcpkg locations
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! %USERPROFILE%\vcpkg\installed\x64-mingw-static"
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! %USERPROFILE%\vcpkg\installed\x64-windows"
+
+REM Chocolatey / manual installs
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! C:\tools\OpenSSL"
+set "OPENSSL_CANDIDATES=!OPENSSL_CANDIDATES! C:\Program Files\OpenSSL-Win64"
+
+
+for %%O in (!OPENSSL_CANDIDATES!) do (
+    if not defined OPENSSL_PATH (
+        if exist "%%O\include\openssl\ssl.h" (
+            if exist "%%O\lib\libssl.dll.a" (
+                if exist "%%O\lib\libcrypto.dll.a" (
+                    set "OPENSSL_PATH=%%O"
+                )
+            )
+        )
+    )
 )
 
-if defined VCPKG_ROOT (
-    echo [INFO] vcpkg found at: %VCPKG_ROOT%
-    set "OPENSSL_PATH=%VCPKG_ROOT%\installed\x64-windows"
-    echo [INFO] Using OpenSSL from: !OPENSSL_PATH!
+
+if defined OPENSSL_PATH (
+    echo [OK] Found MinGW OpenSSL:
+    echo      !OPENSSL_PATH!
 ) else (
-    echo [WARNING] vcpkg not found at common locations
-    echo Please install: vcpkg install openssl:x64-windows
-    set "OPENSSL_PATH="
+    echo [WARNING] OpenSSL development files not found
 )
 
 echo.
-
-REM Configure with CMake using explicit tool paths
-cmake .. -G "MinGW Makefiles" ^
-    -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-    -DCMAKE_CXX_COMPILER="%QT_GPP%" ^
-    -DCMAKE_MAKE_PROGRAM="%QT_MAKE%" ^
-    -DCMAKE_PREFIX_PATH="!OPENSSL_PATH!;%QT_BIN_DIR%\.."
 
 @REM TODO : END OF OPENSSL HANDLING
 
 REM Configure with CMake using explicit tool paths
-cmake .. -G "MinGW Makefiles" ^
-    -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ^
-    -DCMAKE_CXX_COMPILER="%QT_GPP%" ^
-    -DCMAKE_MAKE_PROGRAM="%QT_MAKE%" ^
-    -DCMAKE_PREFIX_PATH="%QT_BIN_DIR%\.." ^
-    -DCMAKE_PREFIX_PATH="!OPENSSL_PATH!;%QT_BIN_DIR%\.."
+REM Build the command step by step to handle spaces in paths properly
+set "CMAKE_CMD=cmake .. -G "MinGW Makefiles""
+set "CMAKE_CMD=!CMAKE_CMD! -DCMAKE_BUILD_TYPE=%BUILD_TYPE%"
+set "CMAKE_CMD=!CMAKE_CMD! -DCMAKE_CXX_COMPILER="%QT_GPP%""
+set "CMAKE_CMD=!CMAKE_CMD! -DCMAKE_MAKE_PROGRAM="%QT_MAKE%""
+set "CMAKE_CMD=!CMAKE_CMD! -DCMAKE_PREFIX_PATH="%QT_BIN_DIR%\.""
+
+REM Add OpenSSL explicitly if found
+if defined OPENSSL_PATH (
+    set "CMAKE_CMD=!CMAKE_CMD! -DOPENSSL_ROOT_DIR="%OPENSSL_PATH%""
+)
+
+!CMAKE_CMD!
 
 echo CMake returned %ERRORLEVEL%
 

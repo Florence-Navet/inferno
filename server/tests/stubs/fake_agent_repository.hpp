@@ -7,11 +7,10 @@
 // agent_repository.hpp
 class FakeAgentRepository : public IAgentRepository {
  private:
-  IDatabaseConnection& db_;  // shared reference
   std::map<std::string, RegisterPayload> agents_;
 
  public:
-  explicit FakeAgentRepository(IDatabaseConnection& db) : db_(db) {}
+  explicit FakeAgentRepository() {}
 
   void save(const RegisterPayload& agent) override {
     agents_[agent.id] = agent;  // Upsert
@@ -20,7 +19,7 @@ class FakeAgentRepository : public IAgentRepository {
                    const std::string& timestampIso) override {
     if (agents_.find(id) != agents_.end()) {
       // In real code, would update DB; here just silently succeed
-      std::cout << "updated last seen : "<< timestampIso <<"\n";
+      std::cout << "updated last seen : " << timestampIso << "\n";
     }
   };
   std::vector<RegisterPayload> findAll() override {

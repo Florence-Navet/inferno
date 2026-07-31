@@ -14,6 +14,7 @@ LPTF is a custom binary protocol for agent-server-dashboard communication.
 - TCP sockets are used as the transport.
 
 **Design goals:**
+
 - Cross-platform
 - Lightweight
 - Extendable
@@ -37,26 +38,26 @@ All messages share a fixed 8-byte header, immediately followed by a payload.
   4 bytes     1 byte   1B    2B
 ```
 
-| Field      | Size | Type     | Description                        |
-| ---------- | ---- | -------- | ---------------------------------- |
-| Identifier | 4B   | char[4]  | ASCII magic: `"LPTF"`              |
-| Version    | 1B   | uint8    | Protocol version (current: `1`)    |
-| Type       | 1B   | uint8    | Message type (see §3.1)            |
-| Size       | 2B   | uint16   | Payload length in bytes (0–65535)  |
+| Field      | Size | Type    | Description                       |
+| ---------- | ---- | ------- | --------------------------------- |
+| Identifier | 4B   | char[4] | ASCII magic: `"LPTF"`             |
+| Version    | 1B   | uint8   | Protocol version (current: `1`)   |
+| Type       | 1B   | uint8   | Message type (see §3.1)           |
+| Size       | 2B   | uint16  | Payload length in bytes (0–65535) |
 
 All integers are **big-endian**. All strings are **UTF-8**, length-prefixed, no null terminator.
 
 ### 3.1 Message Types
 
-| Value | Name               | Direction                        | Description                        |
-| ----- | ------------------ | -------------------------------- | ---------------------------------- |
-| 0     | REGISTER           | Agent → Server                   | Agent registration                 |
-| 1     | DASHBOARD_REGISTER | Dashboard → Server               | Dashboard registration             |
-| 2     | DATA               | Agent → Server → Dashboard       | Unsolicited data (metrics, etc.)   |
-| 3     | COMMAND            | Dashboard → Server → Agent       | Instruction to execute             |
-| 4     | RESPONSE           | Agent → Server → Dashboard       | Result of a COMMAND                |
-| 5     | DISCONNECT         | Any → Server, or Server → Agent  | Graceful disconnection (see §4.6)  |
-| 6     | ERROR              | Server → Any                     | Error notification                 |
+| Value | Name               | Direction                       | Description                       |
+| ----- | ------------------ | ------------------------------- | --------------------------------- |
+| 0     | REGISTER           | Agent → Server                  | Agent registration                |
+| 1     | DASHBOARD_REGISTER | Dashboard → Server              | Dashboard registration            |
+| 2     | DATA               | Agent → Server → Dashboard      | Unsolicited data (metrics, etc.)  |
+| 3     | COMMAND            | Dashboard → Server → Agent      | Instruction to execute            |
+| 4     | RESPONSE           | Agent → Server → Dashboard      | Result of a COMMAND               |
+| 5     | DISCONNECT         | Any → Server, or Server → Agent | Graceful disconnection (see §4.6) |
+| 6     | ERROR              | Server → Any                    | Error notification                |
 
 ---
 
@@ -96,6 +97,7 @@ struct OsInfoPayload {
 Fixed header size: `2 × sizeof(uint8_t) + 5 × sizeof(uint16_t) = 12 bytes`
 
 Rules:
+
 - Server ignores all messages until REGISTER (or DASHBOARD_REGISTER) is received.
 - Invalid or missing REGISTER → server may close the connection.
 - The MAC address is used as the persistent agent identity across reconnections.
@@ -170,15 +172,19 @@ Fixed size: `sizeof(uint32_t) + sizeof(uint16_t) + 3 × sizeof(uint8_t) = 9 byte
 The server does **not** reassemble chunks. Each chunk is forwarded individually to the dashboard as a `DashboardResponse`. The dashboard is responsible for reassembly using `id`, `chunk_index`, and `total_chunks`.
 
 Maximum data per chunk:
+
 ```
 max_data = 65535 - RESPONSE_FIXED_BYTES
          = 65535 - 26
          = 65509 bytes
 ```
+
 `RESPONSE_FIXED_BYTES = sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint8_t) * 3 + MAC_SIZE`
+
 > The agent reserves `MAC_SIZE = 17` bytes in each chunk to allow the server to prepend the agent identity string when wrapping as `DashboardResponse`. The agent does not know its own identity, the server assigns and inserts it. Today the identity is the MAC address (17 bytes); this may change in future versions as long as the identity size stays ≤ 17 bytes.
 
 #### Process Info (RUNNING_PROCESSES response data)
+
 ```
 uint32_t pid;
 float    cpu_percent;   // 0.0–100.0, lifetime average
@@ -197,6 +203,7 @@ struct ProcessInfo {
 ```
 
 `response.data` layout for RUNNING_PROCESSES:
+
 ```
 uint16_t process_count
 ProcessInfo[process_count]
@@ -358,15 +365,17 @@ The dashboard never sends raw agent-level messages. All dashboard messages wrap 
 ```
 uint16_t target_len
 char     target[target_len]
-<serialized payload>           // CommandPayload 
+<serialized payload>           // CommandPayload
 ```
 
 ### 5.2 Wire Format (server → dashboard)
 
 ### 5.2 wire format on network:
+
 #### RegisterPayload
+
 ```
-uint8_t     online 
+uint8_t     online
 uint16_t    target_len
 uint16_t    registered_at_len
 uint16_t    last_seen_len
@@ -375,15 +384,18 @@ char        registered_at[registered_at_len]
 char        last_seen[last_seen_len]
 <serialized payload>           // ResponsePayload or DataPayload
 ```
+
 DATA / REGISRATION data =
+
 ```
 uint16_t registration_count
 RegisterPayload[registration_count]
 ```
 
+#### DashboardCommand
 
-#### DashboardCommand 
 Dashboard sends a DashboardCommand with sent_at field empty and commandPayload.id = 0, server will fill these fields. In case dashboard asks for a command history, server sends back a DashboardCommand witrh sent_at field filled
+
 ```
 uint16_t      target_len
 uint16_t      sent_at_len
@@ -393,8 +405,9 @@ char          sent_at[sent_at_len]
 ```
 
 #### DashboardResponse
+
 ```
-uint16_t      target_len 
+uint16_t      target_len
 uint16_t      received_at_len
 char          target[target_len]
 char          received_at[received_at_len]
@@ -402,20 +415,22 @@ char          received_at[received_at_len]
 ```
 
 #### DashboardDisconnect & DashboardData
+
 The other Dashboard <-> server structures on the wire (DashboardDisconnect, DashboardData)
+
 ```
 uint16_t      target_len
 char          target[target_len]
 <serialized payload>           // ResponsePayload or DataPayload
 ```
 
-
 ### 5.3 Structures
+
 ```cpp
 // Agent registration info sent to dashboard
 struct RegisterPayload {
     std::string    id;        // agent MAC address
-    bool           online 
+    bool           online
     std::string    registered_at;
     std::string    last_seen;
     OsInfoPayload  system;
@@ -459,7 +474,7 @@ struct DashboardDisconnect {
 - When dashboard registers, server **SHOULD** send a `DATA / AGENTS` frame containing all currently connected agents as a list of `RegisterPayload` through a `DashboardData`.
 - On any `DATA` type message, server **MUST** use `DashboardData` wrapper
 - DISCONNECT from dashboard **MUST** carry a `DashboardDisconnect` payload; DISCONNECT from agent or server **SHOULD NOT** carry a payload.
-- On a regular agent disconnection, server **MUST*** send a `DashboardDisconnect` with the agent id so dashboard can update GUI.
+- On a regular agent disconnection, server **MUST\*** send a `DashboardDisconnect` with the agent id so dashboard can update GUI.
 - On any error, server **MUST** inform sender
 
 ---
@@ -480,11 +495,11 @@ A single message may be split across multiple `recv()` calls. Bytes from differe
 
 ## 7. Versioning
 
-| Agent version     | Server behavior                  |
-| ----------------- | -------------------------------- |
-| < protocol version | Reject connection               |
-| = protocol version | Accept                          |
-| > protocol version | Accept (backward-compatible)    |
+| Agent version      | Server behavior              |
+| ------------------ | ---------------------------- |
+| < protocol version | Reject connection            |
+| = protocol version | Accept                       |
+| > protocol version | Accept (backward-compatible) |
 
 Version is checked on REGISTER.
 

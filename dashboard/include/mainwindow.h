@@ -29,6 +29,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    /// Fills the metric cards with the latest sample.
+    // void onMetricsReceived(const MetricsSample &sample);
+
 private:
     ServerClient *m_client = nullptr;
 

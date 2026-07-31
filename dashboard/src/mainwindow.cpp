@@ -62,8 +62,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_client = new ServerClient(this);
     connect(m_client, &ServerClient::agentReceived, this,
-            [this](const QString &id, const QString &name, const QString &details) {
-                addAgentItem(id, name, details, true);
+            [this](const QString &id, const QString &name,
+                    const QString &details, bool online) {
+                addAgentItem(id, name, details, online);
             });
 
     connect(m_client, &ServerClient::responseReceived, this,

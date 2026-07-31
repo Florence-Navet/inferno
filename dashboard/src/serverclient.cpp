@@ -195,7 +195,8 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
 
         emit agentReceived(QString::fromStdString(id),
                            QString::fromStdString(agent.system.hostname),
-                           details);
+                           details,
+                           agent.online);
       }
       // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
       //          << QString::fromStdString(agent.system.ip)

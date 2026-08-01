@@ -136,11 +136,11 @@ void MainWindow::buildContentArea() {
                                       {"rx", "tx"}, {1}),
                           1, 0);
 
-    chartsGrid->addWidget(createChart("Disk I/O — sda",
-                                      {{20, 35, 30, 45, 40, 55, 35, 50, 40},
-                                       {5, 8, 6, 10, 7, 12, 8, 14, 9}},
-                                      {"read", "write"}),
-                          1, 1);
+    m_diskChart = createChart("Disk I/O — sda",
+                              {{20, 35, 30, 45, 40, 55, 35, 50, 40},
+                               {5, 8, 6, 10, 7, 12, 8, 14, 9}},
+                              {"read", "write"});
+    chartsGrid->addWidget(m_diskChart, 1, 1);
 
     ui->contentLayout->insertLayout(0, chartsGrid);
 
@@ -233,6 +233,17 @@ void MainWindow::onMetricsReceived(const QString& target,
         m_cpuHistory.append(cores);
         m_cpuChart->setSeries(m_cpuHistory.series());
     }
+
+    //DISK
+    double diskRead = 0.0;
+    double diskWrite = 0.0;
+    for (const DiskSample& disk : sample.disks) {
+        diskRead += disk.read_bytes_per_sec;
+        diskWrite += disk.write_bytes_per_sec;
+    }
+
+    m_diskHistory.append({diskRead / 1024.0 / 1024.0, diskWrite / 1024.0 / 1024.0});
+    m_diskChart->setSeries(m_diskHistory.series());
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

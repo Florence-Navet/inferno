@@ -101,7 +101,12 @@ class MainWindow : public QMainWindow {
 
   LineChartWidget* m_cpuChart = nullptr;
 
+  LineChartWidget* m_diskChart = nullptr;
+
   SeriesHistory m_memoryHistory{1, 20}; //20 historics points
+
+  SeriesHistory m_diskHistory{2, 20};
+
   SeriesHistory m_cpuHistory{4, 20};
 
 

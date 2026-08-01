@@ -116,6 +116,8 @@ private:
 
     LineChartWidget* m_networkChart = nullptr;
 
+    QLabel* m_onlineLabel = nullptr;
+
     SeriesHistory m_memoryHistory{1, 20}; //20 historics points
 
     SeriesHistory m_diskHistory{2, 20};

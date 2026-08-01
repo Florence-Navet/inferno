@@ -237,7 +237,8 @@ void MainWindow::buildStatusBar() {
 
     ui->statusbar->setContentsMargins(280, 0, 16, 0);
 
-    ui->statusbar->addWidget(makeLabel("● 4 agents online", "statusItem"));
+    m_onlineLabel = makeLabel("● 0 agents online", "statusItem");
+    ui->statusbar->addWidget(m_onlineLabel);
 
     ui->statusbar->addWidget(makeLabel("last sample: 0.3 s ago", "statusItem"));
     // side
@@ -262,6 +263,7 @@ void MainWindow::addAgentItem(const QString& id, const QString& name,
     item->setSizeHint(widget->sizeHint());
     ui->agentList->setItemWidget(item, widget);
     updateAgentCounters();
+
 }
 
 void MainWindow::showOutput(const QString& text) {
@@ -369,4 +371,7 @@ void MainWindow::updateAgentCounters() {
 
     ui->agentsLabel->setText(QString("AGENTS (%1)").arg(total));
     ui->offlineLabel->setText(QString("%1 agent offline").arg(offline));
+
+    if (m_onlineLabel)
+        m_onlineLabel->setText(QString("● %1 agents online").arg(total - offline));
 }

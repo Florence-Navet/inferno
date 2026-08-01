@@ -1,5 +1,6 @@
 #include "serverclient.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QHostInfo>
 #include <QSocketNotifier>
@@ -9,6 +10,7 @@
 #include "codec/protocol_parser.hpp"
 #include "codec/protocol_serializer.hpp"
 #include "dashboardsession.h"
+#include "env_helper.hpp"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
 
@@ -43,9 +45,25 @@ ServerClient::ServerClient(QObject* parent) : QObject{parent} {}
 ServerClient::~ServerClient() = default;
 
 bool ServerClient::connectToServer(const QString& host, quint16 port) {
-  std::unique_ptr<ISocket> socket = SocketFactory::createTCP();
-  // std::unique_ptr<ISocket> socket =
-  // TLSSocketFactory::createClient("certs/ca.crt");
+  qDebug() << "before creating tls socket";
+  bool tlsEnabled = EnvHelper::resolveTlsEnabled();
+  std::unique_ptr<ISocket> socket;
+  if (tlsEnabled) {
+    qDebug() << "tls enabled";
+    QString certPath =
+        QCoreApplication::applicationDirPath() + "/../../certs/ca.crt";
+    // certPath = QFileInfo(certPath).absoluteFilePath();
+    socket = TLSSocketFactory::createClient(certPath.toStdString());
+  } else {
+    qDebug() << "tls disabled";
+    socket = SocketFactory::createTCP();
+  }
+
+  if (!socket) {
+    qDebug() << "socket creation failed";
+    return false;
+  }
+
   if (!socket->connect(host.toStdString(), port)) {
     qDebug() << "connection failed";
     return false;
@@ -146,6 +164,9 @@ void ServerClient::handleFrame(const Frame& frame) {
                << "| cles:" << m_lastCommandByTarget.keys();
 
       if (type == CommandType::RUNNING_PROCESSES) {
+        // dated upstream
+
+        qDebug() << "waiting for running processes to be parsed";
         const std::vector<ProcessInfo> processes =
             ProtocolParser::parseProcessInfoList(response.response.data);
         qDebug() << "process list:" << processes.size() << "entries";

@@ -2,25 +2,28 @@
 #define FAKE_AGENT_REPOSITORY_HPP
 
 #include <iostream>
+#include <chrono>
 
 #include "repository/agent_repository.hpp"
 // agent_repository.hpp
 class FakeAgentRepository : public IAgentRepository {
  private:
-  IDatabaseConnection& db_;  // shared reference
   std::map<std::string, RegisterPayload> agents_;
 
  public:
-  explicit FakeAgentRepository(IDatabaseConnection& db) : db_(db) {}
+  explicit FakeAgentRepository() {}
 
   void save(const RegisterPayload& agent) override {
     agents_[agent.id] = agent;  // Upsert
   };
-  void setLastSeen(const std::string& id,
-                   const std::string& timestampIso) override {
-    if (agents_.find(id) != agents_.end()) {
-      // In real code, would update DB; here just silently succeed
-      std::cout << "updated last seen : "<< timestampIso <<"\n";
+  void setLastSeen(const std::string& id) override {
+    auto it = agents_.find(id);
+    if (it != agents_.end()) {
+      std::ostringstream oss;
+      oss << std::chrono::system_clock::now();
+      it->second.last_seen = oss.str();
+      std::cout << "updated last seen of: " << id << " at " << it->second.last_seen
+                << "\n";
     }
   };
   std::vector<RegisterPayload> findAll() override {

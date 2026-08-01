@@ -14,9 +14,13 @@ void AgentService::registerAgent(AgentConnection& agent,
   agent.setId(agentInfo.mac);
   sessionManager_.recordAgentTarget(agent.getFd(), agent.getId());
 
-  // RegisterPayload registerToSent;
   registerToSent.system = agentInfo;
   registerToSent.id = agent.getId();
+  // TODO retrieve last_seen from repository;
+  registerToSent.last_seen = "placeholder";
+  // TODO retrieve registered_at from repository, save method could return it?;
+  registerToSent.registered_at = "placeholder";
+
 
   // // Save()
 

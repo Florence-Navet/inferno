@@ -107,8 +107,3 @@ void Reactor::onAgentDisconnected(int fileDescriptor) {
   }
 }
 
-// void Reactor::onAgentDisconnected(int fileDescriptor) {
-//   // poller_.remove(fileDescriptor);
-//   // sessionManager_.removeAgent(fileDescriptor);
-//   // But dispatcher doesn't know!
-// }

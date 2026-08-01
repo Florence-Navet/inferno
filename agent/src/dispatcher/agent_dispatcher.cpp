@@ -97,8 +97,15 @@ void AgentDispatcher::onError(const std::vector<std::uint8_t>& payload) {
 }
 void AgentDispatcher::onDisconnect(AgentSession& session) {
   Logger::info("agent dispatcher", "received DISCONNECT");
-  session.close();  // check for valid socket already inside close method
-                    // session.socket.reset();
+  if (metricsController_.get()->isActive()) {
+    CommandPayload cmd;
+    cmd.type = CommandType::STOP_METRICS;
+    stopMetrics(session, cmd);
+  }
+  session.setDisconnectRequest(true);
+  // session.close();  // check for valid socket already inside close method
+  // session.socket.reset();
+  // connected_ = false;
 }
 
 void AgentDispatcher::onCommand(AgentSession& session,

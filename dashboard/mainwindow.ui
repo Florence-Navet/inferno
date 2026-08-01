@@ -132,6 +132,10 @@ QLabel#statusBadge {
 background-color: #d6ece1;
 color: #3f6b58;
 }
+QLabel#statusBadge[streaming="false"] {
+background-color: #f5dcdb;
+color: #8c3b38;
+}
 QLabel#agentItemName {
 color: #4C3B4D;
 font-size: 13px;
@@ -145,7 +149,7 @@ color: #89B6A5;
 font-size: 14px;
 }
 QLabel#agentStatusDot[online="false"] {
-color: #6A706E;
+color: #C0504D;
 }QFrame#metricCard {
 background-color: #ffffff;
 border: 1px solid #e2e6e4;
@@ -339,7 +343,7 @@ background-color: #eef0ef;
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>df -h</string>
+                <string>disk</string>
                </property>
               </widget>
              </item>
@@ -352,7 +356,7 @@ background-color: #eef0ef;
                          </sizepolicy>
                         </property>
                         <property name="text">
-                         <string>netstat -tulpn</string>
+                         <string>network</string>
                         </property>
                        </widget>
                       </item>
@@ -365,7 +369,7 @@ background-color: #eef0ef;
                          </sizepolicy>
                         </property>
                         <property name="text">
-                         <string>top -bn1</string>
+                         <string>load</string>
                         </property>
                        </widget>
                       </item>

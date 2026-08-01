@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QHostInfo>
 #include <QSocketNotifier>
+#include <QFileInfo>
 
 #include "codec/metrics_parser.hpp"
 #include "codec/protocol_helper.hpp"
@@ -13,6 +14,30 @@
 #include "env_helper.hpp"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
+
+/// Returns the first existing path to the CA certificate, or an empty string.
+static QString resolveCertPath() {
+
+    const QString base = QCoreApplication::applicationDirPath();
+
+    const QStringList candidates = {
+        base + "/../../certs/ca.crt",
+        base + "/../../../certs/ca.crt",
+        base + "/certs/ca.crt"
+    };
+
+    for (const QString &path : candidates) {
+        if (QFileInfo::exists(path)) {
+            qDebug() << "using certificate:" << path;
+            return path;
+        }
+    }
+
+    qDebug() << "no certificate found";
+
+
+    return QString();
+}
 
 static QString osTypeToString(OSType type) {
   switch (type) {
@@ -50,10 +75,21 @@ bool ServerClient::connectToServer(const QString& host, quint16 port) {
   std::unique_ptr<ISocket> socket;
   if (tlsEnabled) {
     qDebug() << "tls enabled";
-    QString certPath =
+
+      /*QString certPath =
+
         QCoreApplication::applicationDirPath() + "/../../certs/ca.crt";
     // certPath = QFileInfo(certPath).absoluteFilePath();
+    socket = TLSSocketFactory::createClient(certPath.toStdString());*/
+
+    const QString certPath = resolveCertPath();
+    if (certPath.isEmpty()) {
+        qDebug() << "cannot connect with TLS without a certificate";
+        return false;
+    }
+
     socket = TLSSocketFactory::createClient(certPath.toStdString());
+
   } else {
     qDebug() << "tls disabled";
     socket = SocketFactory::createTCP();
@@ -149,13 +185,6 @@ void ServerClient::handleFrame(const Frame& frame) {
       const DashboardResponse response =
           ProtocolParser::parseDashboardResponse(frame.payload);
 
-      // qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
-      //          << "id" << response.response.id << "status"
-      //          << static_cast<int>(response.response.status) << "chunk"
-      //          << response.response.chunk_index << "/"
-      //          << response.response.total_chunks << "size"
-      //          << response.response.data.size();
-
       const QString target = QString::fromStdString(response.target);
       const CommandType type =
           m_lastCommandByTarget.value(target, CommandType::UNKNOWN);
@@ -163,18 +192,35 @@ void ServerClient::handleFrame(const Frame& frame) {
                << "| type:" << static_cast<int>(type)
                << "| cles:" << m_lastCommandByTarget.keys();
 
-      if (type == CommandType::RUNNING_PROCESSES) {
-        // dated upstream
 
-        qDebug() << "waiting for running processes to be parsed";
-        const std::vector<ProcessInfo> processes =
-            ProtocolParser::parseProcessInfoList(response.response.data);
-        qDebug() << "process list:" << processes.size() << "entries";
-        emit processListReceived(target, processes);
-      } else {
-        emit responseReceived(
-            target, QString::fromStdString(
-                        ProtocolParser::toString(response.response.data)));
+      bool parsed = false;
+      if (type == CommandType::RUNNING_PROCESSES) {
+          try {
+              const std::vector<ProcessInfo> processes =
+                  ProtocolParser::parseProcessInfoList(response.response.data);
+              qDebug() << "process list:" << processes.size() << "entries";
+              emit processListReceived(target, processes);
+              parsed = true;
+          } catch (const std::exception& e) {
+              qDebug() << "not a process list:" << e.what();
+          }
+      }
+
+      if (type == CommandType::OS_INFO) {
+          try {
+              const OsInfoPayload info =
+                  ProtocolParser::parseOsInfoPayload(response.response.data);
+              emit osInfoReceived(target, info);
+              parsed = true;
+          } catch (const std::exception& e) {
+              qDebug() << "not an os info payload:" << e.what();
+          }
+      }
+
+      if (!parsed) {
+          emit responseReceived(
+              target, QString::fromStdString(
+                  ProtocolParser::toString(response.response.data)));
       }
       break;
     }
@@ -220,31 +266,24 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
         // ... emit signals for each agent
         const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
 
-        const QString details =
-            QString("%1 · %2 · %3")
-                .arg(osTypeToString(agent.system.os_type),
-                     archToString(agent.system.arch),
-                     QString::fromStdString(agent.system.ip));
+        const QString os = QString("%1 · %2")
+                               .arg(osTypeToString(agent.system.os_type),
+                                    archToString(agent.system.arch));
 
         emit agentReceived(QString::fromStdString(id),
-                           QString::fromStdString(agent.system.hostname),
-                           details, agent.online);
+                           QString::fromStdString(agent.system.hostname), os,
+                           QString::fromStdString(agent.system.ip),
+                           agent.online);
+
+
       }
-      // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
-      //          << QString::fromStdString(agent.system.ip)
-      //          << "id:" << QString::fromStdString(agent.id);
 
       break;
     }
     case DataType::METRICS_SAMPLE: {
       const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
 
-      // qDebug() << "CPU" << sample.cpu.total_percent << "%"
-      //          << "cores" << sample.cpu.per_core.size()
-      //          << "mem" << sample.mem.phys_used << "/" <<
-      //          sample.mem.phys_total
-      //          << "disks" << sample.disks.size()
-      // << "ifaces" << sample.interfaces.size();
+
       emit metricsReceived(QString::fromStdString(agentId), sample);
       break;
     }
@@ -287,4 +326,27 @@ void ServerClient::sendCommand(const QString& target, CommandType type,
   } catch (const std::exception& e) {
     qDebug() << "send command failed:" << e.what();
   }
+}
+
+void ServerClient::sendDisconnect(const QString& target) {
+    if (!m_session || target.isEmpty()) {
+        qDebug() << "no agent selected";
+        return;
+    }
+
+    DashboardDisconnect payload;
+    payload.target = target.toStdString();
+
+    try {
+        const std::vector<std::uint8_t> data =
+            ProtocolSerializer::serializeDashboardDisconnect(payload);
+
+        const Frame frame{
+                          ProtocolHelper::createHeader(MessageType::DISCONNECT, data), data};
+
+        m_session->sendFrame(frame);
+        qDebug() << "sent disconnect to" << target;
+    } catch (const std::exception& e) {
+        qDebug() << "send disconnect failed:" << e.what();
+    }
 }

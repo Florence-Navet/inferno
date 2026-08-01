@@ -22,14 +22,20 @@ class ServerClient : public QObject {
   void sendCommand(const QString& target, CommandType type,
                    const QString& data);
 
+  /// Asks the server to disconnect an agent.
+  void sendDisconnect(const QString& target);
+
  signals:
-  void agentReceived(const QString& id, const QString& name,
-                     const QString& details, bool online);
+  void agentReceived(const QString& id, const QString& name,const QString& os,
+                     const QString& ip, bool online);
   void responseReceived(const QString& target, const QString& text);
   void processListReceived(const QString& target,
                            const std::vector<ProcessInfo>& processes);
   /// Emitted once per metrics sample received from an agent.
   void metricsReceived(const QString& target, const MetricsSample& sample);
+
+  /// Emitted when an agent answers an OS_INFO command.
+  void osInfoReceived(const QString& target, const OsInfoPayload& info);
 
  private:
   std::unique_ptr<DashboardSession> m_session;

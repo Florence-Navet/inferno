@@ -23,6 +23,9 @@ class MetricCardsWidget : public QWidget {
   /// Updates a metric card subtitle by key.
   void updateSubtitle(const QString &key, const QString &value);
 
+  /// Resets every card to a placeholder value.
+  void clear();
+
  private:
   /// Creates one metric card (title + big value + subtitle).
   QWidget* createMetricCard(const QString& key, const QString& title,

@@ -46,6 +46,19 @@ void LineChartWidget::setTopRight(const QString &text)
     m_topRight = text;
     update();
 }
+
+void LineChartWidget::setYMax(double max)
+{
+    m_yMax = max;
+    update();
+}
+
+void LineChartWidget::setYUnit(const QString &unit)
+{
+    m_yUnit = unit;
+    update();
+}
+
 void LineChartWidget::paintEvent(QPaintEvent *event)
 {
     Q_UNUSED(event);
@@ -112,11 +125,11 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         legendX += painter.fontMetrics().horizontalAdvance(m_labels[i]) + 16;
     }
 
-
-    // TODO: make the Y scale configurable per chart (0-100 for CPU %,
     // but GB for memory, MB/s for I/O). Hardcoded to percentages for now.
-    double minVal = 0.0;
-    double maxVal = 100.0;
+    // double minVal = 0.0;
+    // double maxVal = 100.0;
+    const double minVal = 0.0;
+    const double maxVal = m_yMax;
 
     //hache et graduation
 
@@ -126,11 +139,16 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         painter.setPen(QPen(Theme::GridLine, 1));
         painter.drawLine(QPointF(plotLeft, y), QPointF(plotLeft + plotWidth, y));
 
-        int percent = 100 - i * 50;
+        // int percent = 100 - i * 50;
+        // painter.setPen(Theme::MutedText);
+        // painter.drawText(QRectF(0, y - 8, plotLeft - 4, 16),
+        //                  Qt::AlignRight | Qt::AlignVCenter,
+        //                  QString::number(percent) + "%");
+        const double value = m_yMax - (m_yMax / 2) * i;
         painter.setPen(Theme::MutedText);
         painter.drawText(QRectF(0, y - 8, plotLeft - 4, 16),
                          Qt::AlignRight | Qt::AlignVCenter,
-                         QString::number(percent) + "%");
+                         QString::number(value, 'g', 3) + m_yUnit);
     }
 
     const QStringList xLabels = { "-20s", "-10s", "now" };
@@ -154,7 +172,8 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         QPolygonF points;
         for (int i = 0; i < serie.size(); ++i) {
             double x = plotLeft + i * (plotWidth / (serie.size() - 1));
-            double y = plotTop + plotHeight - (serie[i] - minVal) / (maxVal - minVal) * plotHeight;
+            const double value = qBound(minVal, serie[i], maxVal);
+            double y = plotTop + plotHeight - (value - minVal) / (maxVal - minVal) * plotHeight;
             points << QPointF(x, y);
         }
 

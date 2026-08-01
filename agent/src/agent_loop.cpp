@@ -100,6 +100,9 @@ void AgentLoop::run() {
           onError();
         } else if (event.readable) {
           onReadable();
+        } else if (event.error) {
+          Logger::warn("agent loop", "has error");
+          // onAgentDisconnected(event.fileDescriptor);
         }
       }
     }
@@ -119,6 +122,7 @@ void AgentLoop::run() {
 // On failure: just log. The loop will call tryReconnect() again after
 //             the next retryMs_ timeout. Nothing to clean up.
 void AgentLoop::tryReconnect() {
+  Logger::warn("agent loop", "try reconnect");
   session_.resetSession();
 
   if (session_.connect(host_, port_)) {
@@ -184,9 +188,13 @@ void AgentLoop::onReadable() {
       //   frame = session_.tryExtractFrame();
     }
 
-    if (!session_.isValid()) {
+    if (session_.isDisconnectRequested() || !session_.isValid()) {
       onDisconnect();
     }
+
+    // if (!session_.isValid()) {
+    //   onDisconnect();
+    // }
   }
 }
 

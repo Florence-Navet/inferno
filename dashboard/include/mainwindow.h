@@ -23,96 +23,101 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
-  Q_OBJECT
+    Q_OBJECT
 
- public:
-  MainWindow(QWidget* parent = nullptr);
-  ~MainWindow();
+public:
+    MainWindow(QWidget* parent = nullptr);
+    ~MainWindow();
 
- private slots:
-  /// Fills the metric cards with the latest sample.
-  void onMetricsReceived(const QString &target, const MetricsSample &sample);
+private slots:
+    /// Fills the metric cards with the latest sample.
+    void onMetricsReceived(const QString &target, const MetricsSample &sample);
 
- protected:
-  void closeEvent(QCloseEvent *event) override;
+    /// Fills the OS badge and the console from an OS_INFO answer.
+    void onOsInfoReceived(const QString &target, const OsInfoPayload &info);
 
- private:
-  ServerClient* m_client = nullptr;
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
-  Ui::MainWindow* ui;
-  /// Fills the agent list. TODO: replace hardcoded data with server AGENTS
-  /// payload.
-  void populateAgents();
+private:
+    ServerClient* m_client = nullptr;
 
-  /// Adds one rich agent row to the list.
-  void addAgentItem(const QString& id, const QString& name, const QString& os,
-                    const QString& ip, bool online);
+    Ui::MainWindow* ui;
+    /// Fills the agent list. TODO: replace hardcoded data with server AGENTS
+    /// payload.
+    void populateAgents();
 
-  /// Displays command output. TODO: feed with DashboardResponse data.
-  void showOutput(const QString& text);
+    /// Adds one rich agent row to the list.
+    void addAgentItem(const QString& id, const QString& name, const QString& os,
+                      const QString& ip, bool online);
 
-  /// Refreshes the header status badge from the current streaming state.
-  void updateStatusBadge();
+    /// Displays command output. TODO: feed with DashboardResponse data.
+    void showOutput(const QString& text);
 
-  /// Builds the metric cards, table and console inside contentArea
-  void buildContentArea();
+    /// Refreshes the header status badge from the current streaming state.
+    void updateStatusBadge();
 
-  /// Creates one metric card (title + big value + subtitle).
-  QWidget* createMetricCard(const QString& key, const QString& title,
-                            const QString& value, const QString& subtitle);
+    /// Builds the metric cards, table and console inside contentArea
+    void buildContentArea();
 
-  LineChartWidget* createChart(const QString& title,
-                               const QVector<QVector<double>>& series,
-                               const QStringList& labels,
-                               const QVector<int>& dashed = {},
-                               const QVector<int>& filled = {},
-                               const QString& topRight = {});
+    /// Creates one metric card (title + big value + subtitle).
+    QWidget* createMetricCard(const QString& key, const QString& title,
+                              const QString& value, const QString& subtitle);
 
-  QString m_target;
+    LineChartWidget* createChart(const QString& title,
+                                 const QVector<QVector<double>>& series,
+                                 const QStringList& labels,
+                                 const QVector<int>& dashed = {},
+                                 const QVector<int>& filled = {},
+                                 const QString& topRight = {});
 
-  QString m_streamingTarget;
+    QString m_target;
 
-  QHash<QString, QLabel*> m_metricValues;
+    QString m_streamingTarget;
 
-  /// Updates a metric card value by key. TODO: call from server DataPayload.
-  void updateMetric(const QString& key, const QString& value);
+    bool m_osBadgeDetailed = false;
 
-  /// Builds one process table row from a ProcessInfo.
-  // QWidget *createProcessRow(const ProcessInfo &process, bool isHeader =
-  // false);
+    QHash<QString, QLabel*> m_metricValues;
 
-  /// Builds the RUNNING PROCESSES section (title + header + rows).
-  QWidget* createProcessTable();
+    /// Updates a metric card value by key. TODO: call from server DataPayload.
+    void updateMetric(const QString& key, const QString& value);
 
-  /// Creates a mini progress bar (0-100) for the process table.
-  QWidget* createBar(int value);
+    /// Builds one process table row from a ProcessInfo.
+    // QWidget *createProcessRow(const ProcessInfo &process, bool isHeader =
+    // false);
 
-  /// Creates a thin horizontal separator line.
-  QWidget* createSeparator();
+    /// Builds the RUNNING PROCESSES section (title + header + rows).
+    QWidget* createProcessTable();
 
-  /// Fills the bottom status bar. TODO: feed with live server status.
-  void buildStatusBar();
+    /// Creates a mini progress bar (0-100) for the process table.
+    QWidget* createBar(int value);
 
-  ProcessTableWidget* m_processTable = nullptr;
+    /// Creates a thin horizontal separator line.
+    QWidget* createSeparator();
 
-  MetricCardsWidget* m_metricCards = nullptr;
+    /// Fills the bottom status bar. TODO: feed with live server status.
+    void buildStatusBar();
 
-  LineChartWidget* m_memoryChart = nullptr;
+    ProcessTableWidget* m_processTable = nullptr;
 
-  LineChartWidget* m_cpuChart = nullptr;
+    MetricCardsWidget* m_metricCards = nullptr;
 
-  LineChartWidget* m_diskChart = nullptr;
+    LineChartWidget* m_memoryChart = nullptr;
 
-  LineChartWidget* m_networkChart = nullptr;
+    LineChartWidget* m_cpuChart = nullptr;
 
-  SeriesHistory m_memoryHistory{1, 20}; //20 historics points
+    LineChartWidget* m_diskChart = nullptr;
 
-  SeriesHistory m_diskHistory{2, 20};
+    LineChartWidget* m_networkChart = nullptr;
+
+    SeriesHistory m_memoryHistory{1, 20}; //20 historics points
+
+    SeriesHistory m_diskHistory{2, 20};
 
 
-  SeriesHistory m_networkHistory{2, 20};
+    SeriesHistory m_networkHistory{2, 20};
 
-  SeriesHistory m_cpuHistory{4, 20};
+    SeriesHistory m_cpuHistory{4, 20};
 
 
 

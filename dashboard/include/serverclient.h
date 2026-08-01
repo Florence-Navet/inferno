@@ -31,6 +31,9 @@ class ServerClient : public QObject {
   /// Emitted once per metrics sample received from an agent.
   void metricsReceived(const QString& target, const MetricsSample& sample);
 
+  /// Emitted when an agent answers an OS_INFO command.
+  void osInfoReceived(const QString& target, const OsInfoPayload& info);
+
  private:
   std::unique_ptr<DashboardSession> m_session;
   QSocketNotifier* m_notifier = nullptr;

@@ -97,6 +97,7 @@ void Reactor::onAgentReady(int fileDescriptor) {
 }
 
 void Reactor::onAgentDisconnected(int fileDescriptor) {
+  Logger::info("reactor", "disconnection clean up");
   poller_.remove(fileDescriptor);
   if (fileDescriptor == sessionManager_.getDashboardFd()) {
     sessionManager_.resetDashboard();

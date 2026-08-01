@@ -162,26 +162,6 @@ void ServerDispatcher::onResponse(AgentConnection& agent,
   if (sessionManager_.isDashboard()) {
     sessionManager_.getDashboard().sendFrame(frame);
   }
-
-  // BEFORE response_service.cpp was added, the dispatcher did the following:
-  // dashResponse.target = commandService_.getTarget(response.id);
-  // dashResponse.response = response;
-
-  // std::vector<std::uint8_t> dashPayload =
-  //     ProtocolSerializer::serializeDashboardResponse(dashResponse);
-  // Frame frame = {
-  //     ProtocolHelper::createHeader(MessageType::RESPONSE, dashPayload),
-  //     dashPayload};
-
-  // if (sessionManager_.isDashboard()) {
-  //   sessionManager_.getDashboard().sendFrame(frame);
-  // }
-
-  // // Clean up when last chunk received
-  // if (response.chunk_index + 1 == response.total_chunks) {
-  //   // commandTargets_.erase(commandId);
-  //   commandService_.deleteTarget(response.id);
-  // }
 }
 
 // DATA messages are pushed by the agent without a prior COMMAND
@@ -249,7 +229,9 @@ void ServerDispatcher::onDisconnect(AgentConnection& connection) {
   what << "[DISCONNECT] " << connection.getId();
   Logger::info("server dispatcher", what.str());
   // maybe handle the rest of pending response and communication before closing
-  // anything?
+  // anything? Should be handled by reactor that calls onAgentDisconnected
+  connection.sendFrame(
+      {ProtocolHelper::createHeader(MessageType::DISCONNECT, {}), {}});
 }
 
 // ── Outgoing senders ─────────────────────────────────────────

@@ -72,6 +72,8 @@ MainWindow::MainWindow(QWidget* parent)
                     m_memoryHistory.clear();
                     m_networkHistory.clear();
                     m_diskHistory.clear();
+
+                    m_processTable->setProcesses({});
                 }
 
                 m_target = clicked;

@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QHostInfo>
 #include <QSocketNotifier>
+#include <QFileInfo>
 
 #include "codec/metrics_parser.hpp"
 #include "codec/protocol_helper.hpp"
@@ -13,6 +14,30 @@
 #include "env_helper.hpp"
 #include "socket/socket_factory.hpp"
 #include "socket/tls_socket_factory.hpp"
+
+/// Returns the first existing path to the CA certificate, or an empty string.
+static QString resolveCertPath() {
+
+    const QString base = QCoreApplication::applicationDirPath();
+
+    const QStringList candidates = {
+        base + "/../../certs/ca.crt",
+        base + "/../../../certs/ca.crt",
+        base + "/certs/ca.crt"
+    };
+
+    for (const QString &path : candidates) {
+        if (QFileInfo::exists(path)) {
+            qDebug() << "using certificate:" << path;
+            return path;
+        }
+    }
+
+    qDebug() << "no certificate found";
+
+
+    return QString();
+}
 
 static QString osTypeToString(OSType type) {
   switch (type) {
@@ -50,10 +75,21 @@ bool ServerClient::connectToServer(const QString& host, quint16 port) {
   std::unique_ptr<ISocket> socket;
   if (tlsEnabled) {
     qDebug() << "tls enabled";
-    QString certPath =
+
+      /*QString certPath =
+
         QCoreApplication::applicationDirPath() + "/../../certs/ca.crt";
     // certPath = QFileInfo(certPath).absoluteFilePath();
+    socket = TLSSocketFactory::createClient(certPath.toStdString());*/
+
+    const QString certPath = resolveCertPath();
+    if (certPath.isEmpty()) {
+        qDebug() << "cannot connect with TLS without a certificate";
+        return false;
+    }
+
     socket = TLSSocketFactory::createClient(certPath.toStdString());
+
   } else {
     qDebug() << "tls disabled";
     socket = SocketFactory::createTCP();

@@ -343,7 +343,7 @@ background-color: #eef0ef;
                 </sizepolicy>
                </property>
                <property name="text">
-                <string>df -h</string>
+                <string>disk</string>
                </property>
               </widget>
              </item>
@@ -356,7 +356,7 @@ background-color: #eef0ef;
                          </sizepolicy>
                         </property>
                         <property name="text">
-                         <string>netstat -tulpn</string>
+                         <string>network</string>
                         </property>
                        </widget>
                       </item>
@@ -369,7 +369,7 @@ background-color: #eef0ef;
                          </sizepolicy>
                         </property>
                         <property name="text">
-                         <string>top -bn1</string>
+                         <string>load</string>
                         </property>
                        </widget>
                       </item>

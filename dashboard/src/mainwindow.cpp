@@ -46,11 +46,14 @@ MainWindow::MainWindow(QWidget* parent)
 
     const QVector<QPair<QPushButton*, QString>> presets = {
                                                             {ui->presetDfButton, "df -h"},
-                                                            {ui->presetNetstatButton, "netstat -tulpn"},
-                                                            {ui->presetTopButton, "top -bn1"}};
+                                                            {ui->presetNetstatButton, "cat /proc/net/dev"}, // comptor by interface
+                                                            {ui->presetTopButton, "cat /proc/loadavg"}}; // charge + nb of process
+
     for (const QPair<QPushButton*, QString>& preset : presets) {
-        connect(preset.first, &QPushButton::clicked, this,
-                [this, preset]() { ui->commandEdit->setText(preset.second); });
+        connect(preset.first, &QPushButton::clicked, this, [this, preset]() {
+            ui->commandEdit->setText(preset.second);
+            m_client->sendCommand(m_target, CommandType::SHELL, preset.second);
+        });
     }
     connect(ui->agentList, &QListWidget::itemClicked, this,
             [this](QListWidgetItem* item) {

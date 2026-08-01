@@ -305,8 +305,7 @@ where cmake
 ```
 #### Install OpenSSL compatible with Qt MinGW
 
-Install MSYS2 from: https://www.msys2.org/
-
+Install **MSYS2** (a separate tool, independent from Qt) from: https://www.msys2.org/ 
 Open **MSYS2 MinGW 64-bit terminal** (NOT UCRT64, NOT CLANG64):
 
 ```bash

@@ -86,6 +86,10 @@ MainWindow::MainWindow(QWidget* parent)
 
                 m_client->sendCommand(m_target, CommandType::START_METRICS,
                                       QString());
+
+                m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES,
+                                      QString());
+
                 m_streamingTarget = m_target;
                 updateStatusBadge();
             });

@@ -149,13 +149,6 @@ void ServerClient::handleFrame(const Frame& frame) {
       const DashboardResponse response =
           ProtocolParser::parseDashboardResponse(frame.payload);
 
-      // qDebug() << "RESPONSE from" << QString::fromStdString(response.target)
-      //          << "id" << response.response.id << "status"
-      //          << static_cast<int>(response.response.status) << "chunk"
-      //          << response.response.chunk_index << "/"
-      //          << response.response.total_chunks << "size"
-      //          << response.response.data.size();
-
       const QString target = QString::fromStdString(response.target);
       const CommandType type =
           m_lastCommandByTarget.value(target, CommandType::UNKNOWN);
@@ -163,18 +156,36 @@ void ServerClient::handleFrame(const Frame& frame) {
                << "| type:" << static_cast<int>(type)
                << "| cles:" << m_lastCommandByTarget.keys();
 
-      if (type == CommandType::RUNNING_PROCESSES) {
-        // dated upstream
+      // if (type == CommandType::RUNNING_PROCESSES) {
+      //   // dated upstream
 
-        qDebug() << "waiting for running processes to be parsed";
-        const std::vector<ProcessInfo> processes =
-            ProtocolParser::parseProcessInfoList(response.response.data);
-        qDebug() << "process list:" << processes.size() << "entries";
-        emit processListReceived(target, processes);
-      } else {
-        emit responseReceived(
-            target, QString::fromStdString(
-                        ProtocolParser::toString(response.response.data)));
+      //   qDebug() << "waiting for running processes to be parsed";
+      //   const std::vector<ProcessInfo> processes =
+      //       ProtocolParser::parseProcessInfoList(response.response.data);
+      //   qDebug() << "process list:" << processes.size() << "entries";
+      //   emit processListReceived(target, processes);
+      // } else {
+      //   emit responseReceived(
+      //       target, QString::fromStdString(
+      //                   ProtocolParser::toString(response.response.data)));
+      // }
+      bool parsed = false;
+      if (type == CommandType::RUNNING_PROCESSES) {
+          try {
+              const std::vector<ProcessInfo> processes =
+                  ProtocolParser::parseProcessInfoList(response.response.data);
+              qDebug() << "process list:" << processes.size() << "entries";
+              emit processListReceived(target, processes);
+              parsed = true;
+          } catch (const std::exception& e) {
+              qDebug() << "not a process list:" << e.what();
+          }
+      }
+
+      if (!parsed) {
+          emit responseReceived(
+              target, QString::fromStdString(
+                  ProtocolParser::toString(response.response.data)));
       }
       break;
     }
@@ -229,31 +240,15 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
                            QString::fromStdString(agent.system.ip),
                            agent.online);
 
-        // const QString details =
-        //     QString("%1 · %2 · %3")
-        //         .arg(osTypeToString(agent.system.os_type),
-        //              archToString(agent.system.arch),
-        //              QString::fromStdString(agent.system.ip));
 
-        // emit agentReceived(QString::fromStdString(id),
-        //                    QString::fromStdString(agent.system.hostname),
-        //                    details, agent.online);
       }
-      // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
-      //          << QString::fromStdString(agent.system.ip)
-      //          << "id:" << QString::fromStdString(agent.id);
 
       break;
     }
     case DataType::METRICS_SAMPLE: {
       const MetricsSample sample = MetricsParser::parseMetricsSample(data.data);
 
-      // qDebug() << "CPU" << sample.cpu.total_percent << "%"
-      //          << "cores" << sample.cpu.per_core.size()
-      //          << "mem" << sample.mem.phys_used << "/" <<
-      //          sample.mem.phys_total
-      //          << "disks" << sample.disks.size()
-      // << "ifaces" << sample.interfaces.size();
+
       emit metricsReceived(QString::fromStdString(agentId), sample);
       break;
     }

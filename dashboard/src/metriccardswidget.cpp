@@ -19,6 +19,8 @@ MetricCardsWidget::MetricCardsWidget(QWidget *parent)
     row->addWidget(createMetricCard("memory", "Memory used", "5.2 GB", "of 16 GB · swap 0.1"));
     row->addWidget(createMetricCard("disk", "Disk read", "12 MB/s", "write 4 MB/s"));
     row->addWidget(createMetricCard("network", "Network rx", "820 KB/s", "tx 210 KB/s"));
+
+    clear();
 }
 
 

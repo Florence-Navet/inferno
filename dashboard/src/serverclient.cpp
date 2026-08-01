@@ -220,15 +220,24 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
         // ... emit signals for each agent
         const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
 
-        const QString details =
-            QString("%1 · %2 · %3")
-                .arg(osTypeToString(agent.system.os_type),
-                     archToString(agent.system.arch),
-                     QString::fromStdString(agent.system.ip));
+        const QString os = QString("%1 · %2")
+                               .arg(osTypeToString(agent.system.os_type),
+                                    archToString(agent.system.arch));
 
         emit agentReceived(QString::fromStdString(id),
-                           QString::fromStdString(agent.system.hostname),
-                           details, agent.online);
+                           QString::fromStdString(agent.system.hostname), os,
+                           QString::fromStdString(agent.system.ip),
+                           agent.online);
+
+        // const QString details =
+        //     QString("%1 · %2 · %3")
+        //         .arg(osTypeToString(agent.system.os_type),
+        //              archToString(agent.system.arch),
+        //              QString::fromStdString(agent.system.ip));
+
+        // emit agentReceived(QString::fromStdString(id),
+        //                    QString::fromStdString(agent.system.hostname),
+        //                    details, agent.online);
       }
       // qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
       //          << QString::fromStdString(agent.system.ip)

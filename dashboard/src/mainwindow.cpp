@@ -53,6 +53,8 @@ MainWindow::MainWindow(QWidget* parent)
                 const QString clicked = item->data(Qt::UserRole).toString();
                 ui->agentNameLabel->setText(
                     item->data(Qt::UserRole + 1).toString());
+                ui->osBadge->setText(item->data(Qt::UserRole + 2).toString());
+                ui->ipBadge->setText(item->data(Qt::UserRole + 3).toString());
                 const bool wasStreaming = (clicked == m_streamingTarget);
 
                 if (!m_streamingTarget.isEmpty()) {
@@ -71,8 +73,8 @@ MainWindow::MainWindow(QWidget* parent)
             });
 
     connect(m_client, &ServerClient::agentReceived, this,
-            [this](const QString& id, const QString& name, const QString& details,
-                   bool online) { addAgentItem(id, name, details, online); });
+            [this](const QString& id, const QString& name, const QString& os,
+                   const QString& ip, bool online) { addAgentItem(id, name, os, ip, online); });
 
     connect(
         m_client, &ServerClient::responseReceived, this,
@@ -181,13 +183,17 @@ void MainWindow::buildStatusBar() {
 }
 
 void MainWindow::addAgentItem(const QString& id, const QString& name,
-                              const QString& details, bool online) {
+                              const QString& os, const QString&ip, bool online) {
+    const QString details = os + " · " + ip;
+
     AgentItemWidget* widget = new AgentItemWidget(this);
     widget->setAgent(name, details, online);
 
     QListWidgetItem* item = new QListWidgetItem(ui->agentList);
     item->setData(Qt::UserRole, id);
     item->setData(Qt::UserRole + 1, name);
+    item->setData(Qt::UserRole + 2, os);
+    item->setData(Qt::UserRole + 3, ip);
     item->setSizeHint(widget->sizeHint());
     ui->agentList->setItemWidget(item, widget);
 }

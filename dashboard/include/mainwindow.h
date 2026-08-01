@@ -44,8 +44,8 @@ class MainWindow : public QMainWindow {
   void populateAgents();
 
   /// Adds one rich agent row to the list.
-  void addAgentItem(const QString& id, const QString& name,
-                    const QString& details, bool online);
+  void addAgentItem(const QString& id, const QString& name, const QString& os,
+                    const QString& ip, bool online);
 
   /// Displays command output. TODO: feed with DashboardResponse data.
   void showOutput(const QString& text);

@@ -23,8 +23,8 @@ class ServerClient : public QObject {
                    const QString& data);
 
  signals:
-  void agentReceived(const QString& id, const QString& name,
-                     const QString& details, bool online);
+  void agentReceived(const QString& id, const QString& name,const QString& os,
+                     const QString& ip, bool online);
   void responseReceived(const QString& target, const QString& text);
   void processListReceived(const QString& target,
                            const std::vector<ProcessInfo>& processes);

@@ -156,19 +156,7 @@ void ServerClient::handleFrame(const Frame& frame) {
                << "| type:" << static_cast<int>(type)
                << "| cles:" << m_lastCommandByTarget.keys();
 
-      // if (type == CommandType::RUNNING_PROCESSES) {
-      //   // dated upstream
 
-      //   qDebug() << "waiting for running processes to be parsed";
-      //   const std::vector<ProcessInfo> processes =
-      //       ProtocolParser::parseProcessInfoList(response.response.data);
-      //   qDebug() << "process list:" << processes.size() << "entries";
-      //   emit processListReceived(target, processes);
-      // } else {
-      //   emit responseReceived(
-      //       target, QString::fromStdString(
-      //                   ProtocolParser::toString(response.response.data)));
-      // }
       bool parsed = false;
       if (type == CommandType::RUNNING_PROCESSES) {
           try {

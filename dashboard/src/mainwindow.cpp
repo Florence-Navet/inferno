@@ -119,6 +119,10 @@ MainWindow::MainWindow(QWidget* parent)
         m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES, QString());
     });
 
+    connect(ui->osInfoButton, &QPushButton::clicked, this, [this]() {
+        m_client->sendCommand(m_target, CommandType::OS_INFO, QString());
+    });
+
     m_client->connectToServer("localhost", EnvHelper::resolvePort());
     //   m_client->connectToServer("localhost", 8888);
 }

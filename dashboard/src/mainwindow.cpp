@@ -161,6 +161,14 @@ void MainWindow::buildContentArea() {
     m_networkChart->setSeries(m_networkHistory.series());
     m_diskChart->setSeries(m_diskHistory.series());
 
+    m_memoryChart->setYMax(20.0);
+
+    m_networkChart->setYMax(50.0);
+    m_networkChart->setYUnit(" KB/s");
+
+    m_diskChart->setYMax(10.0);
+    m_diskChart->setYUnit(" MB/s");
+
     ui->contentLayout->insertLayout(0, chartsGrid);
 
     m_processTable = new ProcessTableWidget(this);
@@ -196,14 +204,10 @@ void MainWindow::buildStatusBar() {
             .arg(Theme::StatusBarBackground.name(), Theme::StatusBarText.name()));
 
     ui->statusbar->setContentsMargins(280, 0, 16, 0);
-    // TODO: replace hardcoded values with live server status
-    // ui->statusbar->addWidget(makeLabel(QString("● %1 agents
-    // online").arg(ui->agentList->count()), "statusItem"));
+
     ui->statusbar->addWidget(makeLabel("● 4 agents online", "statusItem"));
-    // TODO: show elapsed since last MetricsSample (arrives every
-    // METRICS_INTERVAL_MS)
+
     ui->statusbar->addWidget(makeLabel("last sample: 0.3 s ago", "statusItem"));
-    // TODO: db status — no payload exposes it yet, to confirm with the server
     // side
     ui->statusbar->addWidget(makeLabel("db: PostgreSQL connected", "statusItem"));
     // App version — static, not server-driven.
@@ -239,8 +243,14 @@ void MainWindow::onMetricsReceived(const QString& target,
 
 
     // Memory
-    const double memGb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
-    m_memoryHistory.append({memGb});
+    // const double memGb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
+    // m_memoryHistory.append({memGb});
+    double memPercent = 0.0;
+    if (sample.mem.phys_total > 0) // empty so =0
+        memPercent = sample.mem.phys_used * 100.0 / sample.mem.phys_total; //axe Y
+
+    m_memoryHistory.append({memPercent});
+
 
     m_memoryChart->setSeries(m_memoryHistory.series());
 

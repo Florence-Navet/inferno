@@ -19,6 +19,12 @@ public:
     void setFilled(const QVector<int> &indices);
     void setTopRight(const QString &text);
 
+    /// Sets the top of the Y axis. Default is 100.
+    void setYMax(double max);
+
+    /// Sets the suffix shown on Y labels. Default is "%".
+    void setYUnit(const QString &unit);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
@@ -31,6 +37,8 @@ private:
     QVector<int> m_filled;   // indices of series drawn with a filled area
     QString m_topRight;   // small text shown top-right (e.g. "16 GB total")
 
+    double m_yMax = 100.0;
+    QString m_yUnit = "%";
 };
 
 #endif // LINECHARTWIDGET_H

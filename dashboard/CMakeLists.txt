@@ -42,6 +42,9 @@ set(PROJECT_SOURCES
         include/serverclient.h
         src/dashboardsession.cpp
         include/dashboardsession.h
+        src/serieshistory.cpp
+        include/serieshistory.h
+        
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

@@ -3,10 +3,11 @@
 
 #include <QLabel>
 #include <QString>
+#include <QStringList>
 #include <QFrame>
 #include <QDebug>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
+#
 
 MetricCardsWidget::MetricCardsWidget(QWidget *parent)
     : QWidget{parent}
@@ -18,6 +19,8 @@ MetricCardsWidget::MetricCardsWidget(QWidget *parent)
     row->addWidget(createMetricCard("memory", "Memory used", "5.2 GB", "of 16 GB · swap 0.1"));
     row->addWidget(createMetricCard("disk", "Disk read", "12 MB/s", "write 4 MB/s"));
     row->addWidget(createMetricCard("network", "Network rx", "820 KB/s", "tx 210 KB/s"));
+
+    clear();
 }
 
 
@@ -40,7 +43,7 @@ QWidget *MetricCardsWidget::createMetricCard(const QString &key, const QString &
     layout->addWidget(makeLabel(title, "metricTitle"));
     layout->addWidget(valueLabel);
 
-    QLabel *subtitleLabel = makeLabel(value, "metricSubtitle");
+    QLabel *subtitleLabel = makeLabel(subtitle, "metricSubtitle");
     m_metricSubtitles.insert(key, subtitleLabel);
     layout->addWidget(subtitleLabel);
 
@@ -99,4 +102,15 @@ void MetricCardsWidget::updateSubtitle(const QString &key, const QString &value)
         m_metricSubtitles[key]->setText(value);
 
 
+}
+
+
+void MetricCardsWidget::clear()
+{
+    const QStringList keys = {"cpu", "memory", "disk", "network"};
+
+    for (const QString &key : keys) {
+        updateMetric(key, "—");
+        updateSubtitle(key, "—");
+    }
 }

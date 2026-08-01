@@ -60,6 +60,9 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent)
     outer->addWidget(grid);
 
 
+    setProcesses({});
+
+
 }
 
 

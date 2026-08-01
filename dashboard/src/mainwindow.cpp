@@ -152,6 +152,11 @@ void MainWindow::buildContentArea() {
                               {"read", "write"});
     chartsGrid->addWidget(m_diskChart, 1, 1);
 
+    m_cpuChart->setSeries(m_cpuHistory.series());
+    m_memoryChart->setSeries(m_memoryHistory.series());
+    m_networkChart->setSeries(m_networkHistory.series());
+    m_diskChart->setSeries(m_diskHistory.series());
+
     ui->contentLayout->insertLayout(0, chartsGrid);
 
     m_processTable = new ProcessTableWidget(this);

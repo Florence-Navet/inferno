@@ -40,7 +40,7 @@ QWidget *MetricCardsWidget::createMetricCard(const QString &key, const QString &
     layout->addWidget(makeLabel(title, "metricTitle"));
     layout->addWidget(valueLabel);
 
-    QLabel *subtitleLabel = makeLabel(value, "metricSubtitle");
+    QLabel *subtitleLabel = makeLabel(subtitle, "metricSubtitle");
     m_metricSubtitles.insert(key, subtitleLabel);
     layout->addWidget(subtitleLabel);
 

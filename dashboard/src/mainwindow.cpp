@@ -114,20 +114,21 @@ void MainWindow::buildContentArea() {
 
     QGridLayout* chartsGrid = new QGridLayout;
 
-    chartsGrid->addWidget(createChart("CPU — per core (last 20 s)",
-                                      {{30, 45, 40, 60, 55, 50, 65, 70, 60},
-                                       {20, 25, 30, 28, 35, 40, 38, 42, 45},
-                                       {55, 60, 58, 65, 70, 68, 72, 75, 70},
-                                       {10, 12, 15, 14, 18, 16, 20, 22, 19}},
-                                      {"core0", "core1", "core2", "core3"}),
-                          0, 0);
+    m_cpuChart = createChart("CPU — per core (last 20 s)",
+                             {{30, 45, 40, 60, 55, 50, 65, 70, 60},
+                              {20, 25, 30, 28, 35, 40, 38, 42, 45},
+                              {55, 60, 58, 65, 70, 68, 72, 75, 70},
+                              {10, 12, 15, 14, 18, 16, 20, 22, 19}},
+                             {"core0", "core1", "core2", "core3"});
+    chartsGrid->addWidget(m_cpuChart, 0, 0);
 
-    chartsGrid->addWidget(
+
+    m_memoryChart =
         createChart("Memory over time", {{40, 42, 45, 44, 48, 50, 52, 55, 58}},
                     {"used"}, {},  // dashed: none
                     {0},           // filled: series 0
-                    "16 GB total"),
-        0, 1);
+                    "16 GB total");
+    chartsGrid->addWidget(m_memoryChart, 0, 1);
 
     chartsGrid->addWidget(createChart("Network I/O — eth0",
                                       {{30, 50, 40, 60, 55, 70, 50, 65, 45},
@@ -216,6 +217,22 @@ void MainWindow::onMetricsReceived(const QString& target,
     if (target != m_target) return;
 
     m_metricCards->updateFromSample(sample);
+
+
+    // Memory
+    const double memGb = sample.mem.phys_used / 1024.0 / 1024.0 / 1024.0;
+    m_memoryHistory.append({memGb});
+
+    m_memoryChart->setSeries(m_memoryHistory.series());
+
+    //CPU
+    if (sample.cpu.per_core.size() >= 4) {
+        QVector<double> cores;
+        for (int i = 0; i < 4; ++i) cores.append(sample.cpu.per_core[i]);
+
+        m_cpuHistory.append(cores);
+        m_cpuChart->setSeries(m_cpuHistory.series());
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

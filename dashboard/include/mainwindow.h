@@ -8,6 +8,7 @@
 #include <QVector>
 
 #include "protocol/lptf_protocol.hpp"
+#include "serieshistory.h"
 
 class QLabel;
 class LineChartWidget;
@@ -95,6 +96,16 @@ class MainWindow : public QMainWindow {
   ProcessTableWidget* m_processTable = nullptr;
 
   MetricCardsWidget* m_metricCards = nullptr;
+
+  LineChartWidget* m_memoryChart = nullptr;
+
+  LineChartWidget* m_cpuChart = nullptr;
+
+  SeriesHistory m_memoryHistory{1, 20}; //20 historics points
+  SeriesHistory m_cpuHistory{4, 20};
+
+
+
 };
 
 #endif  // MAINWINDOW_H

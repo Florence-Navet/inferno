@@ -172,7 +172,8 @@ void LineChartWidget::paintEvent(QPaintEvent *event)
         QPolygonF points;
         for (int i = 0; i < serie.size(); ++i) {
             double x = plotLeft + i * (plotWidth / (serie.size() - 1));
-            double y = plotTop + plotHeight - (serie[i] - minVal) / (maxVal - minVal) * plotHeight;
+            const double value = qBound(minVal, serie[i], maxVal);
+            double y = plotTop + plotHeight - (value - minVal) / (maxVal - minVal) * plotHeight;
             points << QPointF(x, y);
         }
 

@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QVBoxLayout>
+// #include <QStyle>
 
 AgentItemWidget::AgentItemWidget(QWidget *parent)
     : QWidget(parent)
@@ -11,6 +12,7 @@ AgentItemWidget::AgentItemWidget(QWidget *parent)
     , m_statusDot(new QLabel(this))
 {
     m_statusDot->setObjectName("agentStatusDot");
+    m_statusDot->setText("●");
     m_nameLabel->setObjectName("agentItemName");
     m_detailsLabel->setObjectName("agentItemDetails");
 
@@ -29,4 +31,6 @@ void AgentItemWidget::setAgent(const QString &name, const QString &details, bool
     m_nameLabel->setText(name);
     m_detailsLabel->setText(details);
     m_statusDot->setProperty("online", online);
+    // m_statusDot->style()->unpolish(m_statusDot);
+    // m_statusDot->style()->polish(m_statusDot);
 }

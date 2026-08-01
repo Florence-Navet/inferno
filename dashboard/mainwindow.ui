@@ -145,7 +145,7 @@ color: #89B6A5;
 font-size: 14px;
 }
 QLabel#agentStatusDot[online="false"] {
-color: #6A706E;
+color: #C0504D;
 }QFrame#metricCard {
 background-color: #ffffff;
 border: 1px solid #e2e6e4;

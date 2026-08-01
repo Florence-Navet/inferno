@@ -3,10 +3,11 @@
 
 #include <QLabel>
 #include <QString>
+#include <QStringList>
 #include <QFrame>
 #include <QDebug>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
+#
 
 MetricCardsWidget::MetricCardsWidget(QWidget *parent)
     : QWidget{parent}
@@ -99,4 +100,15 @@ void MetricCardsWidget::updateSubtitle(const QString &key, const QString &value)
         m_metricSubtitles[key]->setText(value);
 
 
+}
+
+
+void MetricCardsWidget::clear()
+{
+    const QStringList keys = {"cpu", "memory", "disk", "network"};
+
+    for (const QString &key : keys) {
+        updateMetric(key, "—");
+        updateSubtitle(key, "—");
+    }
 }

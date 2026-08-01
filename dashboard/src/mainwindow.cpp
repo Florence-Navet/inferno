@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget* parent)
                     m_diskHistory.clear();
 
                     m_processTable->setProcesses({});
+                    m_metricCards->clear();
                 }
 
                 m_target = clicked;

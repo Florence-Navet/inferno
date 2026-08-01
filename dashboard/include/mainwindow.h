@@ -54,6 +54,12 @@ private:
     /// Displays command output. TODO: feed with DashboardResponse data.
     void showOutput(const QString& text);
 
+    /// Empties every widget that shows agent data.
+    void clearAgentView();
+
+    /// Recomputes the agent counters shown in the sidebar.
+    void updateAgentCounters();
+
     /// Refreshes the header status badge from the current streaming state.
     void updateStatusBadge();
 

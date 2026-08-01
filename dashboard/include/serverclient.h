@@ -22,6 +22,9 @@ class ServerClient : public QObject {
   void sendCommand(const QString& target, CommandType type,
                    const QString& data);
 
+  /// Asks the server to disconnect an agent.
+  void sendDisconnect(const QString& target);
+
  signals:
   void agentReceived(const QString& id, const QString& name,const QString& os,
                      const QString& ip, bool online);

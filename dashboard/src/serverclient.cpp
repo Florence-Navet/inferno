@@ -327,3 +327,26 @@ void ServerClient::sendCommand(const QString& target, CommandType type,
     qDebug() << "send command failed:" << e.what();
   }
 }
+
+void ServerClient::sendDisconnect(const QString& target) {
+    if (!m_session || target.isEmpty()) {
+        qDebug() << "no agent selected";
+        return;
+    }
+
+    DashboardDisconnect payload;
+    payload.target = target.toStdString();
+
+    try {
+        const std::vector<std::uint8_t> data =
+            ProtocolSerializer::serializeDashboardDisconnect(payload);
+
+        const Frame frame{
+                          ProtocolHelper::createHeader(MessageType::DISCONNECT, data), data};
+
+        m_session->sendFrame(frame);
+        qDebug() << "sent disconnect to" << target;
+    } catch (const std::exception& e) {
+        qDebug() << "send disconnect failed:" << e.what();
+    }
+}

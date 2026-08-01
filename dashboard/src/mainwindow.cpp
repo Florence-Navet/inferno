@@ -70,16 +70,18 @@ MainWindow::MainWindow(QWidget* parent)
                     m_streamingTarget.clear();
                 }
 
-                if (clicked != m_target) {
-                    m_cpuHistory.clear();
-                    m_memoryHistory.clear();
-                    m_networkHistory.clear();
-                    m_diskHistory.clear();
+                // if (clicked != m_target) {
+                //     m_cpuHistory.clear();
+                //     m_memoryHistory.clear();
+                //     m_networkHistory.clear();
+                //     m_diskHistory.clear();
 
-                    m_processTable->setProcesses({});
-                    m_metricCards->clear();
-                    ui->outputView->clear();
-                }
+                //     m_processTable->setProcesses({});
+                //     m_metricCards->clear();
+                //     ui->outputView->clear();
+                // }
+
+                if (clicked != m_target) clearAgentView();
 
                 m_target = clicked;
 
@@ -133,6 +135,17 @@ MainWindow::MainWindow(QWidget* parent)
 
         m_client->sendCommand(m_target, CommandType::OS_INFO, QString());
     });
+
+    connect(ui->disconnectButton, &QPushButton::clicked, this, [this]() {
+        if (m_target.isEmpty()) return;
+
+        m_client->sendDisconnect(m_target);
+
+        m_streamingTarget.clear();
+        clearAgentView();
+        updateStatusBadge();
+    });
+
 
     m_client->connectToServer("localhost", EnvHelper::resolvePort());
     //   m_client->connectToServer("localhost", 8888);
@@ -245,8 +258,10 @@ void MainWindow::addAgentItem(const QString& id, const QString& name,
     item->setData(Qt::UserRole + 1, name);
     item->setData(Qt::UserRole + 2, os);
     item->setData(Qt::UserRole + 3, ip);
+    item->setData(Qt::UserRole + 4, online);
     item->setSizeHint(widget->sizeHint());
     ui->agentList->setItemWidget(item, widget);
+    updateAgentCounters();
 }
 
 void MainWindow::showOutput(const QString& text) {
@@ -331,4 +346,27 @@ void MainWindow::updateStatusBadge() {
     ui->statusBadge->setProperty("streaming", streaming);
     ui->statusBadge->style()->unpolish(ui->statusBadge);
     ui->statusBadge->style()->polish(ui->statusBadge);
+}
+
+void MainWindow::clearAgentView() {
+    m_cpuHistory.clear();
+    m_memoryHistory.clear();
+    m_networkHistory.clear();
+    m_diskHistory.clear();
+
+    m_processTable->setProcesses({});
+    m_metricCards->clear();
+    ui->outputView->clear();
+}
+
+void MainWindow::updateAgentCounters() {
+    const int total = ui->agentList->count();
+    int offline = 0;
+
+    for (int i = 0; i < total; ++i) {
+        if (!ui->agentList->item(i)->data(Qt::UserRole + 4).toBool()) ++offline;
+    }
+
+    ui->agentsLabel->setText(QString("AGENTS (%1)").arg(total));
+    ui->offlineLabel->setText(QString("%1 agent offline").arg(offline));
 }

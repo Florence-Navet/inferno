@@ -79,14 +79,14 @@ TEST_F(AgentDispatcherTest, should_get_response_payload_when_requested) {
 }
 
 TEST_F(AgentDispatcherTest,
-       should_close_session_and_send_nothing_on_disconnect) {
+       should_set_disconnect_request_to_true_and_send_nothing_on_disconnect) {
   //------- Act
   dispatcher.handleFrame(session,
                          FrameBuilder::makeFrame(MessageType::DISCONNECT));
 
   //------- Assert
-  EXPECT_FALSE(session.isValid());  // socket closed
-  EXPECT_TRUE(spy.nothingSent());   // no reply to DISCONNECT
+  EXPECT_TRUE(session.isDisconnectRequested());  // socket closed
+  EXPECT_TRUE(spy.nothingSent());                // no reply to DISCONNECT
 }
 
 TEST_F(AgentDispatcherTest, should_get_process_list_when_requested) {

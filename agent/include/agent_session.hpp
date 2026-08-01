@@ -39,10 +39,13 @@ class AgentSession : public FrameTransport {
   // ===== Register and registration state related method =====
   RegisterState getRegistered_() const { return registered_; };
   void setRegistered_(RegisterState state) { registered_ = state; };
+  bool isDisconnectRequested() { return disconnectRequested_; }
+  void setDisconnectRequest(bool request) { disconnectRequested_ = request; }
 
  private:
   RegisterState registered_{RegisterState::REJECTED};
   bool encryption_;
+  bool disconnectRequested_ = false;
 };
 
 #endif

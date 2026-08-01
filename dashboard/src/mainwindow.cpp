@@ -67,6 +67,13 @@ MainWindow::MainWindow(QWidget* parent)
                     m_streamingTarget.clear();
                 }
 
+                if (clicked != m_target) {
+                    m_cpuHistory.clear();
+                    m_memoryHistory.clear();
+                    m_networkHistory.clear();
+                    m_diskHistory.clear();
+                }
+
                 m_target = clicked;
 
                 if (wasStreaming) {

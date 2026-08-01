@@ -17,6 +17,10 @@ void SeriesHistory::append(const QVector<double>& values) {
 
 QVector<QVector<double>> SeriesHistory::series() const { return m_series; }
 
+void SeriesHistory::clear() {
+    for (int i = 0; i < m_series.size(); ++i) m_series[i].clear();
+}
+
 
 
 

@@ -10,6 +10,9 @@ public:
     /// Adds one point per curve, dropping the oldest when the limit is reached.
     void append(const QVector<double>& values);
 
+    /// Empties every curve, keeping the curve count unchanged.
+    void clear();
+
 
     /// Returns the stored points, ready for LineChartWidget::setSeries.
     QVector<QVector<double>> series() const;

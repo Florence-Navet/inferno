@@ -2,6 +2,7 @@
 
 #include "logger.hpp"
 
+// EXCLUDED. --> new value we try to insert in case of conflict, i.e. the new values we want to update. (agents.value --> old value)
 void AgentRepository::save(const RegisterPayload& agent) {
   pqxx::params params;
   params.append(agent.id);
@@ -17,20 +18,28 @@ void AgentRepository::save(const RegisterPayload& agent) {
       "INSERT INTO agents "
       "  (id, hostname, os_type, architecture, os_version, current_username, "
       "ip_address, mac_address) "
-      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8) "
+      "ON CONFLICT (id) DO UPDATE SET "
+      "  hostname = EXCLUDED.hostname, "
+      "  os_type = EXCLUDED.os_type, "
+      "  architecture = EXCLUDED.architecture, "
+      "  os_version = EXCLUDED.os_version, "
+      "  current_username = EXCLUDED.current_username, "
+      "  ip_address = EXCLUDED.ip_address, "
+      "  mac_address = EXCLUDED.mac_address, "
+      "  last_seen = NOW()",
       params);
 }
 
-void AgentRepository::setLastSeen(const std::string& id,
-                                  const std::string& timestampIso) {
+void AgentRepository::setLastSeen(const std::string& id) {
   pqxx::params params;
-  params.append(timestampIso);
+  // params.append(timestampIso);
   params.append(id);
 
   db_.executeParams(
       "UPDATE agents "
-      "SET last_seen = $1 "
-      "WHERE id = $2",
+      "SET last_seen = $NOW() "
+      "WHERE id = $1",
       params);
 }
 

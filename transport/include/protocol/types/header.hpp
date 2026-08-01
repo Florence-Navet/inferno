@@ -5,6 +5,8 @@
 #include <string_view>
 #include <vector>
 
+constexpr std::uint16_t SERVER_PORT = 8888;
+
 constexpr std::uint8_t LPTF_VERSION = 1;
 
 constexpr std::uint8_t LPTF_HEADER_SIZE =

@@ -8,15 +8,18 @@
 #include "agent_loop.hpp"
 #include "dispatcher/agent_dispatcher.hpp"
 #include "env_helper.hpp"
+#include "logger.hpp"
 #include "poller/poller.hpp"
 #include "system_monitor/i_system_monitor.hpp"
 #include "system_monitor/system_monitor_factory.hpp"
-
 int main() {
   std::setvbuf(stdout, nullptr, _IONBF, 0);
   std::setvbuf(stderr, nullptr, _IONBF, 0);
 
-  const std::string host = EnvHelper::resolveServerHost();
+  // const std::string host = EnvHelper::resolveServerHost();
+  const std::string host = EnvHelper::resolveString("SERVER_HOST");
+  Logger::info("agent main", "SERVER_HOST = " + host);
+
   const std::uint16_t port = EnvHelper::resolvePort();
 
   constexpr int kHeartbeatMs = 30'000;  // 30s — HEALTHCHECK cadence

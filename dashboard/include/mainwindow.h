@@ -33,7 +33,7 @@ class MainWindow : public QMainWindow {
   void onMetricsReceived(const QString &target, const MetricsSample &sample);
 
  protected:
-     void closeEvent(QCloseEvent *event) override;
+  void closeEvent(QCloseEvent *event) override;
 
  private:
   ServerClient* m_client = nullptr;

@@ -130,11 +130,11 @@ void MainWindow::buildContentArea() {
                     "16 GB total");
     chartsGrid->addWidget(m_memoryChart, 0, 1);
 
-    chartsGrid->addWidget(createChart("Network I/O — eth0",
-                                      {{30, 50, 40, 60, 55, 70, 50, 65, 45},
-                                       {10, 15, 12, 18, 14, 20, 16, 22, 18}},
-                                      {"rx", "tx"}, {1}),
-                          1, 0);
+    m_networkChart = createChart("Network I/O — eth0",
+                                 {{30, 50, 40, 60, 55, 70, 50, 65, 45},
+                                  {10, 15, 12, 18, 14, 20, 16, 22, 18}},
+                                 {"rx", "tx"}, {1});
+    chartsGrid->addWidget(m_networkChart, 1, 0);
 
     m_diskChart = createChart("Disk I/O — sda",
                               {{20, 35, 30, 45, 40, 55, 35, 50, 40},
@@ -244,6 +244,20 @@ void MainWindow::onMetricsReceived(const QString& target,
 
     m_diskHistory.append({diskRead / 1024.0 / 1024.0, diskWrite / 1024.0 / 1024.0});
     m_diskChart->setSeries(m_diskHistory.series());
+
+    //NETWORK
+    double netRx = 0.0;
+    double netTx = 0.0;
+    for (const NetSample& iface : sample.interfaces) {
+        netRx += iface.rx_bytes_per_sec;
+        netTx += iface.tx_bytes_per_sec;
+    }
+
+    const double maxRate = 1024.0 * 1024.0 * 1024.0;
+    if (netRx <= maxRate && netTx <= maxRate) {
+        m_networkHistory.append({netRx / 1024.0, netTx / 1024.0});
+        m_networkChart->setSeries(m_networkHistory.series());
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

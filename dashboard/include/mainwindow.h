@@ -50,6 +50,9 @@ class MainWindow : public QMainWindow {
   /// Displays command output. TODO: feed with DashboardResponse data.
   void showOutput(const QString& text);
 
+  /// Refreshes the header status badge from the current streaming state.
+  void updateStatusBadge();
+
   /// Builds the metric cards, table and console inside contentArea
   void buildContentArea();
 

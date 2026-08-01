@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QVector>
+#include <QStyle>
 
 #include "./ui_mainwindow.h"
 #include "agentitemwidget.h"
@@ -30,6 +31,9 @@ MainWindow::MainWindow(QWidget* parent)
     buildContentArea();
 
     buildStatusBar();
+
+    updateStatusBadge();
+
 
     qDebug() << "target:" << m_target;
 
@@ -65,11 +69,15 @@ MainWindow::MainWindow(QWidget* parent)
 
                 m_target = clicked;
 
-                if (wasStreaming) return;
+                if (wasStreaming) {
+                    updateStatusBadge();
+                    return;
+                }
 
                 m_client->sendCommand(m_target, CommandType::START_METRICS,
                                       QString());
                 m_streamingTarget = m_target;
+                updateStatusBadge();
             });
 
     connect(m_client, &ServerClient::agentReceived, this,
@@ -216,4 +224,13 @@ void MainWindow::closeEvent(QCloseEvent* event) {
                               QString());
 
     QMainWindow::closeEvent(event);
+}
+
+void MainWindow::updateStatusBadge() {
+    const bool streaming = !m_target.isEmpty() && m_target == m_streamingTarget;
+
+    ui->statusBadge->setText(streaming ? "● streaming" : "● stopped");
+    ui->statusBadge->setProperty("streaming", streaming);
+    ui->statusBadge->style()->unpolish(ui->statusBadge);
+    ui->statusBadge->style()->polish(ui->statusBadge);
 }

@@ -12,13 +12,13 @@ std::string ResponseRepository::save(const ResponsePayload& response) {
   // params.append(pqxx::binarystring(
   //     reinterpret_cast<const std::byte*>(response.data.data()),
   //     response.data.size()));
-  params.append(pqxx::bytes_view(
-    reinterpret_cast<const std::byte*>(response.data.data()),
-    response.data.size()));
+  params.append(
+      pqxx::bytes_view(reinterpret_cast<const std::byte*>(response.data.data()),
+                       response.data.size()));
 
   pqxx::result result = db_.executeParams(
       "INSERT INTO responses "
-      "  (command_id, status, total_chunks, chunk_index, data) "
+      "  (command_id, status, total_chunks, chunk_index, chunk_data) "
       "VALUES ($1, $2, $3, $4, $5) RETURNING received_at",
       params);
   return result[0][0].as<std::string>();

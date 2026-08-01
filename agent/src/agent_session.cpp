@@ -13,6 +13,7 @@
 
 void AgentSession::resetSession() {
   registered_ = RegisterState::PENDING;
+   disconnectRequested_ = false;
   buffer_.clear();
   header_.reset();
   if (encryption_) {

@@ -23,7 +23,7 @@ int main() {
   const std::uint16_t port = EnvHelper::resolvePort();
 
   constexpr int kHeartbeatMs = 30'000;  // 30s — HEALTHCHECK cadence
-  constexpr int kRetryMs = 5'000;       // 5s  — reconnection cadence
+  constexpr int kRetryMs = 10'000;      // 10s  — reconnection cadence
 
   Poller poller;
   // AgentDispatcher dispatcher;

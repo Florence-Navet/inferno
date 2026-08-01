@@ -206,6 +206,17 @@ void ServerClient::handleFrame(const Frame& frame) {
           }
       }
 
+      if (type == CommandType::OS_INFO) {
+          try {
+              const OsInfoPayload info =
+                  ProtocolParser::parseOsInfoPayload(response.response.data);
+              emit osInfoReceived(target, info);
+              parsed = true;
+          } catch (const std::exception& e) {
+              qDebug() << "not an os info payload:" << e.what();
+          }
+      }
+
       if (!parsed) {
           emit responseReceived(
               target, QString::fromStdString(

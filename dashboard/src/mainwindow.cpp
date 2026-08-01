@@ -115,11 +115,22 @@ MainWindow::MainWindow(QWidget* parent)
     connect(m_client, &ServerClient::metricsReceived, this,
             &MainWindow::onMetricsReceived);
 
+    connect(m_client, &ServerClient::osInfoReceived, this,
+            &MainWindow::onOsInfoReceived);
+
     connect(ui->processListButton, &QPushButton::clicked, this, [this]() {
         m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES, QString());
     });
 
     connect(ui->osInfoButton, &QPushButton::clicked, this, [this]() {
+        if (m_osBadgeDetailed) {
+            QListWidgetItem* item = ui->agentList->currentItem();
+            if (item) ui->osBadge->setText(item->data(Qt::UserRole + 2).toString());
+
+            m_osBadgeDetailed = false;
+            return;
+        }
+
         m_client->sendCommand(m_target, CommandType::OS_INFO, QString());
     });
 
@@ -303,6 +314,14 @@ void MainWindow::closeEvent(QCloseEvent* event) {
                               QString());
 
     QMainWindow::closeEvent(event);
+}
+
+void MainWindow::onOsInfoReceived(const QString& target,
+                                  const OsInfoPayload& info) {
+    if (target != m_target) return;
+
+    ui->osBadge->setText(QString::fromStdString(info.os_version));
+    m_osBadgeDetailed = true;
 }
 
 void MainWindow::updateStatusBadge() {

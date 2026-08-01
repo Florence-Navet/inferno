@@ -75,6 +75,7 @@ MainWindow::MainWindow(QWidget* parent)
 
                     m_processTable->setProcesses({});
                     m_metricCards->clear();
+                    ui->outputView->clear();
                 }
 
                 m_target = clicked;

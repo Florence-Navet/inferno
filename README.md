@@ -8,7 +8,7 @@
 - [Dependencies](#dependencies)
 - [Quick start](#quick-start)
 - [How are agent and server built](#how-are-agent-and-server-built)
-- [How to build dashboard](how-to-build-dashboard)
+- [How to build dashboard](#how-to-build-dashboard)
   - [Windows](#dashboard-on-windows)
   - [Linux](#dashboard-on-linux)
 
@@ -54,6 +54,8 @@ A central service responsible for:
 - receiving and parsing telemetry streams,
 - coordinating requests and responses,
 - preparing data for visualization and analysis.
+
+![server's architecture diagram](./_docs/project/server_architecture.png)
 
 ### Desktop dashboard (future)
 

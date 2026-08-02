@@ -8,8 +8,8 @@
 - [Dependencies](#dependencies)
 - [Quick start](#quick-start)
 - [How are agent and server built](#how-are-agent-and-server-built)
-- [How to build dashboard](#how-to-build-dashboard)
-  - [Windows](#dashboard-on-windows)
+- [How to build dashboard](how-to-build-dashboard)
+  - [Windows](#dashboard-on-windows) + [troubleshooting](./_docs/project/windows-troubleshooting.md)
   - [Linux](#dashboard-on-linux)
 
 ---
@@ -111,14 +111,32 @@ All **dashboard-side dependencies** need to be installed on your host machine (s
 | Google Test / Mock | 1.15.2-4           | Agent, Server (Docker) | Unit testing framework          |
 | CMake              | 3.31.11 (3.20 min) | Dashboard (host)       | Build system for the Qt client  |
 | openssl-devel      | 3.5.7-2            | All (Docker & host)    | Secure communication on network |
+| OpenSSL            | 3.2.4              | Dashboard (server)     | Secure communication on network |
 | libpq              | 18.0-3             | Server (Docker)        |                                 |
 | libpqxx            | 7.10.5-1           | Server (Docker)        |                                 |
 | postgresql         | 18.3-2             | Server (Docker)        |                                 |
 
 ## Prerequisites
 
-- Docker / Docker Desktop or [Podman](https://github.com/containers/podman) installed and running
+
+## Prerequisites
+
+### All Platforms (Docker)
+Docker / Docker Desktop or [Podman](https://github.com/containers/podman) installed and running
+For server and agent: Docker/Podman handles all dependencies automatically.
+
+### Windows (Qt)
 - Qt installed (see more on [How to build dashboard](#how-to-build-dashboard))
+- OpenSSL from Mingw64 environment (see more on [Install OpenSSL compatible with Qt MinGW](#install-openSSL-compatible-with-qt-mingw))
+
+#### ⚠️ CRITICAL: Consistent Toolchain Required
+**All compiled code must use the same MinGW version.** Mixing toolchains (e.g., ucrt64 + mingw64 + Qt's MinGW) causes segmentation faults.
+
+**You MUST use:**
+- **GCC:** Qt's bundled MinGW (not MSYS2, not Git Bash mingw64)
+- **OpenSSL:** Compiled for the same MinGW version
+
+---
 
 ## Setup
 
@@ -244,10 +262,12 @@ The following diagram illustrates the pipeline:
 First, check if you already have the required tools:
 
 ```bash
-qmake6 --version && cmake --version
+qmake6 --version && cmake --version && openssl --version
 ```
 
 If anything is missing, you have two options:
+
+#### Install Qt 6.4.2+ with MinGW
 
 **Option A — via WSL (Windows Subsystem for Linux):**
 
@@ -263,11 +283,42 @@ Download Qt from [https://www.qt.io/download-open-source](https://www.qt.io/down
 Install `Qt` with `gcc`, `g++` and `cmake` to avoid path issues.
 Qt **6.4.2 minimum**, **6.10.2** was used for development.
 
+**During installation, select:**
+- Qt 6.10.2 (or 6.4.2+)
+- **MinGW 13.1 64-bit** compiler
+
+
 Then add these to your `PATH`:
 
 ```
 C:\Qt\Tools\QtCreator\bin
 C:\Qt\6.x.x\mingw_64\bin
+C:\Qt\Tools\CMake_64\bin
+```
+
+Verify installation:
+```powershell
+where gcc
+# Should show: C:\Qt\Tools\mingw1310_64\bin\gcc.exe
+
+where cmake
+# Should show: C:\Qt\Tools\CMake_64\bin\cmake.exe
+
+```
+#### Install OpenSSL compatible with Qt MinGW
+
+Install **MSYS2** (a separate tool, independent from Qt) from: https://www.msys2.org/ 
+Open **MSYS2 MinGW 64-bit terminal** (NOT UCRT64, NOT CLANG64):
+
+```bash
+pacman -S mingw-w64-x86_64-openssl
+```
+
+Verify OpenSSL libraries exist:
+```bash
+ls -la /mingw64/lib/libssl.dll.a
+ls -la /mingw64/lib/libcrypto.dll.a
+ls -la /mingw64/include/openssl/ssl.h
 ```
 
 **Build the dashboard:**
@@ -309,6 +360,7 @@ Install if needed:
 sudo apt install qt6-base-dev qt6-base-dev-tools
 sudo apt install cmake
 sudo apt install qt6-websockets-dev
+sudo apt install libssl-dev
 ```
 
 Make the scripts executable (only needed once):

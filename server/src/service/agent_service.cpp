@@ -16,11 +16,11 @@ void AgentService::registerAgent(AgentConnection& agent,
 
   registerToSent.system = agentInfo;
   registerToSent.id = agent.getId();
+  registerToSent.online = true;
   // TODO retrieve last_seen from repository;
   registerToSent.last_seen = "placeholder";
   // TODO retrieve registered_at from repository, save method could return it?;
   registerToSent.registered_at = "placeholder";
-
 
   // // Save()
 
@@ -30,7 +30,8 @@ void AgentService::registerAgent(AgentConnection& agent,
   //   repository_.setLastSeen(agent.getId());
   // }
 
-  repository_.save(registerToSent);  // now save() is upsert, so no need to check existence first
+  repository_.save(registerToSent);  // now save() is upsert, so no need to
+                                     // check existence first
 
   // TODO : use getAgentData or getAgentDates to retrieve db data here?
   std::ostringstream what;
@@ -39,9 +40,10 @@ void AgentService::registerAgent(AgentConnection& agent,
        << "\nos : " << static_cast<int>(agentInfo.os_type)
        << "\narch : " << static_cast<int>(agentInfo.arch)
        << "\nversion : " << agentInfo.os_version << "\nip : " << agentInfo.ip
-       << "\nmac : " << agentInfo.mac
-      //  << "\nregistered_at : " << registerToSent.registered_at
-      //  << "\nlast_seen : " << registerToSent.last_seen
+       << "\nmac : "
+       << agentInfo.mac
+       //  << "\nregistered_at : " << registerToSent.registered_at
+       //  << "\nlast_seen : " << registerToSent.last_seen
        << "\nagent id : " << registerToSent.id;
   Logger::info("server dispatcher", what.str());
 }

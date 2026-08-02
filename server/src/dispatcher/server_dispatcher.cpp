@@ -267,7 +267,7 @@ void ServerDispatcher::onAgentDisconnect(AgentConnection& agent) {
   std::vector<std::uint8_t> payload =
       ProtocolSerializer::serializeDashboardDisconnect(disconnection);
   Frame frame;
-  frame.header = ProtocolHelper::createHeader(MessageType::DATA, payload);
+  frame.header = ProtocolHelper::createHeader(MessageType::DISCONNECT, payload);
   if (sessionManager_.isDashboard()) {
     frame.payload = payload;
     sessionManager_.getDashboard().sendFrame(frame);

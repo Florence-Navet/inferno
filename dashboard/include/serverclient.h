@@ -37,6 +37,9 @@ class ServerClient : public QObject {
   /// Emitted when an agent answers an OS_INFO command.
   void osInfoReceived(const QString& target, const OsInfoPayload& info);
 
+  /// Emitted when the server reports that an agent went offline.
+  void agentDisconnected(const QString& target);
+
  private:
   std::unique_ptr<DashboardSession> m_session;
   QSocketNotifier* m_notifier = nullptr;

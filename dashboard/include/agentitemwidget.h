@@ -13,6 +13,8 @@ public:
     explicit AgentItemWidget(QWidget *parent = nullptr);
 
     void setAgent(const QString &name, const QString &details, bool online);
+    /// Updates only the connection state dot.
+    void setOnline(bool online);
 
 private:
     QLabel *m_nameLabel;

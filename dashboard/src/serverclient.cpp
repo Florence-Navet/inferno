@@ -231,6 +231,18 @@ void ServerClient::handleFrame(const Frame& frame) {
                << QString::fromStdString(error.message);
       break;
     }
+    case MessageType::DISCONNECT: {
+        try {
+            const DashboardDisconnect payload =
+                ProtocolParser::parseDashboardDisconnect(frame.payload);
+
+            emit agentDisconnected(QString::fromStdString(payload.target));
+        } catch (const std::exception& e) {
+            qDebug() << "bad disconnect payload:" << e.what();
+        }
+        break;
+    }
+
     default:
       qDebug() << "unhandled type" << static_cast<int>(frame.header.type);
   }
@@ -251,18 +263,28 @@ void ServerClient::handleData(const std::vector<std::uint8_t>& payload) {
   const std::string agentId = dataDashboard.target;
   const DataPayload data = dataDashboard.data;
 
+  qDebug() << "DATA subtype" << static_cast<int>(data.subtype)
+           << "size" << data.data.size();
+
   switch (data.subtype) {
     case DataType::AGENTS:
     case DataType::REGISTRATION: {
       if (data.data.empty()) break;  // no agent connected yet
 
-      const std::vector<RegisterPayload> agents =
-          ProtocolParser::parseRegisterPayloadList(data.data);
+      std::vector<RegisterPayload> agents;
+      if (data.subtype == DataType::AGENTS) {
+          agents = ProtocolParser::parseRegisterPayloadList(data.data);
+      } else {
+          agents.push_back(ProtocolParser::parseRegisterPayload(data.data));
+      }
 
-      for (const auto& agent : agents) {
+    qDebug() << "parsed agents:" << agents.size();
+      for (const RegisterPayload& agent : agents) {
         qDebug() << "agent:" << QString::fromStdString(agent.system.hostname)
-                 << QString::fromStdString(agent.system.ip)
-                 << "id:" << QString::fromStdString(agent.id);
+                   << QString::fromStdString(agent.system.ip)
+                 << "id:" << QString::fromStdString(agent.id)
+                << "online:" << agent.online;
+
         // ... emit signals for each agent
         const std::string id = agent.id.empty() ? agent.system.mac : agent.id;
 

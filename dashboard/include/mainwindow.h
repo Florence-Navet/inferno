@@ -36,6 +36,9 @@ private slots:
     /// Fills the OS badge and the console from an OS_INFO answer.
     void onOsInfoReceived(const QString &target, const OsInfoPayload &info);
 
+    /// Marks an agent as offline when the server reports its disconnection.
+    void onAgentDisconnected(const QString &target);
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 

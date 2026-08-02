@@ -120,6 +120,9 @@ MainWindow::MainWindow(QWidget* parent)
     connect(m_client, &ServerClient::osInfoReceived, this,
             &MainWindow::onOsInfoReceived);
 
+    connect(m_client, &ServerClient::agentDisconnected, this,
+            &MainWindow::onAgentDisconnected);
+
     connect(ui->processListButton, &QPushButton::clicked, this, [this]() {
         m_client->sendCommand(m_target, CommandType::RUNNING_PROCESSES, QString());
     });
@@ -249,6 +252,22 @@ void MainWindow::buildStatusBar() {
 
 void MainWindow::addAgentItem(const QString& id, const QString& name,
                               const QString& os, const QString&ip, bool online) {
+
+    for (int i = 0; i < ui->agentList->count(); ++i) {
+        QListWidgetItem* existing = ui->agentList->item(i);
+        if (existing->data(Qt::UserRole).toString() != id) continue;
+
+        existing->setData(Qt::UserRole + 4, online);
+
+        AgentItemWidget* existingWidget =
+            qobject_cast<AgentItemWidget*>(ui->agentList->itemWidget(existing));
+        if (existingWidget) existingWidget->setOnline(online);
+
+        updateAgentCounters();
+        return;
+    }
+
+
     const QString details = os + " · " + ip;
 
     AgentItemWidget* widget = new AgentItemWidget(this);
@@ -374,4 +393,20 @@ void MainWindow::updateAgentCounters() {
 
     if (m_onlineLabel)
         m_onlineLabel->setText(QString("● %1 agents online").arg(total - offline));
+}
+
+void MainWindow::onAgentDisconnected(const QString& target) {
+    for (int i = 0; i < ui->agentList->count(); ++i) {
+        QListWidgetItem* item = ui->agentList->item(i);
+        if (item->data(Qt::UserRole).toString() != target) continue;
+
+        item->setData(Qt::UserRole + 4, false);
+
+        AgentItemWidget* widget =
+            qobject_cast<AgentItemWidget*>(ui->agentList->itemWidget(item));
+        if (widget) widget->setOnline(false);
+        break;
+    }
+
+    updateAgentCounters();
 }

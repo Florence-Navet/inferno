@@ -225,15 +225,16 @@ cp .env.template .env
 
 ### Key variables to know:
 
-| Variable            | Default            | Required | Description                                                                                             |
-| ------------------- | ------------------ | -------- | ------------------------------------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD` | —                  | ✅       | Root password for the TimescaleDb container. Only used internally by PostgreSQL, not by the server.     |
-| `POSTGRES_DB`       | `infernoDB`        | ✅       | Name of the database that will be created and used by the server.                                       |
-| `POSTGRES_USER`     | `infernoUser`      | ✅       | PostgreSQL user the server connects as.                                                                 |
-| `DB_PORT`           | `5432`             | ✅       | PostgreSQL port exposed on your host. Change it if you already have a local PostgreSQL running on 5432. |
-| `SERVER_PORT`       | `8888`             | ✅       | Port the C++ server listens on (also exposed by Docker).                                                |
-| `COMPOSE_PROFILES`  | `agent,server, db` | —        | Needed for development stage to enable --profile command and orchestration through docker compose.      |
-| `TLS`               | `true`             | —        | Used as configuration for disabling TLS, if non existant, default will be true.                          |
+| Variable            | Default            | Required        | Description                                                                                             |
+| ------------------- | ------------------ | --------------- | ------------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD` | —                  | ✅              | Root password for the TimescaleDb container. Only used internally by PostgreSQL, not by the server.     |
+| `POSTGRES_DB`       | `infernoDB`        | ✅              | Name of the database that will be created and used by the server.                                       |
+| `POSTGRES_USER`     | `infernoUser`      | ✅              | PostgreSQL user the server connects as.                                                                 |
+| `DB_PORT`           | `5432`             | ✅              | PostgreSQL port exposed on your host. Change it if you already have a local PostgreSQL running on 5432. |
+| `SERVER_PORT`       | `8888`             | ✅              | Port the C++ server listens on (also exposed by Docker).                                                |
+| `SERVER_HOST`       | `server`           | ✅ (for docker) | Host for agent, name resolution done by docker network, else SERVER_HOST should be 'localhost'          |
+| `COMPOSE_PROFILES`  | `agent,server, db` | —               | Needed for development stage to enable --profile command and orchestration through docker compose.      |
+| `TLS`               | `true`             | —               | Used as configuration for disabling TLS, if non existant, default will be true.                         |
 
 > ⚠️ All three `POSTGRES_*` variables must be set or the database container will fail to start — and since the server depends on it, it will fail too.
 

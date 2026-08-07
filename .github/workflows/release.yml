@@ -130,7 +130,7 @@ jobs:
           path: inferno-agent-linux-*.AppImage
   build-dashboard-linux:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -247,13 +247,13 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           APPIMAGE_FILE=$(ls *.AppImage 2>/dev/null | head -1)
-          
+
           if [ -z "$APPIMAGE_FILE" ]; then
             echo "ERROR: No AppImage found!"
             ls -la
             exit 1
           fi
-          
+
           mv "$APPIMAGE_FILE" "inferno-dashboard-linux-${VERSION}.AppImage"
           chmod +x "inferno-dashboard-linux-${VERSION}.AppImage"
           ls -lh inferno-dashboard-linux-*.AppImage
@@ -268,7 +268,7 @@ jobs:
     needs: [build-agent-linux, build-dashboard-linux]
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -288,21 +288,21 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           RELEASE_DATE=$(date -u '+%Y-%m-%d')
-          
+
           cat > RELEASE_NOTES.md << 'EOF'
           # Inferno $VERSION
-          
+
           **Released:** $RELEASE_DATE
-          
+
           ## 📦 Downloads
-          
+
           Linux AppImages are ready to run — download and execute directly.
-          
+
           - `inferno-agent-linux-$VERSION.AppImage` — Remote monitoring agent
           - `inferno-dashboard-linux-$VERSION.AppImage` — Desktop monitoring interface
-          
+
           ## 🚀 Linux QuickStart
-          
+
           ```bash
               # Download, then run directly
               ./inferno-agent-linux-$VERSION.AppImage
@@ -310,7 +310,7 @@ jobs:
           ```
                     
           ### Custom Configuration
-          
+
           Override defaults via environment variables:
                     
           ```bash
@@ -318,14 +318,14 @@ jobs:
           ```
                     
           See [Configuration](README.md#setup) for all options.
-          
+
           ## Windows
           Build from source using `windows-build.bat` :
           - see [Build Instructions for agent](README.md#agent-on-windows)
           - see [Build Instructions for dashboard](README.md#dashboard-on-Windows)
-          
+
           ## Server Setup
-          
+
           Server and database (TimescaleDB) requires Docker. See [Quick Start](README.md#quick-start):
                     
           ```bash
@@ -334,14 +334,15 @@ jobs:
               cp .env.template .env
               docker compose --profile server up
           ```
-          
+
           ## Documentation
-          
+
           - [Full README](README.md)
           - [Architecture](README.md#architecture)
           - [Binary Protocol](_docs/project/lptf_binary_protocol.md)
           EOF
-          
+
+
           # Replace version and date placeholders
           sed -i "s|\$VERSION|$VERSION|g" RELEASE_NOTES.md
           sed -i "s|\$RELEASE_DATE|$RELEASE_DATE|g" RELEASE_NOTES.md

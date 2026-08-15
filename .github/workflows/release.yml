@@ -329,7 +329,7 @@ jobs:
           Server and database (TimescaleDB) requires Docker. See [Quick Start](README.md#quick-start):
                     
           ```bash
-              git clone https://github.com/thibault-caron/inferno.git
+              git clone https://github.com/Florence-Navet/inferno.git
               cd inferno
               cp .env.template .env
               docker compose --profile server up
